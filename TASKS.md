@@ -63,15 +63,7 @@ Coordination file for parallel agents working on Cloudy Ninja. Read [AGENTS.md](
 
 ## In Progress
 
-### T-001 — Migrate Hud.kt buttons to VisUI
-- **Status:** In Progress
-- **Agent:** claude-sonnet-4-6 (main window)
-- **Branch:** claude/T-001-hud-visui
-- **Started:** 2026-05-09
-- **Depends on:** _none_
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/Hud.kt`
-- **Goal:** Replace raw Scene2D buttons/labels in `Hud.kt` with VisUI equivalents (`VisTextButton`, `VisLabel`) for visual consistency with the menus that already use VisUI.
-- **Done when:** HUD renders with VisUI styling, all input flags still feed `InputManager` correctly, game runs without regressions.
+_No tasks currently in progress._
 
 <!--
 Template for moving a task here:
@@ -92,7 +84,11 @@ Template for moving a task here:
 
 ## Done
 
-_No tasks completed yet._
+### T-001 — Migrate Hud.kt buttons to VisUI
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** HUD `Label`/`Table`/`Image` widgets migrated to `VisLabel`/`VisTable`/`VisImage`. Buttons were already VisUI. Compile clean, behavior unchanged.
+- **Commit/PR:** 3fd1a91
 
 <!--
 Template for moving a task here:
