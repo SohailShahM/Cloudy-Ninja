@@ -31,15 +31,6 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 ## Todo
 
 
-### T-021 — Split GameScreen into focused subsystems
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** §10.1
-- **Files:** `screens/GameScreen.kt` (1179 LOC → ~300), new `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `screens/LevelTransitionController.kt`
-- **Goal:** Extract from `GameScreen`: (1) `LevelRunState` — score, combo, spirit health, completion flags; (2) `LevelRenderer` — the entire `shapeRenderer.begin/end` block; (3) `LevelTransitionController` — goToNextLevel / dispose chain. `GameScreen` becomes a thin coordinator. No behaviour change.
-- **Done when:** `GameScreen.kt` is ≤ 350 LOC; game compiles and existing tests pass.
 
 ### T-024 — Time trial mode
 - **Status:** Todo
@@ -223,6 +214,12 @@ Template for moving a task here:
 - **Completed:** 2026-05-09
 - **Outcome:** `CloudAtlasLibraryTest.kt` covers known-ID lookup, unknown-ID null, non-blank fields, and unique IDs.
 - **Commit/PR:** fc297c3
+
+### T-021 — Split GameScreen into focused subsystems
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** GameScreen 1214 → 349 LOC; `LevelRunState.kt` (~320L) owns all state + update loop; `LevelRenderer.kt` (~290L) owns all drawing + particle helpers + Palette; `LevelTransitionController.kt` (~85L) owns level-complete + goToNextLevel. No behaviour change.
+- **Commit/PR:** this branch
 
 ### T-009 — World 0 Room 4 "First Cleanse" tutorial
 - **Status:** Done
