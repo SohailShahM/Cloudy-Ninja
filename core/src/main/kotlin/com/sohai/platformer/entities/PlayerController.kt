@@ -1,5 +1,6 @@
 package com.sohai.platformer.entities
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.*
 import com.sohai.platformer.Constants
@@ -167,6 +168,45 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
 
     /** Always returns Vector2.Zero now; physics friction handles the carry. */
     fun getRidingPlatformVelocity(): Vector2 = Vector2.Zero
+
+    /**
+     * Defensive guard: returns true only if [platformBody] is safe to read from.
+     *
+     * Before the friction-based carry refactor, `platformContacts` stored raw
+     * Box2D Body references that could become stale after a teleport-respawn (the
+     * contact-end event was missed, leaving a destroyed body in the map). Reading
+     * `body.position` on such a body caused EXCEPTION_ACCESS_VIOLATION inside
+     * `Body.jniGetPosition` (T-017).
+     *
+     * This helper is kept here as a reference for any future code that re-introduces
+     * direct Body position reads from contact-derived references. Always call it
+     * before touching position/velocity on a body obtained outside the player's own
+     * init block.
+     */
+    fun isPlatformBodyValid(platformBody: Body?): Boolean {
+        if (platformBody == null) {
+            Gdx.app.error("PlayerController", "isPlatformBodyValid: null body — stale reference detected")
+            return false
+        }
+        return try {
+            // isActive() is a cheap JNI call; it will throw or return false if the
+            // native proxy has been freed, letting us catch the crash early in Java.
+            val active = platformBody.isActive
+            if (!active) {
+                Gdx.app.error(
+                    "PlayerController",
+                    "isPlatformBodyValid: body 0x${platformBody.hashCode().toString(16)} is INACTIVE — skipping position read"
+                )
+            }
+            active
+        } catch (e: Exception) {
+            Gdx.app.error(
+                "PlayerController",
+                "isPlatformBodyValid: body 0x${platformBody.hashCode().toString(16)} threw on isActive: ${e.message}"
+            )
+            false
+        }
+    }
 
     fun onWallRightContact(begin: Boolean) {
         wallRightContactCount = if (begin) wallRightContactCount + 1 else (wallRightContactCount - 1).coerceAtLeast(0)
