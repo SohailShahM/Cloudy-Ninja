@@ -17,6 +17,12 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
     var isDead = false
     var hasReachedExit = false
     var onJump: (() -> Unit)? = null
+    /**
+     * Invoked when a footstep should spawn a particle.
+     * Args: (x, y, isLeftFoot). Coordinates are world meters at the foot position,
+     * already offset slightly to the appropriate side of the player.
+     */
+    var onFootstep: ((Float, Float, Boolean) -> Unit)? = null
     var deathFlashTimer = 0f
     val isFlashing get() = deathFlashTimer > 0f
     // Stored spawn position (in world meters) used for respawn
@@ -44,6 +50,15 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
     private val rcFrom = Vector2()
     private val rcTo = Vector2()
     private var rcHit = false
+
+    // Footstep particle accumulator (T-011)
+    private var distanceWalkedSinceLastFootstep = 0f
+    private var lastFootWasLeft = false
+    companion object {
+        private const val FOOTSTEP_INTERVAL_M = 0.12f
+        private const val FOOTSTEP_OFFSET_X = 0.10f   // ~half-width of player body in meters
+        private const val FOOTSTEP_OFFSET_Y = 0.32f   // foot position below body center
+    }
 
 
     init {
@@ -296,6 +311,25 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
             if (body.linearVelocity.y < Constants.PLAYER_WALL_SLIDE_SPEED) {
                 body.linearVelocity = Vector2(body.linearVelocity.x, Constants.PLAYER_WALL_SLIDE_SPEED)
             }
+        }
+
+        // Footstep particles (T-011): accumulate horizontal distance while
+        // grounded; every FOOTSTEP_INTERVAL_M, spawn an alternating L/R foot puff.
+        if (isGrounded) {
+            val vx = body.linearVelocity.x
+            if (vx != 0f) {
+                distanceWalkedSinceLastFootstep += Math.abs(vx) * deltaTime
+                if (distanceWalkedSinceLastFootstep >= FOOTSTEP_INTERVAL_M) {
+                    distanceWalkedSinceLastFootstep = 0f
+                    lastFootWasLeft = !lastFootWasLeft
+                    val px = body.position.x + (if (lastFootWasLeft) -FOOTSTEP_OFFSET_X else FOOTSTEP_OFFSET_X)
+                    val py = body.position.y - FOOTSTEP_OFFSET_Y
+                    onFootstep?.invoke(px, py, lastFootWasLeft)
+                }
+            }
+        } else {
+            // Reset accumulator so the first step after landing isn't an instant puff.
+            distanceWalkedSinceLastFootstep = 0f
         }
 
         // Update ability if one is assigned
