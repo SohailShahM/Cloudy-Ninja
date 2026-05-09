@@ -6,6 +6,7 @@ package com.sohai.platformer.levels
 object LevelManager {
     private val levels: Map<String, Level> = mapOf(
         "level0_1" to Level0_1(),
+        "level0_2" to Level0_2(),
         "level1" to Level1(),
         "level2" to Level2(),
         "level3" to Level3()
