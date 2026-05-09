@@ -6,6 +6,16 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.sohai.platformer.Constants
 
 /**
+ * Visual theme for [ParallaxBackground].
+ *
+ * Each theme defines the corrupted→cleansed colour palette for one campaign world:
+ * - [ARID]  Level 1 — parched expanse, warm browns/oranges → rich greens/golds
+ * - [WIND]  Level 2 — wind and weather, slate greys/blues → crisp whites/sky-blues
+ * - [ECO]   Level 3 — eco-restoration, deep swamp greens → bright teals/limes
+ */
+enum class ParallaxTheme { ARID, WIND, ECO }
+
+/**
  * Renders a two-layer parallax background (distant mountains + mid-ground trees)
  * plus a two-tone sky that lerps from a "corrupted" dark palette to a bright
  * "cleansed" palette as cleanseRatio approaches 1.
@@ -13,8 +23,10 @@ import com.sohai.platformer.Constants
  * All geometry is drawn in Box2D world-space (meters) using the game camera's
  * combined matrix — no projection-matrix swap, no save/restore.
  * Caller must NOT have an open ShapeRenderer begin/end block.
+ *
+ * @param theme Per-level visual theme; defaults to [ParallaxTheme.ARID].
  */
-class ParallaxBackground {
+class ParallaxBackground(private val theme: ParallaxTheme = ParallaxTheme.ARID) {
 
     private data class BgElement(
         val patternXPx: Float,
@@ -58,15 +70,58 @@ class ParallaxBackground {
         )
     )
 
-    private val corruptedSkyTop    = Color(0.06f, 0.09f, 0.20f, 1f)
-    private val corruptedSkyBot    = Color(0.10f, 0.14f, 0.26f, 1f)
-    private val corruptedMountains = Color(0.12f, 0.15f, 0.28f, 1f)
-    private val corruptedTrees     = Color(0.08f, 0.18f, 0.10f, 1f)
+    // ── Per-theme colour palettes ────────────────────────────────────────────
+    // Each tuple: (corruptedSkyTop, corruptedSkyBot, corruptedMountains, corruptedTrees,
+    //              cleansedSkyTop,  cleansedSkyBot,  cleansedMountains,  cleansedTrees)
 
-    private val cleansedSkyTop    = Color(0.22f, 0.55f, 0.90f, 1f)
-    private val cleansedSkyBot    = Color(0.45f, 0.75f, 0.98f, 1f)
-    private val cleansedMountains = Color(0.30f, 0.40f, 0.60f, 1f)
-    private val cleansedTrees     = Color(0.12f, 0.55f, 0.22f, 1f)
+    private data class Palette(
+        val corSkyTop:    Color, val corSkyBot:    Color,
+        val corMountains: Color, val corTrees:     Color,
+        val clrSkyTop:    Color, val clrSkyBot:    Color,
+        val clrMountains: Color, val clrTrees:     Color
+    )
+
+    private val palette: Palette = when (theme) {
+        ParallaxTheme.ARID -> Palette(           // Level 1 — parched expanse
+            corSkyTop    = Color(0.15f, 0.10f, 0.05f, 1f),
+            corSkyBot    = Color(0.20f, 0.14f, 0.07f, 1f),
+            corMountains = Color(0.22f, 0.16f, 0.08f, 1f),
+            corTrees     = Color(0.18f, 0.14f, 0.06f, 1f),
+            clrSkyTop    = Color(0.90f, 0.62f, 0.25f, 1f),
+            clrSkyBot    = Color(0.98f, 0.80f, 0.45f, 1f),
+            clrMountains = Color(0.55f, 0.40f, 0.20f, 1f),
+            clrTrees     = Color(0.30f, 0.55f, 0.12f, 1f)
+        )
+        ParallaxTheme.WIND -> Palette(           // Level 2 — wind and weather
+            corSkyTop    = Color(0.06f, 0.09f, 0.20f, 1f),
+            corSkyBot    = Color(0.10f, 0.14f, 0.26f, 1f),
+            corMountains = Color(0.12f, 0.15f, 0.28f, 1f),
+            corTrees     = Color(0.10f, 0.12f, 0.22f, 1f),
+            clrSkyTop    = Color(0.55f, 0.72f, 0.95f, 1f),
+            clrSkyBot    = Color(0.78f, 0.90f, 1.00f, 1f),
+            clrMountains = Color(0.62f, 0.72f, 0.85f, 1f),
+            clrTrees     = Color(0.55f, 0.65f, 0.80f, 1f)
+        )
+        ParallaxTheme.ECO -> Palette(            // Level 3 — eco-restoration
+            corSkyTop    = Color(0.04f, 0.12f, 0.06f, 1f),
+            corSkyBot    = Color(0.06f, 0.16f, 0.09f, 1f),
+            corMountains = Color(0.06f, 0.14f, 0.08f, 1f),
+            corTrees     = Color(0.04f, 0.18f, 0.08f, 1f),
+            clrSkyTop    = Color(0.18f, 0.78f, 0.60f, 1f),
+            clrSkyBot    = Color(0.30f, 0.92f, 0.72f, 1f),
+            clrMountains = Color(0.15f, 0.58f, 0.38f, 1f),
+            clrTrees     = Color(0.10f, 0.75f, 0.35f, 1f)
+        )
+    }
+
+    private val corruptedSkyTop    get() = palette.corSkyTop
+    private val corruptedSkyBot    get() = palette.corSkyBot
+    private val corruptedMountains get() = palette.corMountains
+    private val corruptedTrees     get() = palette.corTrees
+    private val cleansedSkyTop    get() = palette.clrSkyTop
+    private val cleansedSkyBot    get() = palette.clrSkyBot
+    private val cleansedMountains get() = palette.clrMountains
+    private val cleansedTrees     get() = palette.clrTrees
 
     private val tmp = Color()
 

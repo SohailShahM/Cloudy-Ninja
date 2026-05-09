@@ -20,6 +20,7 @@ object LevelManager {
     private val levels: List<Level> = buildList {
         add(Level0_1())
         add(Level0_2())
+        add(Level0_3())
         LevelRegistry.ALL.forEach { def -> add(TmxLevel(def)) }
     }
 

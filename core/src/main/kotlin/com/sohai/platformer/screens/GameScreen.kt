@@ -22,6 +22,7 @@ import com.sohai.platformer.rendering.CharacterAtlas
 import com.sohai.platformer.rendering.SpriteFactory
 import com.sohai.platformer.abilities.EboAbility
 import com.sohai.platformer.abilities.LayaAbility
+import com.sohai.platformer.abilities.ZephyrAbility
 import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.entities.EcoToken
 import com.sohai.platformer.entities.MovingPlatform
@@ -36,6 +37,7 @@ import com.sohai.platformer.persist.SettingsManager
 import com.sohai.platformer.physics.CleanseEventQueue
 import com.sohai.platformer.physics.WorldContactListener
 import com.sohai.platformer.rendering.ParallaxBackground
+import com.sohai.platformer.rendering.ParallaxTheme
 import com.sohai.platformer.rendering.ParticleSystem
 import com.sohai.platformer.rendering.ScreenFade
 import com.sohai.platformer.world.ObstacleKind
@@ -110,6 +112,7 @@ class GameScreen(
     private val player: PlayerController
     private val eboAbility: EboAbility
     private val layaAbility: LayaAbility
+    private val zephyrAbility: ZephyrAbility
     private var currentCharacter = "Ebo"
     private var canSwitchCharacter = true
     private var switchCooldownTimer = 0f
@@ -225,10 +228,12 @@ class GameScreen(
 
         eboAbility = EboAbility(world)
         layaAbility = LayaAbility(world)
+        zephyrAbility = ZephyrAbility()
 
         player = PlayerController(world, level.spawnX, level.spawnY, eboAbility)
         eboAbility.setPlayerController(player)
         layaAbility.setPlayerController(player)
+        zephyrAbility.setPlayerController(player)
 
         // Restore from saved checkpoint if one was passed in (P0 fix)
         resumeCheckpoint?.let { cp ->
@@ -263,7 +268,13 @@ class GameScreen(
         hud.onSwapCharacter = { switchCharacter() }
         Gdx.input.inputProcessor = hud.stage
 
-        parallaxBg = ParallaxBackground()
+        parallaxBg = ParallaxBackground(
+            theme = when (level.id) {
+                "level2"  -> ParallaxTheme.WIND
+                "level3"  -> ParallaxTheme.ECO
+                else      -> ParallaxTheme.ARID
+            }
+        )
         screenFade = ScreenFade(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
         screenFade.fadeIn(speed = 1.5f)
 
@@ -369,6 +380,13 @@ class GameScreen(
             val pos = trail.getCurrentPosition()
             val alpha = trail.getAlpha()
             Palette.tmpWindCol.set(1f, 1f, 1f, 0.6f * alpha)
+            shapeRenderer.color = Palette.tmpWindCol
+            shapeRenderer.circle(pos.x / Constants.PPM, pos.y / Constants.PPM, trail.getRadius())
+        }
+        for (trail in zephyrAbility.getActiveWindTrails()) {
+            val pos = trail.getCurrentPosition()
+            val alpha = trail.getAlpha()
+            Palette.tmpWindCol.set(0.75f, 0.55f, 1f, 0.65f * alpha)   // light purple
             shapeRenderer.color = Palette.tmpWindCol
             shapeRenderer.circle(pos.x / Constants.PPM, pos.y / Constants.PPM, trail.getRadius())
         }
@@ -492,13 +510,17 @@ class GameScreen(
             Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
             spriteBatch.projectionMatrix = camera.combined
             spriteBatch.begin()
-            if (player.isFlashing) spriteBatch.setColor(1f, 0.35f, 0.35f, 0.85f)
+            if (player.isFlashing) {
+                spriteBatch.setColor(1f, 0.35f, 0.35f, 0.85f)
+            } else if (currentCharacter == "Zephyr") {
+                spriteBatch.setColor(0.72f, 0.55f, 1f, 1f)   // light purple tint
+            }
             if (player.isFacingRight) {
                 spriteBatch.draw(frame, sx, sy, sw, sh)
             } else {
                 spriteBatch.draw(frame, sx + sw, sy, -sw, sh)
             }
-            if (player.isFlashing) spriteBatch.setColor(Color.WHITE)
+            if (player.isFlashing || currentCharacter == "Zephyr") spriteBatch.setColor(Color.WHITE)
             spriteBatch.end()
             Gdx.gl.glDisable(GL20.GL_BLEND)
         }
@@ -725,7 +747,7 @@ class GameScreen(
                 )
                 Gdx.input.inputProcessor = gameOverOverlay!!.stage
             } else {
-                hud.showTransientMessage("$currentCharacter fell  ($spiritHealth spirits left)", 1.2f)
+                hud.showTransientMessage("$currentCharacter fell ($spiritHealth spirits left)", 1.2f)
             }
             // Restore from checkpoint autosave if one exists; otherwise respawn at
             // the level's default spawn position set during world setup.
@@ -960,22 +982,30 @@ class GameScreen(
     }
 
     private fun switchCharacter() {
-        currentCharacter = if (currentCharacter == "Ebo") {
-            player.changeAbility(layaAbility)
-            "Laya"
-        } else {
-            player.changeAbility(eboAbility)
-            "Ebo"
+        currentCharacter = when (currentCharacter) {
+            "Ebo" -> {
+                player.changeAbility(layaAbility)
+                "Laya"
+            }
+            "Laya" -> {
+                player.changeAbility(zephyrAbility)
+                "Zephyr"
+            }
+            else -> {
+                player.changeAbility(eboAbility)
+                "Ebo"
+            }
         }
         canSwitchCharacter = false
         switchCooldownTimer = 1.0f
 
-        val burstColor = if (currentCharacter == "Ebo")
-            Color(0.83f, 0.57f, 0.29f, 0.9f)
-        else
-            Color(0.29f, 0.50f, 0.66f, 0.9f)
+        val burstColor = when (currentCharacter) {
+            "Ebo"    -> Color(0.83f, 0.57f, 0.29f, 0.9f)
+            "Laya"   -> Color(0.29f, 0.50f, 0.66f, 0.9f)
+            else     -> Color(0.72f, 0.55f, 1.00f, 0.9f)   // Zephyr light purple
+        }
         spawnCollectSparkle(player.body.position.x, player.body.position.y, burstColor)
-        val abilityName = if (currentCharacter == "Ebo") "Seed Slam" else "Wind Dash"
+        val abilityName = player.ability?.getAbilityName() ?: ""
         hud.showTransientMessage("$currentCharacter: $abilityName", 0.8f)
     }
 
@@ -1011,10 +1041,11 @@ class GameScreen(
     }
 
     private fun spawnJumpPuff(x: Float, y: Float) {
-        val col = if (currentCharacter == "Ebo")
-            Color(0.7f, 0.55f, 0.35f, 0.8f)
-        else
-            Color(0.9f, 0.95f, 1f, 0.8f)
+        val col = when (currentCharacter) {
+            "Ebo"    -> Color(0.7f, 0.55f, 0.35f, 0.8f)
+            "Zephyr" -> Color(0.75f, 0.55f, 1.00f, 0.8f)
+            else     -> Color(0.9f, 0.95f, 1f, 0.8f)
+        }
         for (i in 0..2) {
             val ang = (com.badlogic.gdx.math.MathUtils.random() * 1.2f) + 0.2f  // 0.2 - 1.4 rad above horizontal
             val sign = if (com.badlogic.gdx.math.MathUtils.randomBoolean()) -1f else 1f

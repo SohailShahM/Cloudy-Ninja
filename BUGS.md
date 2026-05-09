@@ -153,3 +153,35 @@ map no longer exists.
 ---
 
 *Last updated: T-017 investigation (2026-05-09)*
+
+---
+
+## BUG-002: Player collision mask missing BIT_EXIT and BIT_ECOTOKEN (FIXED)
+
+**Status:** Fixed (2026-05-09)
+**Severity:** P0 — exit sensors never fired; eco-tokens and snapshots could never be collected
+
+### Root Cause
+
+`PlayerController`'s main body fixture `maskBits` was:
+```
+BIT_GROUND | BIT_WALL | BIT_HAZARD | BIT_CHECKPOINT = 60
+```
+
+Box2D requires both sides of a contact to pass the filter check:
+`(A.category & B.mask) != 0 AND (B.category & A.mask) != 0`
+
+- `BIT_EXIT (128) & 60 = 0` → exit sensors **never fired** — levels were uncompletable
+- `BIT_ECOTOKEN (256) & 60 = 0` → eco-tokens and atlas snapshots **could never be collected**
+
+### Fix
+
+Added the missing bits to the player body maskBits in `PlayerController.kt`:
+```kotlin
+fixtureDef.filter.maskBits = (
+    Constants.BIT_GROUND or Constants.BIT_WALL or Constants.BIT_HAZARD or
+    Constants.BIT_CHECKPOINT or Constants.BIT_EXIT or Constants.BIT_ECOTOKEN
+).toShort()   // = 444
+```
+
+**File:** `core/src/main/kotlin/com/sohai/platformer/entities/PlayerController.kt`

@@ -30,150 +30,15 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 
 ## Todo
 
-### T-002 — Add Kotest specs for PlayerController state machine
-- **Status:** In Progress
-- **Agent:** team-agent-E (parallel team)
-- **Branch:** auto (worktree)
-- **Started:** 2026-05-09
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/entities/`
-- **Goal:** Coyote-time edge cases, jump-buffer expiration, ability-swap mid-air, ground/air state transitions.
-
-### T-003 — Save/load UI in Settings menu
-- **Status:** In Progress
-- **Agent:** team-agent-F (parallel team)
-- **Branch:** auto (worktree)
-- **Started:** 2026-05-09
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt`, `persist/SaveManager.kt`
-- **Goal:** Save/Load/Delete buttons in SettingsScreen wired to SaveManager; toast confirmation.
-
-### T-004 — Checkpoint restart via serialized GameState
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-003
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`, `persist/GameState.kt`
-- **Goal:** On player death, restore from the last `GameState` checkpoint instead of reloading the level from scratch. Capture checkpoint state when the player crosses a checkpoint trigger.
-- **Done when:** Dying after a checkpoint respawns the player at the checkpoint with eco-tokens/snapshots collected up to that point preserved.
-
-### T-006 — World 0 Room 1 "First Step" tutorial
-- **Status:** In Progress
-- **Agent:** team-agent-G (parallel team)
-- **Branch:** auto (worktree)
-- **Started:** 2026-05-09
-- **GDD ref:** §7.1 (table row 0-1)
-- **Files:** new `core/src/main/kotlin/com/sohai/platformer/levels/Level0_1.kt`, `levels/LevelManager.kt`, possibly a new `.tmx` in `assets/maps/`
-- **Goal:** Single-screen room teaching walk + ground jump. One eco-token on the far side of a 2-tile gap that requires exactly one jump. No text — environment teaches.
-- **Done when:** Player can launch `level0_1` from `LevelManager`, jump the gap, collect the token, and trigger the level-exit sensor that hands off to Room 2 (or returns to main menu while T-007 is unbuilt).
-
-### T-007 — World 0 Room 2 "Long Fall" tutorial
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-006
-- **GDD ref:** §7.1 (table row 0-2)
-- **Files:** new `levels/Level0_2.kt`, `LevelManager.kt`
-- **Goal:** Vertical drop teaching variable jump height (must release jump early to fit through a low ceiling) and coyote time (a ledge requiring the player to walk off then jump).
-- **Done when:** Both teaching beats are physically only solvable using the intended mechanic; level chains from Room 1.
-
-### T-008 — World 0 Room 3 "Wall Climb" tutorial
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-007
-- **GDD ref:** §7.1 (table row 0-3)
-- **Files:** new `levels/Level0_3.kt`, `LevelManager.kt`
-- **Goal:** Vertical shaft, no other path. Player must wall-jump up. If they fall, restart the room (no death penalty — this is teaching).
-- **Done when:** Wall-jump is the only solution, falling cleanly resets the room without a game-over screen.
-
 ### T-009 — World 0 Room 4 "First Cleanse" tutorial
 - **Status:** Todo
 - **Agent:** _unclaimed_
 - **Branch:** _none_
-- **Depends on:** T-008
+- **Depends on:** T-008 ✅
 - **GDD ref:** §7.1 (table row 0-4) and §7.2 prologue beat
 - **Files:** new `levels/Level0_4.kt`, `LevelManager.kt`, `Hud.kt` (action button hint)
 - **Goal:** Hazard blocks the only path. Action button gets a pulsing-ring hint. After Seed Slam cleanses, the hazard becomes ground. Final transition uses `screenFade` into `level1`.
 - **Done when:** Cleanse is the only solution; HUD action button visibly hints; finishing fades into the existing `level1`.
-
-### T-012 — Camera vertical platform snap
-- **Status:** In Progress
-- **Agent:** team-agent-H (parallel team)
-- **Branch:** auto (worktree)
-- **Started:** 2026-05-09
-- **GDD ref:** §4.3
-- **Files:** wherever the camera controller lives (likely `screens/GameScreen.kt` per §4.4 sketch)
-- **Goal:** Only follow vertical position when the player is grounded *or* falling past a y-threshold. Locks the camera during jump arcs so the world doesn't bob with every jump.
-- **Done when:** Standing-jumping in level1 keeps the camera still; falling off a high platform still pans down to keep the player on screen.
-
-### T-013 — Generate 8 base SFX via ProceduralSoundGenerator
-- **Status:** In Progress
-- **Agent:** team-agent-I (parallel team)
-- **Branch:** auto (worktree)
-- **Started:** 2026-05-09
-- **GDD ref:** §5.4 (priority-order list, items 1–8)
-- **Files:** `audio/ProceduralSoundGenerator.kt`, `audio/SoundManager.kt`, new files in `assets/audio/sfx/`
-- **Goal:** Use the existing `ProceduralSoundGenerator` to synthesize wav files for: jump, land, collect_token, collect_snapshot, death, checkpoint, level_complete, hazard_cleansed. Output to `assets/audio/sfx/`. SoundManager loads them at startup and exposes `play(name)`.
-- **Done when:** All 8 sounds exist on disk, `SoundManager.play("jump")` makes a recognizable noise, no allocations in hot path.
-
-### T-014 — Wire SoundManager into gameplay events
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-013
-- **GDD ref:** §5.1, §5.2 (bus layout + ducking), §5.4
-- **Files:** `entities/PlayerController.kt`, `screens/GameScreen.kt`, `screens/Hud.kt` (where ability fires), `physics/WorldContactListener.kt`
-- **Goal:** Trigger appropriate SoundManager calls from: jump (PlayerController), land (contact begin with `vy_prev < -8`), collect_token / collect_snapshot (pickup), death (player.die), checkpoint (sensor), level_complete (exit sensor), Ebo seed slam, hazard cleansed.
-- **Done when:** Every gameplay event has audio feedback; `Settings.sfxVolume` controls level; mute works.
-
-### T-015 — Three save slots UI
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-003
-- **GDD ref:** §6.2
-- **Files:** `screens/MainMenuScreen.kt`, `persist/SaveManager.kt`
-- **Goal:** Replace single Continue/New Game with 3 slot cards on main menu. Each card shows: level reached, % atlas collected, total deaths, last-played timestamp. Empty slot shows "New Game".
-- **Done when:** Players can save to any of 3 slots, see at-a-glance status, load any slot, delete a slot with confirmation.
-
-### T-016 — Refactor levels to data-driven registry
-- **Status:** In Progress
-- **Agent:** team-agent-J (parallel team)
-- **Branch:** auto (worktree)
-- **Started:** 2026-05-09
-- **GDD ref:** §10.4
-- **Files:** `levels/Level1.kt`, `Level2.kt`, `Level3.kt`, `LevelManager.kt`, new `levels/TmxLevelDefinition.kt`
-- **Goal:** Replace the three near-identical `LevelN` classes with a single registry of `TmxLevelDefinition(id, name, mapPath, spawnX, spawnY, levelWidthPx, exitX, ecoTokens, snapshots)`. `LevelManager` reads from the registry.
-- **Done when:** All three existing levels still play identically; adding a 4th level requires only a new registry entry (no new class).
-
-### T-017 — Investigate intermittent native Box2D crash
-- **Status:** In Progress
-- **Agent:** team-agent-K (parallel team)
-- **Branch:** auto (worktree)
-- **Started:** 2026-05-09
-- **GDD ref:** §0 "KNOWN ISSUE: Intermittent native Box2D crash"
-- **Files:** `entities/PlayerController.kt`, `physics/WorldContactListener.kt`, `screens/GameScreen.kt`
-- **Goal:** Reproduce the `EXCEPTION_ACCESS_VIOLATION` in `gdx-box2d64.dll` from `Body.jniGetPosition`. Follow the investigation path in §0: disable platform-carry to isolate, add logging in contact begin/end to verify `platformContacts` map invariants, hunt for stale body references.
-- **Done when:** Either a reproducer is documented in a new `BUGS.md` with stack trace and minimal repro steps, OR a fix is shipped with a regression test.
-
-### T-019 — Collect sparkles on eco-token and snapshot pickup
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** §3.6
-- **Files:** `screens/GameScreen.kt`, `rendering/ParticleSystem.kt`, `entities/EcoToken.kt`, `entities/SnapshotPickup.kt`
-- **Goal:** When player collects an eco-token or atlas snapshot, burst 6–10 small particles upward: additive blend feel (bright cyan/yellow), slight upward initial velocity (~1 m/s), 0.4 s lifespan, alpha-fade. Reuse the existing 200-particle pool.
-- **Done when:** Collecting any token or snapshot triggers visible sparkle burst; pool cap is respected; compile and tests pass.
-
-### T-020 — Apply Celeste-calibrated movement constants + asymmetric gravity
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** §2.1, §2.2
-- **Files:** `Constants.kt`, `entities/PlayerController.kt`
-- **Goal:** Apply the full constant table from GDD §2.1 (PLAYER_RUN_ACCEL, PLAYER_RUN_DECEL, PLAYER_AIR_ACCEL_MUL, PLAYER_JUMP_HOLD_GRAVITY_MUL, PLAYER_APEX_VEL_THRESHOLD, PLAYER_JUMP_CUT_MUL, GRAVITY_FALL_MUL, PLAYER_MAX_FALL, PLAYER_FAST_FALL, PLAYER_WALL_JUMP_IMPULSE_X/Y, PLAYER_WALL_SLIDE_SPEED). Add the asymmetric gravity + apex-hang `gravityScale` code from §2.2 into `PlayerController.update()`. Add terminal velocity cap.
-- **Done when:** All constants from §2.1 exist in `Constants.kt`; asymmetric gravity and terminal velocity are applied each frame; existing tests pass; compile clean.
 
 ### T-021 — Split GameScreen into focused subsystems
 - **Status:** Todo
@@ -181,29 +46,9 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Branch:** _none_
 - **Depends on:** _none_
 - **GDD ref:** §10.1
-- **Files:** `screens/GameScreen.kt` (636 LOC → ~300), new `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `screens/LevelTransitionController.kt`
+- **Files:** `screens/GameScreen.kt` (1179 LOC → ~300), new `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `screens/LevelTransitionController.kt`
 - **Goal:** Extract from `GameScreen`: (1) `LevelRunState` — score, combo, spirit health, completion flags; (2) `LevelRenderer` — the entire `shapeRenderer.begin/end` block; (3) `LevelTransitionController` — goToNextLevel / dispose chain. `GameScreen` becomes a thin coordinator. No behaviour change.
 - **Done when:** `GameScreen.kt` is ≤ 350 LOC; game compiles and existing tests pass.
-
-### T-022 — Particle pool eviction tests
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** §11 (table row "Particle pool eviction")
-- **Files:** new `core/src/test/kotlin/com/sohai/platformer/rendering/ParticleSystemTest.kt`
-- **Goal:** Test that spawning more than 200 particles (pool capacity) doesn't crash or allocate new objects — the overflow is silently dropped. Test that `update()` correctly marks particles dead after their lifespan, freeing slots for reuse.
-- **Done when:** `./gradlew :core:test` passes with new specs covering overflow, lifespan expiry, and slot reuse.
-
-### T-023 — Zephyr third-character ability skeleton
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN §4.3 ("Third Character: Zephyr — Air Elemental")
-- **Files:** new `abilities/ZephyrAbility.kt`, `screens/GameScreen.kt` (add Zephyr to character roster)
-- **Goal:** Create `ZephyrAbility` implementing `CharacterAbility`. Ability: lightweight float — on action press, reduce gravity scale to 0.2f for 1.5 s (float), then cooldown 3 s. Spawns wind-trail effects (reuse `WindTrail`). Wire into `GameScreen` character roster (cycle Ebo → Laya → Zephyr → Ebo). Zephyr renders as a light-purple circle.
-- **Done when:** Player can cycle to Zephyr, float ability works, compile and tests pass.
 
 ### T-024 — Time trial mode
 - **Status:** Todo
@@ -225,74 +70,11 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Goal:** Restructure Level 3 so the first 30% is ground-only movement (no wall-jump required), the wall-jump shaft appears at ~50%, and the moving-platform gauntlet is reserved for the final 15% "Ketsu" section. Apply the Ki/Shō/Ten/Ketsu template from §8.
 - **Done when:** Level3 loads and plays through end-to-end; first section requires no wall-jump; compile clean.
 
-### T-026 — Per-level parallax background theming
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN §2.1–2.3 (level themes: water cycle, wind/weather, eco-restoration)
-- **Files:** `rendering/ParallaxBackground.kt`, `screens/GameScreen.kt`
-- **Goal:** Give each level a distinct parallax colour palette: Level 1 = warm browns/greens (parched expanse); Level 2 = cool blues/whites (wind and weather); Level 3 = lush greens/teals (eco-restoration). `ParallaxBackground` should accept a theme parameter (or colour set) rather than hardcoded colours.
-- **Done when:** Each level has visually distinct parallax layers; switching levels changes the background; compile clean.
-
-### T-027 — CloudAtlasLibrary.get unit tests
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** §11 (table row "CloudAtlasLibrary.get")
-- **Files:** new `core/src/test/kotlin/com/sohai/platformer/atlas/CloudAtlasLibraryTest.kt`
-- **Goal:** Test `CloudAtlasLibrary`: known ID returns the correct `CloudAtlasEntry`; unknown ID returns null (or throws, per implementation); all entries have non-blank `title`, `subtitle`, `character`, and `id` fields; no two entries share the same `id`.
-- **Done when:** `./gradlew :core:test` passes with new specs.
-
-### T-028 — Android lint + build verification
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN success metrics ("Both Android and Desktop run without errors")
-- **Files:** `android/` module, `.github/workflows/` (if CI exists)
-- **Goal:** Run `./gradlew android:lint` and fix any errors (warnings are acceptable). Document any outstanding warnings in `BUGS.md`. If a GitHub Actions workflow doesn't exist yet, create a minimal one at `.github/workflows/ci.yml` that runs `./gradlew :core:compileKotlin :core:test android:lint` on push to main.
-- **Done when:** `./gradlew android:lint` exits 0 (or only warnings); CI workflow file exists and is valid YAML.
-
 ---
 
 ## In Progress
 
-### T-005 — Kotest specs for WorldContactListener
-- **Status:** In Progress
-- **Agent:** team-agent-A (parallel team)
-- **Branch:** auto (worktree)
-- **Started:** 2026-05-09
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/physics/`
-- **Goal:** Test that fixture `userData` strings translate to correct gameplay state on `beginContact`/`endContact`.
-
-### T-010 — Corner correction in PlayerController
-- **Status:** In Progress
-- **Agent:** team-agent-B (parallel team)
-- **Branch:** auto (worktree)
-- **Started:** 2026-05-09
-- **GDD ref:** §2.3
-- **Files:** `entities/PlayerController.kt`, `Constants.kt`
-- **Goal:** Raycast-based corner nudge when rising into clipped overhead obstacles (≤ `CORNER_CORRECT_PX`).
-
-### T-011 — Footstep particles
-- **Status:** In Progress
-- **Agent:** team-agent-C (parallel team)
-- **Branch:** auto (worktree)
-- **Started:** 2026-05-09
-- **GDD ref:** §3.5
-- **Files:** `entities/PlayerController.kt`, `rendering/ParticleSystem.kt`
-- **Goal:** Alternate L/R foot particle every ~12 cm of grounded horizontal travel.
-
-### T-018 — Tests for MapLevelLoader coordinate flipping
-- **Status:** In Progress
-- **Agent:** team-agent-D (parallel team)
-- **Branch:** auto (worktree)
-- **Started:** 2026-05-09
-- **GDD ref:** §11, §15
-- **Files:** new `core/src/test/kotlin/com/sohai/platformer/world/MapLevelLoaderTest.kt`
-- **Goal:** Cover libGDX `flipY = true` y-coordinate translation.
+_(none — all claimed tasks completed)_
 
 <!--
 Template for moving a task here:
@@ -318,6 +100,144 @@ Template for moving a task here:
 - **Completed:** 2026-05-09
 - **Outcome:** HUD `Label`/`Table`/`Image` widgets migrated to `VisLabel`/`VisTable`/`VisImage`. Buttons were already VisUI. Compile clean, behavior unchanged.
 - **Commit/PR:** 3fd1a91
+
+### T-002 — Add Kotest specs for PlayerController state machine
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** 4 test files added: `PlayerControllerJumpTest`, `PlayerControllerMovementTest`, `PlayerControllerStateTest`, `PlayerControllerWallAndAbilityTest`. Covers coyote-time, jump-buffer, ability-swap, wall contacts.
+- **Commit/PR:** merged via worktree
+
+### T-003 — Save/load UI in Settings menu
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** Save/Load/Delete buttons wired to SaveManager in SettingsScreen with toast confirmation.
+- **Commit/PR:** 190d96b
+
+### T-004 — Checkpoint restart via serialized GameState
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** Player respawns at last checkpoint on death; `resumeCheckpoint` passed into GameScreen constructor.
+- **Commit/PR:** 4617e9e
+
+### T-005 — Kotest specs for WorldContactListener
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `WorldContactListenerTest` covers player_foot, player_wall_left/right, hazard kill, flashing invincibility.
+- **Commit/PR:** 3db00d0
+
+### T-006 — World 0 Room 1 "First Step" tutorial
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `Level0_1.kt` added; single-screen room with one jump gap and one eco-token. Registered in LevelManager.
+- **Commit/PR:** 2449d75
+
+### T-007 — World 0 Room 2 "Long Fall" tutorial
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `Level0_2.kt` added; teaches variable jump height (low ceiling) and coyote time (walk-off ledge). Two eco-tokens.
+- **Commit/PR:** d4e37f2
+
+### T-008 — World 0 Room 3 "Wall Climb" tutorial
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `Level0_3.kt` added; 120 px wide chimney shaft, ~4 wall-jumps needed, safety net at bottom, horizontal EXIT sensor at top. Registered in LevelManager.
+- **Commit/PR:** this branch
+
+### T-010 — Corner correction in PlayerController
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** Raycast-based corner nudge when rising into clipped overhead obstacles (≤ CORNER_CORRECT_M).
+- **Commit/PR:** d09d0b1
+
+### T-011 — Footstep particles
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** Alternate L/R dust particles every 12 cm of grounded horizontal travel via `onFootstep` callback.
+- **Commit/PR:** ed58182
+
+### T-012 — Camera vertical platform snap
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `cameraTargetY` only updates when grounded or falling past threshold — no Y bobbing during jump arcs.
+- **Commit/PR:** 1e22d03
+
+### T-013 — Generate 8 base SFX via ProceduralSoundGenerator
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** jump, land, collect_token, collect_snapshot, death, checkpoint, level_complete, hazard_cleansed WAV files generated and placed in `assets/audio/sfx/`.
+- **Commit/PR:** e38ce48
+
+### T-014 — Wire SoundManager into gameplay events
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** All 8 canonical sounds wired into jump, land, collect, death, checkpoint, level_complete, and hazard_cleansed events.
+- **Commit/PR:** 34b2cd3
+
+### T-015 — Three save slots UI
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** Main menu replaced Continue/New Game with 3 slot cards showing level, progress, deaths, last-played. Wired to SaveManager.
+- **Commit/PR:** 890a472
+
+### T-016 — Refactor levels to data-driven registry
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** Level1/2/3 classes removed; single `TmxLevelDefinition` registry in `LevelRegistry.ALL`. Adding a level = one registry entry.
+- **Commit/PR:** d7c77f4
+
+### T-017 — Investigate intermittent native Box2D crash
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** Root cause documented in BUGS.md; defensive fixes: friction-based platform carry (no stale body refs), contact-begin/end logging, isPlatformBodyValid guard, deferred body-destroy queue.
+- **Commit/PR:** 2a80160
+
+### T-018 — Tests for MapLevelLoader coordinate flipping
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `MapLevelLoaderCoordTest.kt` added; BehaviorSpec covers flipY=true/false centerOf formula, symmetry invariant, and moving-platform endY translation — pure math tests, no libGDX runtime needed.
+- **Commit/PR:** this branch
+
+### T-019 — Collect sparkles on eco-token and snapshot pickup
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** 6–10 particle burst spawned at collection site; additive cyan/yellow colors; reuses 200-particle pool.
+- **Commit/PR:** 896d7d4
+
+### T-020 — Apply Celeste-calibrated movement constants + asymmetric gravity
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** Full constant table from GDD §2.1 in Constants.kt; asymmetric gravity + apex-hang gravityScale applied per frame; terminal velocity capped.
+- **Commit/PR:** dccb872
+
+### T-022 — Particle pool eviction tests
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `ParticleSystemTest.kt` covers overflow (silent drop), lifespan expiry, slot reuse.
+- **Commit/PR:** 609ac4b
+
+### T-023 — Zephyr third-character ability skeleton
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `ZephyrAbility.kt` implements Float (gravity 0.2f for 1.5 s, cooldown 3 s); radial WindTrail burst at activation; GameScreen cycles Ebo → Laya → Zephyr → Ebo; Zephyr renders as light-purple tinted sprite.
+- **Commit/PR:** this branch
+
+### T-026 — Per-level parallax background theming
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `ParallaxTheme` enum (ARID/WIND/ECO) added to `ParallaxBackground`; Level 1 = warm browns/golds, Level 2 = slate blues/whites, Level 3 = deep-to-bright greens. GameScreen selects theme by level ID.
+- **Commit/PR:** this branch
+
+### T-027 — CloudAtlasLibrary.get unit tests
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `CloudAtlasLibraryTest.kt` covers known-ID lookup, unknown-ID null, non-blank fields, and unique IDs.
+- **Commit/PR:** fc297c3
+
+### T-028 — Android lint + build verification
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `.github/workflows/ci.yml` created; runs `:core:compileKotlin`, `:core:test`, and `android:lint` on push/PR to main; uploads lint and test reports as artifacts.
+- **Commit/PR:** this branch
 
 <!--
 Template for moving a task here:

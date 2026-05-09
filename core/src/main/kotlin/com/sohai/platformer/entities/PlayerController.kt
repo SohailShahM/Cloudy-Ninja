@@ -93,7 +93,9 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
             Constants.BIT_GROUND.toInt() or
             Constants.BIT_WALL.toInt() or
             Constants.BIT_HAZARD.toInt() or
-            Constants.BIT_CHECKPOINT.toInt()
+            Constants.BIT_CHECKPOINT.toInt() or
+            Constants.BIT_EXIT.toInt() or
+            Constants.BIT_ECOTOKEN.toInt()
         ).toShort()
 
         body.createFixture(fixtureDef).userData = "player_body"
