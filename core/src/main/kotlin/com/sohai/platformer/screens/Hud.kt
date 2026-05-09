@@ -44,6 +44,8 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
     private var comboLabelTimer = 0f
     private val cooldownBarImage: VisImage
     private lateinit var btnAction: VisTextButton
+    private lateinit var stopwatchLabel: VisLabel
+    private var isTrialMode = false
 
     /** When true, the action button pulses with a warm glow to direct player attention. */
     var showActionHint: Boolean = false
@@ -181,6 +183,16 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
         topRight.add(barContainer).width(120f).height(6f).right().padTop(6f)
         stage.addActor(topRight)
 
+        // ---------- Stopwatch (top-centre, time trial only) ----------
+        val stopwatchFont = FontManager.getShared(34)
+        val stopwatchTable = VisTable()
+        stopwatchTable.top().padTop(16f)
+        stopwatchTable.setFillParent(true)
+        stopwatchLabel = VisLabel("⏱ 0:00.0", Label.LabelStyle(stopwatchFont, Color(0.1f, 0.95f, 0.85f, 1f)))
+        stopwatchLabel.isVisible = false
+        stopwatchTable.add(stopwatchLabel)
+        stage.addActor(stopwatchTable)
+
         // ---------- Combo label (centre, transient) ----------
         val comboStyle = Label.LabelStyle(comboFont, Color(1f, 0.85f, 0.1f, 1f))
         val comboTable = VisTable()
@@ -190,6 +202,20 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
         comboLabel.isVisible = false
         comboTable.add(comboLabel)
         stage.addActor(comboTable)
+    }
+
+    fun setTimeTrial(enabled: Boolean) {
+        isTrialMode = enabled
+        stopwatchLabel.isVisible = enabled
+        // In trial mode dim the regular timer so the stopwatch dominates
+        timerLabel.color = if (enabled) Color(0.5f, 0.5f, 0.5f, 0.5f) else Color(0.75f, 0.75f, 1f, 1f)
+    }
+
+    fun updateStopwatch(seconds: Float) {
+        val mins  = (seconds / 60f).toInt()
+        val secs  = (seconds % 60f).toInt()
+        val tenth = ((seconds % 1f) * 10f).toInt()
+        stopwatchLabel.setText("⏱ %d:%02d.%d".format(mins, secs, tenth))
     }
 
     fun showTransientMessage(message: String, durationSeconds: Float = 1f) {

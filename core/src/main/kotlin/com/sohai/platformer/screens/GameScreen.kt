@@ -49,7 +49,9 @@ class GameScreen(
     private val level: Level,
     private val game: Game? = null,
     /** Optional saved checkpoint to resume from (world meters). Null = level spawn. */
-    private val resumeCheckpoint: Vector2? = null
+    private val resumeCheckpoint: Vector2? = null,
+    /** When true: stopwatch HUD active, no checkpoint autosaves, best time persisted. */
+    private val isTimeTrial: Boolean = false
 ) : Screen {
 
     private companion object {
@@ -153,6 +155,7 @@ class GameScreen(
 
         hud = Hud(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
         hud.onSwapCharacter = { runState.switchCharacter() }
+        hud.setTimeTrial(isTimeTrial)
         Gdx.input.inputProcessor = hud.stage
 
         parallaxBg = ParallaxBackground(
@@ -187,7 +190,8 @@ class GameScreen(
             ecoTokens, snapshotPickups, obstacleManager, movingPlatforms,
             world, hud, game, particles, screenFade,
             eboAnimator, layaAnimator, camera, pendingBodyDestroy,
-            renderer, CHECKPOINT_AUTOSAVE_FILE
+            renderer, CHECKPOINT_AUTOSAVE_FILE,
+            isTimeTrial = isTimeTrial
         )
 
         runState.onAtlasCollected = { snap ->
@@ -210,13 +214,22 @@ class GameScreen(
             level, game, screenFade, ecoTokens,
             CHECKPOINT_AUTOSAVE_FILE,
             onInputChange = { stage -> Gdx.input.inputProcessor = stage },
-            onDispose     = { dispose() }
+            onDispose     = { dispose() },
+            isTimeTrial   = isTimeTrial
         )
 
         pauseOverlay = PauseOverlay(
             onResume   = { setPaused(false) },
             onRestart  = { if (game != null) { game.screen = GameScreen(level, game); dispose() } },
-            onMainMenu = { if (game != null) { game.screen = MainMenuScreen(game); dispose() } }
+            onMainMenu = { if (game != null) { game.screen = MainMenuScreen(game); dispose() } },
+            // Toggle time trial: restart the level with the opposite mode
+            onTimeTrial = {
+                if (game != null) {
+                    game.screen = GameScreen(level, game, isTimeTrial = !isTimeTrial)
+                    dispose()
+                }
+            },
+            isCurrentlyTimeTrial = isTimeTrial
         )
 
         hud.updateSpiritHealth(runState.spiritHealth)

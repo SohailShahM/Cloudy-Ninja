@@ -32,15 +32,6 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 
 
 
-### T-024 — Time trial mode
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN §4.1
-- **Files:** `screens/GameScreen.kt`, `screens/Hud.kt`, `persist/GameState.kt`, `persist/SaveManager.kt`
-- **Goal:** Add a time trial mode toggled from the pause menu. In time trial mode: timer counts up from 0, no checkpoint saves, HUD shows a prominent stopwatch, on level complete the time is saved to `GameState.bestScores[levelId]` if it beats the previous best. Show "New Best!" on the VictoryScreen.
-- **Done when:** Time trial can be started from pause, timer displays and counts, best time persists across sessions, compile clean.
 
 
 ---
@@ -216,6 +207,12 @@ Template for moving a task here:
 - **Status:** Done
 - **Completed:** 2026-05-09
 - **Outcome:** `Level0_4.kt` added; 820 px hazard strip blocks passage; Hud.showActionHint pulses action button at 1.5 Hz; GameScreen enables hint while cleanseRatio==0 in level0_4; Level0_4 registered in LevelManager before campaign levels.
+- **Commit/PR:** this branch
+
+### T-024 — Time trial mode
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `GameState.bestTimes` map added; pause menu "▶ Time Trial" / "Exit Time Trial" button restarts level with `isTimeTrial=true`; stopwatch (cyan, top-centre) visible in trial mode; checkpoint autosaves suppressed in trial; best time saved to `GameState.bestTimes` on completion; VictoryScreen shows trial time + "★ NEW BEST! ★" banner. Wired through `GameScreen → LevelRunState + LevelTransitionController`.
 - **Commit/PR:** this branch
 
 ### T-025 — Level 3 pacing rebalance per Kishōtenketsu

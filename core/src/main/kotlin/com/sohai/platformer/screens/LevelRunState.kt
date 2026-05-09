@@ -57,7 +57,9 @@ class LevelRunState(
     private val camera: OrthographicCamera,
     private val pendingBodyDestroy: MutableSet<Body>,
     private val renderer: LevelRenderer,
-    private val checkpointAutosaveFile: String
+    private val checkpointAutosaveFile: String,
+    /** When true: timer counts up from 0, checkpoint autosaves are suppressed. */
+    val isTimeTrial: Boolean = false
 ) {
 
     // ── Game-session state ────────────────────────────────────────────────────
@@ -250,6 +252,7 @@ class LevelRunState(
         if (!levelCompleted && !isGameOver) {
             levelTimer += delta
             hud.updateTimer(levelTimer)
+            if (isTimeTrial) hud.updateStopwatch(levelTimer)
         }
 
         val totalEco = level.getEcoTokenPositions().size
@@ -413,18 +416,20 @@ class LevelRunState(
                     spiritHealth = (spiritHealth + 1).coerceAtMost(3)
                     hud.updateSpiritHealth(spiritHealth)
                 }
-                val existing = SaveManager.loadGame()
-                val cpState  = existing.copy(
-                    level         = level.id,
-                    characterName = currentCharacter,
-                    checkpoint    = Checkpoint(
-                        levelName = level.id,
-                        x         = player.spawnPos.x,
-                        y         = player.spawnPos.y
+                if (!isTimeTrial) {
+                    val existing = SaveManager.loadGame()
+                    val cpState  = existing.copy(
+                        level         = level.id,
+                        characterName = currentCharacter,
+                        checkpoint    = Checkpoint(
+                            levelName = level.id,
+                            x         = player.spawnPos.x,
+                            y         = player.spawnPos.y
+                        )
                     )
-                )
-                SaveManager.saveGame(cpState)
-                SaveManager.saveGame(cpState, checkpointAutosaveFile)
+                    SaveManager.saveGame(cpState)
+                    SaveManager.saveGame(cpState, checkpointAutosaveFile)
+                }
             }
         }
 

@@ -18,6 +18,9 @@ data class GameState(
     val collectedAtlasIds: Set<String> = emptySet(),
     /** Best score per level */
     val bestScores: Map<String, Int> = emptyMap(),
+    /** Best completion time per level in seconds (lower = better).
+     *  Only written during time trial runs; null means never completed in trial. */
+    val bestTimes: Map<String, Float> = emptyMap(),
     /** Cumulative deaths across all sessions for this slot */
     val totalDeaths: Int = 0,
     /** ISO-8601 date string of the last save ("yyyy-MM-dd"), empty if never saved */

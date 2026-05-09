@@ -16,7 +16,12 @@ import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.levels.LevelManager
 
-class VictoryScreen(private val game: Game, private val finalScore: Int) : Screen {
+class VictoryScreen(
+    private val game: Game,
+    private val finalScore: Int,
+    private val bestTrialTime: Float? = null,
+    private val isNewTimeBest: Boolean = false
+) : Screen {
 
     private val viewport = FitViewport(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
     private val stage = Stage(viewport)
@@ -37,6 +42,20 @@ class VictoryScreen(private val game: Game, private val finalScore: Int) : Scree
         table.add(Label("MISSION COMPLETE!", titleStyle)).padBottom(20f).row()
         table.add(Label("The ecosystem has been restored.", bodyStyle)).padBottom(12f).row()
         table.add(Label("Final Score: $finalScore", scoreStyle)).padBottom(40f).row()
+
+        if (bestTrialTime != null) {
+            val mins  = (bestTrialTime / 60f).toInt()
+            val secs  = (bestTrialTime % 60f).toInt()
+            val tenth = ((bestTrialTime % 1f) * 10f).toInt()
+            val timeStr = "%d:%02d.%d".format(mins, secs, tenth)
+            val timeColor = if (isNewTimeBest) Color(0.1f, 0.95f, 0.85f, 1f) else Color(0.75f, 0.75f, 1f, 1f)
+            table.add(Label("Trial Time: $timeStr", Label.LabelStyle(bodyFont, timeColor)))
+                .padBottom(8f).row()
+            if (isNewTimeBest) {
+                val bestStyle = Label.LabelStyle(bodyFont, Color(1f, 0.85f, 0.1f, 1f))
+                table.add(Label("★ NEW BEST! ★", bestStyle)).padBottom(32f).row()
+            }
+        }
 
         val btnMenu = VisTextButton("Main Menu")
         btnMenu.addListener(object : ChangeListener() {

@@ -23,8 +23,13 @@ class LevelTransitionController(
     private val ecoTokens: List<EcoToken>,
     private val checkpointAutosaveFile: String,
     private val onInputChange: (Stage) -> Unit,
-    private val onDispose: () -> Unit
+    private val onDispose: () -> Unit,
+    private val isTimeTrial: Boolean = false,
+    private val onBestTime: ((time: Float, isNewBest: Boolean) -> Unit)? = null
 ) {
+
+    private var lastTrialTime = 0f
+    private var trialIsNewBest = false
 
     /** Shows the level-complete UI and persists the score. Returns the overlay. */
     fun startLevelComplete(
@@ -51,12 +56,27 @@ class LevelTransitionController(
         val existing     = SaveManager.loadGame()
         val newCompleted = existing.completedLevels + level.id
         val prevBest     = existing.bestScores[level.id] ?: 0
-        val newBest      = existing.bestScores + (level.id to maxOf(prevBest, score))
-        SaveManager.saveGame(existing.copy(completedLevels = newCompleted, bestScores = newBest))
-
-        // Autosave is invalid once the level is complete — delete so the next
-        // play-through starts clean.
-        SaveManager.deleteSave(checkpointAutosaveFile)
+        val newBestScores = existing.bestScores + (level.id to maxOf(prevBest, score))
+        if (isTimeTrial) {
+            lastTrialTime  = levelTimer
+            val prevTime   = existing.bestTimes[level.id]
+            trialIsNewBest = prevTime == null || levelTimer < prevTime
+            val newBestTimes = if (trialIsNewBest) existing.bestTimes + (level.id to levelTimer)
+                               else existing.bestTimes
+            SaveManager.saveGame(existing.copy(
+                completedLevels = newCompleted,
+                bestScores      = newBestScores,
+                bestTimes       = newBestTimes
+            ))
+            onBestTime?.invoke(lastTrialTime, trialIsNewBest)
+            // no autosave to delete — time trial never writes checkpoints
+        } else {
+            SaveManager.saveGame(existing.copy(
+                completedLevels = newCompleted,
+                bestScores      = newBestScores
+            ))
+            SaveManager.deleteSave(checkpointAutosaveFile)
+        }
 
         return overlay
     }
@@ -67,7 +87,11 @@ class LevelTransitionController(
         if (nextLevel != null && game != null) {
             game.screen = GameScreen(nextLevel, game)
         } else if (game != null) {
-            game.screen = VictoryScreen(game, score)
+            game.screen = VictoryScreen(
+                game, score,
+                bestTrialTime  = if (isTimeTrial) lastTrialTime else null,
+                isNewTimeBest  = trialIsNewBest
+            )
         }
         onDispose()
     }

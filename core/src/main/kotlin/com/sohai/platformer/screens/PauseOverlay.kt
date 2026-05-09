@@ -18,7 +18,9 @@ import com.sohai.platformer.FontManager
 class PauseOverlay(
     private val onResume: () -> Unit,
     private val onRestart: () -> Unit,
-    private val onMainMenu: () -> Unit
+    private val onMainMenu: () -> Unit,
+    private val onTimeTrial: (() -> Unit)? = null,
+    private val isCurrentlyTimeTrial: Boolean = false
 ) : Disposable {
 
     private val viewport = FitViewport(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
@@ -54,6 +56,14 @@ class PauseOverlay(
             override fun changed(event: ChangeEvent?, actor: Actor?) { onMainMenu() }
         })
         table.add(btnMenu).size(220f, 55f).row()
+
+        // Time Trial button (always shown; label reflects current state)
+        val trialLabel = if (isCurrentlyTimeTrial) "Exit Time Trial" else "▶ Time Trial"
+        val btnTrial = VisTextButton(trialLabel)
+        btnTrial.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) { onTimeTrial?.invoke() }
+        })
+        table.add(btnTrial).size(220f, 55f).padTop(20f).row()
 
         stage.addActor(table)
     }
