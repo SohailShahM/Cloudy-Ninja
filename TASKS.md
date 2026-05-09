@@ -155,6 +155,106 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Goal:** Reproduce the `EXCEPTION_ACCESS_VIOLATION` in `gdx-box2d64.dll` from `Body.jniGetPosition`. Follow the investigation path in §0: disable platform-carry to isolate, add logging in contact begin/end to verify `platformContacts` map invariants, hunt for stale body references.
 - **Done when:** Either a reproducer is documented in a new `BUGS.md` with stack trace and minimal repro steps, OR a fix is shipped with a regression test.
 
+### T-019 — Collect sparkles on eco-token and snapshot pickup
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §3.6
+- **Files:** `screens/GameScreen.kt`, `rendering/ParticleSystem.kt`, `entities/EcoToken.kt`, `entities/SnapshotPickup.kt`
+- **Goal:** When player collects an eco-token or atlas snapshot, burst 6–10 small particles upward: additive blend feel (bright cyan/yellow), slight upward initial velocity (~1 m/s), 0.4 s lifespan, alpha-fade. Reuse the existing 200-particle pool.
+- **Done when:** Collecting any token or snapshot triggers visible sparkle burst; pool cap is respected; compile and tests pass.
+
+### T-020 — Apply Celeste-calibrated movement constants + asymmetric gravity
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §2.1, §2.2
+- **Files:** `Constants.kt`, `entities/PlayerController.kt`
+- **Goal:** Apply the full constant table from GDD §2.1 (PLAYER_RUN_ACCEL, PLAYER_RUN_DECEL, PLAYER_AIR_ACCEL_MUL, PLAYER_JUMP_HOLD_GRAVITY_MUL, PLAYER_APEX_VEL_THRESHOLD, PLAYER_JUMP_CUT_MUL, GRAVITY_FALL_MUL, PLAYER_MAX_FALL, PLAYER_FAST_FALL, PLAYER_WALL_JUMP_IMPULSE_X/Y, PLAYER_WALL_SLIDE_SPEED). Add the asymmetric gravity + apex-hang `gravityScale` code from §2.2 into `PlayerController.update()`. Add terminal velocity cap.
+- **Done when:** All constants from §2.1 exist in `Constants.kt`; asymmetric gravity and terminal velocity are applied each frame; existing tests pass; compile clean.
+
+### T-021 — Split GameScreen into focused subsystems
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §10.1
+- **Files:** `screens/GameScreen.kt` (636 LOC → ~300), new `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `screens/LevelTransitionController.kt`
+- **Goal:** Extract from `GameScreen`: (1) `LevelRunState` — score, combo, spirit health, completion flags; (2) `LevelRenderer` — the entire `shapeRenderer.begin/end` block; (3) `LevelTransitionController` — goToNextLevel / dispose chain. `GameScreen` becomes a thin coordinator. No behaviour change.
+- **Done when:** `GameScreen.kt` is ≤ 350 LOC; game compiles and existing tests pass.
+
+### T-022 — Particle pool eviction tests
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §11 (table row "Particle pool eviction")
+- **Files:** new `core/src/test/kotlin/com/sohai/platformer/rendering/ParticleSystemTest.kt`
+- **Goal:** Test that spawning more than 200 particles (pool capacity) doesn't crash or allocate new objects — the overflow is silently dropped. Test that `update()` correctly marks particles dead after their lifespan, freeing slots for reuse.
+- **Done when:** `./gradlew :core:test` passes with new specs covering overflow, lifespan expiry, and slot reuse.
+
+### T-023 — Zephyr third-character ability skeleton
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN §4.3 ("Third Character: Zephyr — Air Elemental")
+- **Files:** new `abilities/ZephyrAbility.kt`, `screens/GameScreen.kt` (add Zephyr to character roster)
+- **Goal:** Create `ZephyrAbility` implementing `CharacterAbility`. Ability: lightweight float — on action press, reduce gravity scale to 0.2f for 1.5 s (float), then cooldown 3 s. Spawns wind-trail effects (reuse `WindTrail`). Wire into `GameScreen` character roster (cycle Ebo → Laya → Zephyr → Ebo). Zephyr renders as a light-purple circle.
+- **Done when:** Player can cycle to Zephyr, float ability works, compile and tests pass.
+
+### T-024 — Time trial mode
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN §4.1
+- **Files:** `screens/GameScreen.kt`, `screens/Hud.kt`, `persist/GameState.kt`, `persist/SaveManager.kt`
+- **Goal:** Add a time trial mode toggled from the pause menu. In time trial mode: timer counts up from 0, no checkpoint saves, HUD shows a prominent stopwatch, on level complete the time is saved to `GameState.bestScores[levelId]` if it beats the previous best. Show "New Best!" on the VictoryScreen.
+- **Done when:** Time trial can be started from pause, timer displays and counts, best time persists across sessions, compile clean.
+
+### T-025 — Level 3 pacing rebalance per Kishōtenketsu
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §8 ("Audit: level3 currently jumps to wall-jump + fast moving platforms in first 30%")
+- **Files:** `levels/Level3.kt`
+- **Goal:** Restructure Level 3 so the first 30% is ground-only movement (no wall-jump required), the wall-jump shaft appears at ~50%, and the moving-platform gauntlet is reserved for the final 15% "Ketsu" section. Apply the Ki/Shō/Ten/Ketsu template from §8.
+- **Done when:** Level3 loads and plays through end-to-end; first section requires no wall-jump; compile clean.
+
+### T-026 — Per-level parallax background theming
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN §2.1–2.3 (level themes: water cycle, wind/weather, eco-restoration)
+- **Files:** `rendering/ParallaxBackground.kt`, `screens/GameScreen.kt`
+- **Goal:** Give each level a distinct parallax colour palette: Level 1 = warm browns/greens (parched expanse); Level 2 = cool blues/whites (wind and weather); Level 3 = lush greens/teals (eco-restoration). `ParallaxBackground` should accept a theme parameter (or colour set) rather than hardcoded colours.
+- **Done when:** Each level has visually distinct parallax layers; switching levels changes the background; compile clean.
+
+### T-027 — CloudAtlasLibrary.get unit tests
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §11 (table row "CloudAtlasLibrary.get")
+- **Files:** new `core/src/test/kotlin/com/sohai/platformer/atlas/CloudAtlasLibraryTest.kt`
+- **Goal:** Test `CloudAtlasLibrary`: known ID returns the correct `CloudAtlasEntry`; unknown ID returns null (or throws, per implementation); all entries have non-blank `title`, `subtitle`, `character`, and `id` fields; no two entries share the same `id`.
+- **Done when:** `./gradlew :core:test` passes with new specs.
+
+### T-028 — Android lint + build verification
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN success metrics ("Both Android and Desktop run without errors")
+- **Files:** `android/` module, `.github/workflows/` (if CI exists)
+- **Goal:** Run `./gradlew android:lint` and fix any errors (warnings are acceptable). Document any outstanding warnings in `BUGS.md`. If a GitHub Actions workflow doesn't exist yet, create a minimal one at `.github/workflows/ci.yml` that runs `./gradlew :core:compileKotlin :core:test android:lint` on push to main.
+- **Done when:** `./gradlew android:lint` exits 0 (or only warnings); CI workflow file exists and is valid YAML.
+
 ---
 
 ## In Progress
