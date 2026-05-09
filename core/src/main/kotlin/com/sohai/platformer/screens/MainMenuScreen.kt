@@ -15,8 +15,8 @@ import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.sohai.platformer.atlas.CloudAtlasLibrary
-import com.sohai.platformer.levels.Level1
 import com.sohai.platformer.levels.LevelManager
+import com.sohai.platformer.levels.LevelRegistry
 import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
 
@@ -254,7 +254,10 @@ class MainMenuScreen(private val game: Game) : Screen {
     }
 
     private fun openGameAtLevel(levelId: String, resumeCheckpoint: Vector2? = null) {
-        val level = LevelManager.getLevel(levelId) ?: Level1()
+        val level = LevelManager.getLevel(levelId)
+            ?: LevelRegistry.buildLevel("level1")
+            ?: LevelManager.getAllLevels().firstOrNull()
+            ?: return
         game.screen = GameScreen(level, game, resumeCheckpoint)
         dispose()
     }
