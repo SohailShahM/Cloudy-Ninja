@@ -1,94 +1,107 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.9" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down"
-     width="138" height="46" tilewidth="16" tileheight="16" infinite="0" nextobjectid="70">
+     width="138" height="46" tilewidth="16" tileheight="16" infinite="0" nextobjectid="80">
 
   <!--
-    Cloudy Ninja — Level 3: "Stormy Heights"
+    Cloudy Ninja — Level 3: "Stormy Heights"  (T-025 Kishōtenketsu rebalance)
     Coordinate system: x right, y UP (virtual pixels, VIRTUAL_WIDTH=1280, VIRTUAL_HEIGHT=720).
     Load with MapLevelLoader flipY=false.
-    Combines wall-jump shaft climbing, fast moving platforms, and precision sky routing.
+
+    Structure:
+      Ki    (0–25%,  x=0–550):   flat ground-only run, two hop-gaps, no wall-jump
+      Shō   (25–55%, x=550–1200): ascending step-platforms with hazard pits, still no wall-jump
+      Ten   (55–85%, x=1200–1870): wall-jump shaft at ~55% + sky precision-jump sequence
+      Ketsu (85–100%,x=1870–2200): fast moving-platform gauntlet, dense eco-token cluster, exit
+
+    Checkpoints, eco-tokens, and snapshot pickups are registered in LevelRegistry.kt
+    (NOT in this file) to keep a single source of truth.
   -->
 
+  <!-- ── Ground objects (y-up, in virtual pixels) ─────────────────────────── -->
   <objectgroup name="ground" draworder="index" color="#4CAF50">
-    <!-- Safe start zone -->
-    <object id="1"  name="spawn_platform"  x="0"    y="0"   width="200" height="40"/>
-    <!-- Stepping stone ascent -->
-    <object id="2"  name="step1"           x="320"  y="100" width="100" height="20"/>
-    <object id="3"  name="step2"           x="440"  y="200" width="90"  height="20"/>
-    <object id="4"  name="step3"           x="580"  y="300" width="80"  height="20"/>
-    <!-- Sky bridge (reached via wall-jump shaft) -->
-    <object id="5"  name="sky_bridge"      x="770"  y="360" width="200" height="15"/>
-    <!-- Descent chain -->
-    <object id="6"  name="descent1"        x="1010" y="290" width="100" height="20"/>
-    <object id="7"  name="descent2"        x="1150" y="190" width="100" height="20"/>
-    <!-- Mid rest area -->
-    <object id="8"  name="rest_zone"       x="1300" y="100" width="200" height="30"/>
-    <!-- Rise to exit -->
-    <object id="9"  name="rise1"           x="1560" y="160" width="90"  height="20"/>
-    <object id="10" name="rise2"           x="1680" y="280" width="80"  height="15"/>
-    <object id="11" name="rise3"           x="1800" y="200" width="100" height="20"/>
-    <!-- Optional sky shortcut -->
-    <object id="12" name="sky_s1"          x="860"  y="490" width="80"  height="15"/>
-    <object id="13" name="sky_s2"          x="1020" y="530" width="80"  height="15"/>
-    <object id="14" name="sky_s3"          x="1180" y="470" width="80"  height="15"/>
-    <!-- Final approach and exit island -->
-    <object id="15" name="final_a"         x="1940" y="170" width="200" height="20"/>
+
+    <!-- Ki zone ─────────────────────────── -->
+    <!-- Spawn floor -->
+    <object id="1"  name="spawn_floor"   x="0"    y="0"   width="220" height="40"/>
+    <!-- Flat continuation after gap1 -->
+    <object id="2"  name="flat1"         x="320"  y="0"   width="230" height="40"/>
+
+    <!-- Shō zone ────────────────────────── -->
+    <!-- Ground-level step before rise -->
+    <object id="3"  name="step1"         x="550"  y="0"   width="130" height="40"/>
+    <!-- Stepped up 80 px — standard jump required, no wall needed -->
+    <object id="4"  name="step2"         x="730"  y="80"  width="130" height="20"/>
+    <object id="5"  name="step3"         x="920"  y="140" width="130" height="20"/>
+    <!-- Platform before shaft approach -->
+    <object id="6"  name="step4"         x="1060" y="200" width="140" height="20"/>
+
+    <!-- Ten zone ────────────────────────── -->
+    <!-- Sky landing after wall-jump shaft -->
+    <object id="7"  name="sky_landing"   x="1320" y="410" width="180" height="20"/>
+    <!-- Precision sky sequence -->
+    <object id="8"  name="sky1"          x="1520" y="330" width="130" height="20"/>
+    <object id="9"  name="sky2"          x="1680" y="250" width="130" height="20"/>
+    <object id="10" name="sky3"          x="1860" y="320" width="130" height="20"/>
+
+    <!-- Ketsu zone ──────────────────────── -->
+    <!-- Final exit island (reachable via moving platforms) -->
+    <object id="11" name="final_a"       x="2060" y="160" width="160" height="20"/>
+
   </objectgroup>
 
+  <!-- ── Walls ────────────────────────────────────────────────────────────── -->
   <objectgroup name="walls" draworder="index" color="#795548">
-    <!-- Boundaries -->
-    <object id="20" name="left_wall"   x="0"    y="0"   width="20"  height="600"/>
-    <object id="21" name="right_wall"  x="2150" y="0"   width="20"  height="600"/>
-    <!-- Wall-jump shaft (climb from step3 to sky_bridge) -->
-    <object id="22" name="shaft_left"  x="660"  y="0"   width="20"  height="370"/>
-    <object id="23" name="shaft_right" x="750"  y="0"   width="20"  height="370"/>
+
+    <!-- Level boundaries -->
+    <object id="20" name="left_wall"    x="0"    y="0"   width="20"  height="600"/>
+    <object id="21" name="right_wall"   x="2150" y="0"   width="20"  height="600"/>
+
+    <!-- Wall-jump shaft at ~55% (x=1200).
+         100 px interior (1220–1320) — same width as Level0_3 chimney.
+         Height 450 px gives ~4 wall-jumps to reach sky_landing at y=410. -->
+    <object id="22" name="shaft_left"   x="1200" y="0"   width="20"  height="450"/>
+    <object id="23" name="shaft_right"  x="1320" y="0"   width="20"  height="450"/>
+
   </objectgroup>
 
+  <!-- ── Hazards ──────────────────────────────────────────────────────────── -->
   <objectgroup name="hazards" draworder="index" color="#F44336">
-    <object id="30" name="gap_1"  x="200"  y="0"  width="120" height="15"/>
-    <object id="31" name="gap_2"  x="420"  y="0"  width="20"  height="15"/>
-    <object id="32" name="gap_3"  x="530"  y="0"  width="50"  height="15"/>
-    <object id="33" name="gap_4"  x="770"  y="0"  width="40"  height="15"/>
-    <object id="34" name="gap_5"  x="1110" y="0"  width="40"  height="15"/>
-    <object id="35" name="gap_6"  x="1250" y="0"  width="50"  height="15"/>
-    <object id="36" name="gap_7"  x="1500" y="0"  width="60"  height="15"/>
-    <object id="37" name="gap_8"  x="1900" y="0"  width="40"  height="15"/>
+
+    <!-- Ki zone: two small ground-level gaps (no wall-jump needed to clear) -->
+    <object id="30" name="gap1"  x="220"  y="0"   width="100" height="15"/>
+    <object id="31" name="gap2"  x="680"  y="0"   width="50"  height="15"/>
+
+    <!-- Shō zone: escalating pit hazards between the step platforms -->
+    <object id="32" name="gap3"  x="860"  y="0"   width="60"  height="15"/>
+    <object id="33" name="gap4"  x="1050" y="0"   width="60"  height="15"/>
+
+    <!-- Ketsu zone: long gap forces the player onto the moving platform ferry -->
+    <object id="34" name="gap5"  x="1990" y="0"   width="70"  height="15"/>
+
   </objectgroup>
 
-  <objectgroup name="checkpoints" draworder="index" color="#2196F3">
-    <!-- Top of shaft climb -->
-    <object id="40" name="checkpoint_1" x="770"  y="380" width="36" height="36"/>
-    <!-- Mid rest zone -->
-    <object id="41" name="checkpoint_2" x="1300" y="120" width="36" height="36"/>
-    <!-- Near exit -->
-    <object id="42" name="checkpoint_3" x="1940" y="190" width="36" height="36"/>
-  </objectgroup>
-
+  <!-- ── Moving platforms (Ketsu gauntlet, final 15%) ─────────────────────── -->
   <objectgroup name="moving_platforms" draworder="index" color="#FF9800">
-    <!-- Ferry over gap_7 -->
-    <object id="50" name="ferry_1" x="1500" y="130" width="90" height="15">
+
+    <!-- Fast horizontal ferry — the main Ketsu challenge.
+         Player must time the jump from sky3 (y=320) onto the ferry (y=300). -->
+    <object id="50" name="ferry1" x="1990" y="300" width="90" height="15">
       <properties>
-        <property name="endX" type="float" value="1750"/>
-        <property name="endY" type="float" value="130"/>
+        <property name="endX" type="float" value="2060"/>
+        <property name="endY" type="float" value="300"/>
+        <property name="speed" type="float" value="4.5"/>
+      </properties>
+    </object>
+
+    <!-- Vertical lift from ferry to the exit island height -->
+    <object id="51" name="lift1" x="2060" y="160" width="80" height="15">
+      <properties>
+        <property name="endX" type="float" value="2060"/>
+        <property name="endY" type="float" value="320"/>
         <property name="speed" type="float" value="3.5"/>
       </properties>
     </object>
-    <!-- Vertical lift toward rise2 -->
-    <object id="51" name="lift_1" x="1680" y="100" width="80" height="15">
-      <properties>
-        <property name="endX" type="float" value="1680"/>
-        <property name="endY" type="float" value="260"/>
-        <property name="speed" type="float" value="2.8"/>
-      </properties>
-    </object>
-    <!-- Optional sky-route ferry (rewards exploration) -->
-    <object id="52" name="sky_ferry" x="660" y="430" width="80" height="15">
-      <properties>
-        <property name="endX" type="float" value="840"/>
-        <property name="endY" type="float" value="430"/>
-        <property name="speed" type="float" value="2.2"/>
-      </properties>
-    </object>
+
   </objectgroup>
 
 </map>

@@ -79,7 +79,7 @@ class TmxLevel(private val def: TmxLevelDefinition) : Level() {
         obstacleManager: ObstacleManager,
         movingPlatforms: MutableList<MovingPlatform>
     ) {
-        MapLevelLoader.load(def.mapPath, obstacleManager, movingPlatforms, world, flipY = true)
+        MapLevelLoader.load(def.mapPath, obstacleManager, movingPlatforms, world, flipY = false)
 
         // Pit safety net so the player lands somewhere before the death threshold
         obstacleManager.addRectNormalized(
@@ -188,8 +188,8 @@ object LevelRegistry {
         ),
 
         // ── Level 3 — "Stormy Heights" ───────────────────────────────────────
-        // Combines wall-jump shaft climbing with fast moving platforms and
-        // precision jumps.
+        // Kishōtenketsu layout (T-025): Ki = ground run, Shō = ascending steps,
+        // Ten = wall-jump shaft + sky sequence, Ketsu = moving-platform gauntlet.
         TmxLevelDefinition(
             id           = "level3",
             name         = "Stormy Heights",
@@ -197,24 +197,31 @@ object LevelRegistry {
             spawnX       = 80f,
             spawnY       = 80f,
             levelWidthPx = 2200f,
-            exitXPx      = 2050f,
+            exitXPx      = 2130f,
             checkpoints  = listOf(
+                // cp1: Shō entry, first step platform
                 LevelCheckpoint("cp1",  6.0f,  0.8f, "level3"),
-                LevelCheckpoint("cp2", 11.0f,  0.8f, "level3"),
-                LevelCheckpoint("cp3", 17.0f,  0.8f, "level3")
+                // cp2: top of wall-jump shaft, sky_landing platform (y=410px)
+                LevelCheckpoint("cp2", 13.8f,  4.5f, "level3"),
+                // cp3: sky3 platform before Ketsu gauntlet (y=320px)
+                LevelCheckpoint("cp3", 19.3f,  3.5f, "level3")
             ),
-            snapshots = emptyList(),   // Level3 had no snapshot pickups
+            snapshots = emptyList(),
             ecoTokens = listOf(
-                Vector2( 350f,  120f),
-                Vector2( 470f,  230f),
-                Vector2( 600f,  330f),
-                Vector2( 730f,  490f),  // sky shortcut reward
-                Vector2( 900f,  310f),
-                Vector2(1110f,  220f),
-                Vector2(1340f,  130f),
-                Vector2(1490f,  420f),  // high platform
-                Vector2(1710f,  300f),
-                Vector2(1960f,  200f)   // final approach
+                // Ki zone — flat ground run
+                Vector2( 170f,  60f),
+                Vector2( 400f,  60f),
+                // Shō zone — ascending step platforms
+                Vector2( 620f,  60f),
+                Vector2( 790f, 145f),
+                Vector2( 980f, 205f),
+                Vector2(1110f, 265f),
+                // Ten zone — sky sequence after shaft
+                Vector2(1390f, 475f),
+                Vector2(1585f, 395f),
+                Vector2(1745f, 315f),
+                // Ketsu zone — exit island reward
+                Vector2(2120f, 225f)
             )
         )
     )

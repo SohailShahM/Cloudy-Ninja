@@ -42,15 +42,6 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Goal:** Add a time trial mode toggled from the pause menu. In time trial mode: timer counts up from 0, no checkpoint saves, HUD shows a prominent stopwatch, on level complete the time is saved to `GameState.bestScores[levelId]` if it beats the previous best. Show "New Best!" on the VictoryScreen.
 - **Done when:** Time trial can be started from pause, timer displays and counts, best time persists across sessions, compile clean.
 
-### T-025 — Level 3 pacing rebalance per Kishōtenketsu
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** §8 ("Audit: level3 currently jumps to wall-jump + fast moving platforms in first 30%")
-- **Files:** `levels/Level3.kt`
-- **Goal:** Restructure Level 3 so the first 30% is ground-only movement (no wall-jump required), the wall-jump shaft appears at ~50%, and the moving-platform gauntlet is reserved for the final 15% "Ketsu" section. Apply the Ki/Shō/Ten/Ketsu template from §8.
-- **Done when:** Level3 loads and plays through end-to-end; first section requires no wall-jump; compile clean.
 
 ---
 
@@ -225,6 +216,12 @@ Template for moving a task here:
 - **Status:** Done
 - **Completed:** 2026-05-09
 - **Outcome:** `Level0_4.kt` added; 820 px hazard strip blocks passage; Hud.showActionHint pulses action button at 1.5 Hz; GameScreen enables hint while cleanseRatio==0 in level0_4; Level0_4 registered in LevelManager before campaign levels.
+- **Commit/PR:** this branch
+
+### T-025 — Level 3 pacing rebalance per Kishōtenketsu
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `assets/maps/level3.tmx` rewritten with Ki/Shō/Ten/Ketsu zones; wall-jump shaft moved to ~55%; moving-platform gauntlet in final 15%. `TmxLevelDefinition.setup()` fixed: `flipY=false` (all TMX files are y-up). LevelRegistry level3 checkpoints and eco-tokens updated to match new layout.
 - **Commit/PR:** this branch
 
 ### T-028 — Android lint + build verification
