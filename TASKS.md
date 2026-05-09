@@ -57,15 +57,6 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Goal:** On player death, restore from the last `GameState` checkpoint instead of reloading the level from scratch. Capture checkpoint state when the player crosses a checkpoint trigger.
 - **Done when:** Dying after a checkpoint respawns the player at the checkpoint with eco-tokens/snapshots collected up to that point preserved.
 
-### T-005 — Kotest specs for WorldContactListener
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/physics/`
-- **Goal:** Test that fixture `userData` strings (`ground`, `hazard`, `player_foot`, `player_wall_left`, `player_wall_right`) translate to the correct gameplay state on `beginContact` / `endContact`.
-- **Done when:** New `WorldContactListenerTest.kt` covers each userData string with at least one positive and one negative case.
-
 ### T-006 — World 0 Room 1 "First Step" tutorial
 - **Status:** Todo
 - **Agent:** _unclaimed_
@@ -105,26 +96,6 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Files:** new `levels/Level0_4.kt`, `LevelManager.kt`, `Hud.kt` (action button hint)
 - **Goal:** Hazard blocks the only path. Action button gets a pulsing-ring hint. After Seed Slam cleanses, the hazard becomes ground. Final transition uses `screenFade` into `level1`.
 - **Done when:** Cleanse is the only solution; HUD action button visibly hints; finishing fades into the existing `level1`.
-
-### T-010 — Corner correction in PlayerController
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** §2.3
-- **Files:** `entities/PlayerController.kt`, `Constants.kt` (already has `CORNER_CORRECT_PX` per §2.1)
-- **Goal:** When the player's head clips an overhead obstacle by ≤ `CORNER_CORRECT_PX` (~6 cm) while `vy > 0`, nudge them horizontally past the corner instead of killing vertical velocity. Implement via raycast above the head when rising.
-- **Done when:** Manual playtest of level3 wall-jump shaft no longer "stubs" the player on overhead corners; existing PlayerController tests still pass.
-
-### T-011 — Footstep particles
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** §3.5
-- **Files:** `entities/PlayerController.kt`, `rendering/ParticleSystem.kt`
-- **Goal:** Every ~12 cm of horizontal travel while grounded, alternate L/R foot and spawn one small circle particle (lifespan 0.2 s, no movement). Distinguishes movement direction visually.
-- **Done when:** Walking left vs right is visibly distinguishable from particles alone; cap respects existing 200-particle pool.
 
 ### T-012 — Camera vertical platform snap
 - **Status:** Todo
@@ -186,21 +157,44 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Goal:** Reproduce the `EXCEPTION_ACCESS_VIOLATION` in `gdx-box2d64.dll` from `Body.jniGetPosition`. Follow the investigation path in §0: disable platform-carry to isolate, add logging in contact begin/end to verify `platformContacts` map invariants, hunt for stale body references.
 - **Done when:** Either a reproducer is documented in a new `BUGS.md` with stack trace and minimal repro steps, OR a fix is shipped with a regression test.
 
-### T-018 — Tests for MapLevelLoader coordinate flipping
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** §11 (table row "MapLevelLoader coordinate flipping"), §15 ("the dramatic playerY=-0.27 vs 0.73 bug history")
-- **Files:** new `core/src/test/kotlin/com/sohai/platformer/world/MapLevelLoaderTest.kt`
-- **Goal:** Cover the libGDX `flipY = true` translation that has historically caused regressions. Use synthetic `RectangleMapObject` fixtures.
-- **Done when:** Tests catch sign-flip and origin-shift mistakes in y-coordinate handling.
-
 ---
 
 ## In Progress
 
-_No tasks currently in progress._
+### T-005 — Kotest specs for WorldContactListener
+- **Status:** In Progress
+- **Agent:** team-agent-A (parallel team)
+- **Branch:** auto (worktree)
+- **Started:** 2026-05-09
+- **Files:** `core/src/test/kotlin/com/sohai/platformer/physics/`
+- **Goal:** Test that fixture `userData` strings translate to correct gameplay state on `beginContact`/`endContact`.
+
+### T-010 — Corner correction in PlayerController
+- **Status:** In Progress
+- **Agent:** team-agent-B (parallel team)
+- **Branch:** auto (worktree)
+- **Started:** 2026-05-09
+- **GDD ref:** §2.3
+- **Files:** `entities/PlayerController.kt`, `Constants.kt`
+- **Goal:** Raycast-based corner nudge when rising into clipped overhead obstacles (≤ `CORNER_CORRECT_PX`).
+
+### T-011 — Footstep particles
+- **Status:** In Progress
+- **Agent:** team-agent-C (parallel team)
+- **Branch:** auto (worktree)
+- **Started:** 2026-05-09
+- **GDD ref:** §3.5
+- **Files:** `entities/PlayerController.kt`, `rendering/ParticleSystem.kt`
+- **Goal:** Alternate L/R foot particle every ~12 cm of grounded horizontal travel.
+
+### T-018 — Tests for MapLevelLoader coordinate flipping
+- **Status:** In Progress
+- **Agent:** team-agent-D (parallel team)
+- **Branch:** auto (worktree)
+- **Started:** 2026-05-09
+- **GDD ref:** §11, §15
+- **Files:** new `core/src/test/kotlin/com/sohai/platformer/world/MapLevelLoaderTest.kt`
+- **Goal:** Cover libGDX `flipY = true` y-coordinate translation.
 
 <!--
 Template for moving a task here:
