@@ -112,6 +112,8 @@ class GameScreen(
     private val parallaxBg: ParallaxBackground
     private val screenFade: ScreenFade
     private val particles = ParticleSystem(maxParticles = 200)
+    // Pre-allocated dust color reused for every footstep particle (T-011) — avoids per-step allocation.
+    private val footstepColor = Color(0.6f, 0.55f, 0.45f, 0.8f)
     private var prevPlayerVy = 0f
     private var prevGrounded = false
 
@@ -228,6 +230,10 @@ class GameScreen(
         player.onJump = {
             SoundManager.play("jump")
             spawnJumpPuff(player.body.position.x, player.body.position.y - 0.32f)
+        }
+
+        player.onFootstep = { fx, fy, _ ->
+            spawnFootstep(fx, fy)
         }
 
         for (pos in level.getEcoTokenPositions()) {
@@ -936,6 +942,22 @@ class GameScreen(
     }
 
     // === Particle helpers ==================================================
+
+    /**
+     * T-011: spawn one small dust particle at a foot position for a footstep.
+     * Caller (PlayerController) supplies the already-offset L/R position.
+     * No movement, no gravity, short lifespan — pure visual cue for walking cadence.
+     */
+    private fun spawnFootstep(x: Float, y: Float) {
+        particles.spawn(
+            x, y,
+            vx = 0f, vy = 0f,
+            radius = 0.05f,
+            life = 0.2f,
+            color = footstepColor,
+            gravity = 0f
+        )
+    }
 
     private fun spawnJumpPuff(x: Float, y: Float) {
         val col = if (currentCharacter == "Ebo")
