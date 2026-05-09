@@ -3,6 +3,7 @@ package com.sohai.platformer.screens
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Screen
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.Stage
@@ -19,9 +20,14 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.audio.SoundManager
+import com.sohai.platformer.persist.GameState
+import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.persist.SettingsManager
 
-class SettingsScreen(private val game: Game) : Screen {
+class SettingsScreen(
+    private val game: Game,
+    private val currentState: GameState = GameState()
+) : Screen {
 
     private val viewport = FitViewport(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
     private val stage = Stage(viewport)
@@ -30,12 +36,21 @@ class SettingsScreen(private val game: Game) : Screen {
     private val titleFont   = FontManager.getShared(32)
     private val sectionFont = FontManager.getShared(20)
 
+    /** Toast feedback label shown after save/load/delete actions */
+    private val toastLabel = VisLabel("")
+    private var toastTimer = 0f
+
+    companion object {
+        private const val SAVE_SLOT = "save_0.json"
+        private const val TOAST_DURATION = 2f
+    }
+
     init {
         Gdx.input.inputProcessor = stage
 
         val skin = VisUI.getSkin()
-        val titleStyle   = Label.LabelStyle(titleFont,   com.badlogic.gdx.graphics.Color(0.3f, 1f, 0.55f, 1f))
-        val sectionStyle = Label.LabelStyle(sectionFont, com.badlogic.gdx.graphics.Color(0.7f, 0.85f, 0.75f, 1f))
+        val titleStyle   = Label.LabelStyle(titleFont,   Color(0.3f, 1f, 0.55f, 1f))
+        val sectionStyle = Label.LabelStyle(sectionFont, Color(0.7f, 0.85f, 0.75f, 1f))
 
         val root = VisTable()
         root.setFillParent(true)
@@ -132,6 +147,37 @@ class SettingsScreen(private val game: Game) : Screen {
         })
         inner.add(sliderSpeed).width(260f).row()
 
+        // ── Save / Load / Delete ──────────────────────────────────────────
+        inner.add(Label("Save Data", sectionStyle)).left().padTop(20f).padBottom(8f).row()
+
+        val saveRow = VisTable()
+        val btnSave = VisTextButton("Save")
+        btnSave.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                SaveManager.saveGame(currentState, SAVE_SLOT)
+                showToast("Saved!")
+            }
+        })
+        val btnLoad = VisTextButton("Load")
+        btnLoad.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                SaveManager.loadGame(SAVE_SLOT)
+                showToast("Loaded!")
+            }
+        })
+        val btnDelete = VisTextButton("Delete")
+        btnDelete.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                SaveManager.deleteSave(SAVE_SLOT)
+                showToast("Deleted!")
+            }
+        })
+        saveRow.add(btnSave).size(120f, 48f).padRight(12f)
+        saveRow.add(btnLoad).size(120f, 48f).padRight(12f)
+        saveRow.add(btnDelete).size(120f, 48f)
+        inner.add(saveRow).left().padBottom(8f).row()
+        inner.add(toastLabel).left().padBottom(8f).row()
+
         // Scroll pane so the content isn't clipped on small windows
         val scroll = VisScrollPane(inner)
         scroll.setFlickScroll(false)
@@ -150,9 +196,26 @@ class SettingsScreen(private val game: Game) : Screen {
         stage.addActor(root)
     }
 
+    private fun showToast(message: String) {
+        toastLabel.setText(message)
+        toastLabel.color = Color(0.3f, 1f, 0.55f, 1f)
+        toastTimer = TOAST_DURATION
+    }
+
     override fun render(delta: Float) {
         Gdx.gl.glClearColor(0.07f, 0.10f, 0.14f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+
+        if (toastTimer > 0f) {
+            toastTimer -= delta
+            val alpha = (toastTimer / TOAST_DURATION).coerceIn(0f, 1f)
+            toastLabel.color.a = alpha
+            if (toastTimer <= 0f) {
+                toastLabel.setText("")
+                toastTimer = 0f
+            }
+        }
+
         stage.act(delta)
         stage.draw()
     }
