@@ -23,15 +23,6 @@ Coordination file for parallel agents working on Cloudy Ninja. Read [AGENTS.md](
 
 ## Todo
 
-### T-001 — Migrate Hud.kt buttons to VisUI
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/Hud.kt`
-- **Goal:** Replace raw Scene2D buttons/labels in `Hud.kt` with VisUI equivalents (`VisTextButton`, `VisLabel`) for visual consistency with the menus that already use VisUI.
-- **Done when:** HUD renders with VisUI styling, all input flags still feed `InputManager` correctly, game runs without regressions.
-
 ### T-002 — Add Kotest specs for PlayerController state machine
 - **Status:** Todo
 - **Agent:** _unclaimed_
@@ -72,7 +63,15 @@ Coordination file for parallel agents working on Cloudy Ninja. Read [AGENTS.md](
 
 ## In Progress
 
-_No tasks currently in progress._
+### T-001 — Migrate Hud.kt buttons to VisUI
+- **Status:** In Progress
+- **Agent:** claude-sonnet-4-6 (main window)
+- **Branch:** claude/T-001-hud-visui
+- **Started:** 2026-05-09
+- **Depends on:** _none_
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/Hud.kt`
+- **Goal:** Replace raw Scene2D buttons/labels in `Hud.kt` with VisUI equivalents (`VisTextButton`, `VisLabel`) for visual consistency with the menus that already use VisUI.
+- **Done when:** HUD renders with VisUI styling, all input flags still feed `InputManager` correctly, game runs without regressions.
 
 <!--
 Template for moving a task here:
