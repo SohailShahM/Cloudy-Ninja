@@ -87,6 +87,10 @@ class GameScreen(
         // Tokens
         val TOKEN = Color(0.2f, 0.9f, 0.3f, 1f)
 
+        // Collect sparkle colors (hoisted to avoid per-frame allocation)
+        val SPARKLE_TOKEN    = Color(0.3f, 1f, 0.9f, 1f)   // cyan  — eco-token pickup
+        val SPARKLE_SNAPSHOT = Color(1f, 0.9f, 0.2f, 1f)   // yellow — snapshot pickup
+
         // Wind trail (per-frame alpha; mutate `tmpWindCol`)
         val tmpWindCol = Color(1f, 1f, 1f, 1f)
     }
@@ -821,7 +825,7 @@ class GameScreen(
             if (comboMultiplier > 1) hud.showCombo(comboMultiplier)
             collected.forEach {
                 // Capture position BEFORE queuing destroy
-                spawnCollectSparkle(it.body.position.x, it.body.position.y, Color(0.3f, 0.95f, 0.4f, 0.9f))
+                spawnTokenSparkle(it.body.position.x, it.body.position.y)
                 queueBodyDestroy(it.body)
             }
             ecoTokens.removeAll(collected.toSet())
@@ -838,7 +842,7 @@ class GameScreen(
             SoundManager.play("collect")
             score += 25  // bonus score for a snapshot
             hud.updateScore(score)
-            spawnCollectSparkle(collectedSnap.body.position.x, collectedSnap.body.position.y, Color(0.3f, 0.95f, 1f, 0.9f))
+            spawnSnapshotSparkle(collectedSnap.body.position.x, collectedSnap.body.position.y)
             snapshotPickups.remove(collectedSnap)
             queueBodyDestroy(collectedSnap.body)
             // Persist this entry to GameState.collectedAtlasIds (P0 fix)
@@ -1073,6 +1077,48 @@ class GameScreen(
                 life = 0.4f,
                 color = color,
                 gravity = 1.5f
+            )
+        }
+    }
+
+    /**
+     * T-019: Cyan sparkle burst on eco-token pickup.
+     * 6–10 particles, upward-biased velocity, slight upward gravity (negative = lift),
+     * short lifespan with alpha-fade. Reuses the existing 200-particle pool.
+     */
+    private fun spawnTokenSparkle(x: Float, y: Float) {
+        val count = 6 + (Math.random() * 5).toInt()   // 6–10
+        for (i in 0 until count) {
+            particles.spawn(
+                x + (Math.random() * 0.12 - 0.06).toFloat(),
+                y + (Math.random() * 0.08).toFloat(),
+                vx = (Math.random() * 1.0 - 0.5).toFloat(),
+                vy = (0.8 + Math.random() * 0.4).toFloat(),
+                radius = 0.05f,
+                life = (0.35 + Math.random() * 0.10).toFloat(),
+                color = Palette.SPARKLE_TOKEN,
+                gravity = -2f
+            )
+        }
+    }
+
+    /**
+     * T-019: Yellow sparkle burst on Cloud Atlas snapshot pickup.
+     * Same spread as token sparkles but larger radius and longer lifespan
+     * to distinguish the rarer, more important pickup.
+     */
+    private fun spawnSnapshotSparkle(x: Float, y: Float) {
+        val count = 6 + (Math.random() * 5).toInt()   // 6–10
+        for (i in 0 until count) {
+            particles.spawn(
+                x + (Math.random() * 0.12 - 0.06).toFloat(),
+                y + (Math.random() * 0.08).toFloat(),
+                vx = (Math.random() * 1.0 - 0.5).toFloat(),
+                vy = (0.8 + Math.random() * 0.4).toFloat(),
+                radius = 0.07f,
+                life = 0.5f,
+                color = Palette.SPARKLE_SNAPSHOT,
+                gravity = -2f
             )
         }
     }
