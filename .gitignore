@@ -1,3 +1,10 @@
+## Google Drive temp files:
+.tmp.driveupload/
+.tmp.drivedownload/
+
+## Claude Code:
+.claude/
+
 ## Gradle:
 .gradle/
 gradle-app.setting
