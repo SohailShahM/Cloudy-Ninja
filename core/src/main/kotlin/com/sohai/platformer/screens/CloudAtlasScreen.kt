@@ -33,7 +33,7 @@ class CloudAtlasScreen(private val game: Game) : Screen {
     private val bodyFont     = FontManager.getShared(16)
 
     private var selectedEntry: CloudAtlasEntry? = null
-    private lateinit var detailContainer: VisTable
+    private var detailContainer: VisTable = VisTable()
 
     init {
         Gdx.input.inputProcessor = stage
