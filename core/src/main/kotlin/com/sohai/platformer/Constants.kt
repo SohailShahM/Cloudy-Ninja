@@ -19,6 +19,8 @@ object Constants {
 
     // Player horizontal movement
     const val PLAYER_SPEED                = 9f    // Was 8; bumped for snappier feel at 1280p
+    const val PLAYER_RUN_ACCEL            = 40f   // m/s² — accelerate to top speed over ~0.22s
+    const val PLAYER_RUN_DECEL            = 16f   // m/s² — friction deceleration when no input
     const val PLAYER_AIR_ACCEL_MUL        = 0.65f // Air control = 65% of ground (Celeste-ish)
 
     // Player jump
