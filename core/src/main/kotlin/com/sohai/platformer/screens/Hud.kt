@@ -8,14 +8,14 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.Stage
-import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
-import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.utils.Disposable
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.badlogic.gdx.utils.viewport.Viewport
-import com.kotcrab.vis.ui.VisUI
+import com.kotcrab.vis.ui.widget.VisImage
+import com.kotcrab.vis.ui.widget.VisLabel
+import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.input.InputManager
@@ -31,17 +31,17 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
     private val charFont: BitmapFont = FontManager.create(18)
     private val comboFont: BitmapFont = FontManager.create(28)
 
-    private val statusLabel: Label
+    private val statusLabel: VisLabel
     private var statusTimer = 0f
-    private val charLabel: Label
-    private val spiritLabel: Label
-    private val scoreLabel: Label
-    private val timerLabel: Label
-    private val progressBarBg: Image
-    private val progressBarFill: Image
-    private val comboLabel: Label
+    private val charLabel: VisLabel
+    private val spiritLabel: VisLabel
+    private val scoreLabel: VisLabel
+    private val timerLabel: VisLabel
+    private val progressBarBg: VisImage
+    private val progressBarFill: VisImage
+    private val comboLabel: VisLabel
     private var comboLabelTimer = 0f
-    private val cooldownBarImage: Image
+    private val cooldownBarImage: VisImage
 
     // Reusable 1×1 white texture for the cooldown bar
     private val whiteTexture: Texture
@@ -110,21 +110,21 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
         })
 
         // ---------- Layout ----------
-        val table = Table()
+        val table = VisTable()
         table.bottom().padBottom(20f)
         table.setFillParent(true)
 
-        val leftTable = Table()
+        val leftTable = VisTable()
         leftTable.add(btnLeft).size(100f, 100f).padRight(16f)
         leftTable.add(btnRight).size(100f, 100f)
 
-        cooldownBarImage = Image(barSkin.newDrawable("white", Color.GREEN))
-        val actionColumn = Table()
+        cooldownBarImage = VisImage(barSkin.newDrawable("white", Color.GREEN))
+        val actionColumn = VisTable()
         actionColumn.add(cooldownBarImage).width(120f).height(10f).right()
         actionColumn.row()
         actionColumn.add(btnAction).size(120f, 100f)
 
-        val rightTable = Table()
+        val rightTable = VisTable()
         rightTable.add(btnJump).size(120f, 100f).padRight(16f)
         rightTable.add(actionColumn)
 
@@ -136,33 +136,33 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
 
         // ---------- Status label (top-centre, transient) ----------
         val statusStyle = Label.LabelStyle(statusFont, Color.WHITE)
-        val statusTable = Table()
+        val statusTable = VisTable()
         statusTable.top().padTop(20f)
         statusTable.setFillParent(true)
-        statusLabel = Label("", statusStyle)
+        statusLabel = VisLabel("", statusStyle)
         statusLabel.isVisible = false
         statusTable.add(statusLabel)
         stage.addActor(statusTable)
 
         // ---------- Character / ability + spirit health (top-left) ----------
         val charStyle = Label.LabelStyle(charFont, Color.WHITE)
-        val topLeft = Table()
+        val topLeft = VisTable()
         topLeft.top().left().padTop(20f).padLeft(40f)
         topLeft.setFillParent(true)
-        charLabel = Label("Ebo — Seed Slam", charStyle)
+        charLabel = VisLabel("Ebo — Seed Slam", charStyle)
         topLeft.add(charLabel).row()
-        spiritLabel = Label("Spirit: ***", Label.LabelStyle(charFont, Color(0.3f, 1f, 0.4f, 1f)))
+        spiritLabel = VisLabel("Spirit: ***", Label.LabelStyle(charFont, Color(0.3f, 1f, 0.4f, 1f)))
         topLeft.add(spiritLabel).left().padTop(4f)
         stage.addActor(topLeft)
 
         // ---------- Score + timer (top-right) ----------
-        val topRight = Table()
+        val topRight = VisTable()
         topRight.top().right().padTop(20f).padRight(40f)
         topRight.setFillParent(true)
-        scoreLabel = Label("Score: 0", Label.LabelStyle(charFont, Color(0.3f, 1f, 0.4f, 1f)))
-        timerLabel = Label("0:00", Label.LabelStyle(charFont, Color(0.75f, 0.75f, 1f, 1f)))
-        progressBarBg   = Image(barSkin.newDrawable("white", Color(0.2f, 0.2f, 0.2f, 0.6f)))
-        progressBarFill = Image(barSkin.newDrawable("white", Color(0.3f, 1f, 0.4f, 0.9f)))
+        scoreLabel = VisLabel("Score: 0", Label.LabelStyle(charFont, Color(0.3f, 1f, 0.4f, 1f)))
+        timerLabel = VisLabel("0:00", Label.LabelStyle(charFont, Color(0.75f, 0.75f, 1f, 1f)))
+        progressBarBg   = VisImage(barSkin.newDrawable("white", Color(0.2f, 0.2f, 0.2f, 0.6f)))
+        progressBarFill = VisImage(barSkin.newDrawable("white", Color(0.3f, 1f, 0.4f, 0.9f)))
 
         topRight.add(scoreLabel).right().row()
         topRight.add(timerLabel).right().padTop(4f).row()
@@ -177,10 +177,10 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
 
         // ---------- Combo label (centre, transient) ----------
         val comboStyle = Label.LabelStyle(comboFont, Color(1f, 0.85f, 0.1f, 1f))
-        val comboTable = Table()
+        val comboTable = VisTable()
         comboTable.center().padTop(60f)
         comboTable.setFillParent(true)
-        comboLabel = Label("", comboStyle)
+        comboLabel = VisLabel("", comboStyle)
         comboLabel.isVisible = false
         comboTable.add(comboLabel)
         stage.addActor(comboTable)
