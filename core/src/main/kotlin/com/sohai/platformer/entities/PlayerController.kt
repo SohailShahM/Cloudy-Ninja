@@ -195,6 +195,28 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
     fun update(deltaTime: Float) {
         val vel = body.linearVelocity
 
+        // Asymmetric gravity & apex hang (GDD §2.2) — placed first, before any
+        // velocity writes, so gravity scale is set for this physics step.
+        //   - rising while jump held & near apex: half gravity (apex hang)
+        //   - falling (vy <= 0): 1.45× gravity for snappy descent
+        //   - fast-fall (down held, airborne): 2.5× gravity for quick drop
+        //   - otherwise (rising, jump released): normal gravity (variable jump)
+        val vy = body.linearVelocity.y
+        val fastFalling = !isGrounded && InputManager.isDownPressed()
+        when {
+            fastFalling -> body.gravityScale = 2.5f
+            vy > 0 && InputManager.isJumpHeld() && Math.abs(vy) < Constants.PLAYER_APEX_VEL_THRESHOLD ->
+                body.gravityScale = Constants.PLAYER_JUMP_HOLD_GRAVITY_MUL
+            vy <= 0 -> body.gravityScale = Constants.GRAVITY_FALL_MUL
+            else    -> body.gravityScale = 1f
+        }
+
+        // Terminal velocity cap (GDD §2.2) — after gravity scale is set.
+        val cap = if (InputManager.isDownPressed()) Constants.PLAYER_FAST_FALL else Constants.PLAYER_MAX_FALL
+        if (body.linearVelocity.y < -cap) {
+            body.linearVelocity = Vector2(body.linearVelocity.x, -cap)
+        }
+
         if (isGrounded || isTouchingWallLeft || isTouchingWallRight) {
             airJumpAvailable = true
         }
@@ -276,30 +298,11 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
             body.linearVelocity = Vector2(body.linearVelocity.x, body.linearVelocity.y * Constants.PLAYER_JUMP_CUT_MUL)
         }
 
-        // Asymmetric / apex-hang gravity (Celeste-style):
-        //   - fast-fall (down held, airborne): 2.5× gravity for quick drop
-        //   - rising while jump held & near apex: half gravity (extra hangtime)
-        //   - rising while jump released: normal gravity (variable jump height)
-        //   - falling: 1.45× gravity for snappy descent
-        val vy = body.linearVelocity.y
-        val fastFalling = !isGrounded && InputManager.isDownPressed()
-        body.gravityScale = when {
-            fastFalling -> 2.5f
-            vy > 0f && InputManager.isJumpHeld() && Math.abs(vy) < Constants.PLAYER_APEX_VEL_THRESHOLD ->
-                Constants.PLAYER_JUMP_HOLD_GRAVITY_MUL
-            vy < 0f -> Constants.GRAVITY_FALL_MUL
-            else    -> 1f
-        }
-
-        // Fast-fall: pressing down while airborne boosts gravity and raises terminal velocity.
+        // Fast-fall: pressing down while airborne gives an immediate downward
+        // kick so the response feels instant (gravity scale handles the rest).
         val downHeld = !isGrounded && InputManager.isDownPressed()
         if (downHeld && body.linearVelocity.y > -2f) {
-            // Give an immediate downward kick so the response feels instant.
             body.applyLinearImpulse(Vector2(0f, -8f), body.position, true)
-        }
-        val cap = if (downHeld) Constants.PLAYER_FAST_FALL else Constants.PLAYER_MAX_FALL
-        if (body.linearVelocity.y < -cap) {
-            body.linearVelocity = Vector2(body.linearVelocity.x, -cap)
         }
 
         // Wall sliding
