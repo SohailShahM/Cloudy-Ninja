@@ -1,5 +1,8 @@
 # AGENTS.md
 
+## Multi-agent coordination
+Open tasks live in [TASKS.md](TASKS.md). Before starting work, claim a task there (move it to `In Progress`, fill in your agent name + branch, push to `main`). Work in a git worktree on the branch you claimed. When done, merge to `main` and move the task to `Done`.
+
 ## Project snapshot
 - This is a multi-module **libGDX** game generated with gdx-liftoff.
 - The current design is a momentum-based 2D physics platformer built on Box2D, focused on climate-change education, the water cycle, and eco-restoration.
