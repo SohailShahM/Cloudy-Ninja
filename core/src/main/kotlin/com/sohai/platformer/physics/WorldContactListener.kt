@@ -1,9 +1,11 @@
 package com.sohai.platformer.physics
 
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.physics.box2d.*
 import com.sohai.platformer.effects.WaterDroplet
 import com.sohai.platformer.physics.CleanseEventQueue
 import com.sohai.platformer.entities.EcoToken
+import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.SnapshotPickup
 
@@ -100,8 +102,48 @@ class WorldContactListener : ContactListener {
         // contacts in user code.
         if (udA == "player_foot" || udB == "player_foot") {
             val playerFixture = if (udA == "player_foot") fixA else fixB
+            val otherFixture  = if (udA == "player_foot") fixB else fixA
             val player = playerFixture.body.userData as? PlayerController
             player?.onGroundContact(begin)
+
+            // Defensive logging: trace every moving-platform contact so we can
+            // detect missed contact-end events (the suspected cause of the stale
+            // body crash — T-017).
+            val otherUserData = otherFixture.userData
+            if (otherUserData == "moving_platform" || otherFixture.body.userData is MovingPlatform) {
+                val platform = otherFixture.body.userData as? MovingPlatform
+                val platformBodyId = platform?.body?.hashCode() ?: otherFixture.body.hashCode()
+                if (begin) {
+                    Gdx.app.log(
+                        "ContactListener",
+                        "Platform contact BEGIN — platformBody=0x${platformBodyId.toString(16)}"
+                    )
+                } else {
+                    Gdx.app.log(
+                        "ContactListener",
+                        "Platform contact END   — platformBody=0x${platformBodyId.toString(16)}"
+                    )
+                    // Sanity check: warn if the platform body no longer appears valid.
+                    // A body in a destroyed or inactive state is a red flag for stale
+                    // references — exactly the scenario that triggers the JNI crash.
+                    if (platform != null) {
+                        try {
+                            val stillActive = platform.body.isActive
+                            if (!stillActive) {
+                                Gdx.app.error(
+                                    "ContactListener",
+                                    "WARN: platform contact END — body 0x${platformBodyId.toString(16)} is INACTIVE (stale reference risk)"
+                                )
+                            }
+                        } catch (e: Exception) {
+                            Gdx.app.error(
+                                "ContactListener",
+                                "WARN: platform contact END — body 0x${platformBodyId.toString(16)} threw on isActive check: ${e.message}"
+                            )
+                        }
+                    }
+                }
+            }
         }
 
         // Left wall detection
