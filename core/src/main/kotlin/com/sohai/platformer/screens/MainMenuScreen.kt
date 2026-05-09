@@ -72,7 +72,8 @@ class MainMenuScreen(private val game: Game) : Screen {
         val settingsButton = VisTextButton("Settings")
         settingsButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                Gdx.app.log("Menu", "Settings not yet implemented")
+                game.screen = SettingsScreen(game)
+                dispose()
             }
         })
         table.add(settingsButton).width(220f).height(55f).padBottom(16f).row()
