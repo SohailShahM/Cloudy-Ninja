@@ -34,6 +34,16 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
     private var wallJumpLockCounter = 0f
     private var wasActionHeld = false
     private var airJumpAvailable = true
+    private var prevVy = 0f
+
+    // Player half-extents in meters (mirror of init values below; keep in sync)
+    private val halfWidth = 32f / Constants.PPM / 2f
+    private val halfHeight = 64f / Constants.PPM / 2f
+
+    // Reusable scratch vectors / state for corner-correction raycasts
+    private val rcFrom = Vector2()
+    private val rcTo = Vector2()
+    private var rcHit = false
 
 
     init {
@@ -237,6 +247,15 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
             }
         }
 
+        // Corner correction: when rising into an overhead obstacle that only
+        // clips the head by ≤ CORNER_CORRECT_M, nudge horizontally past the
+        // corner instead of letting the body kill vertical velocity.
+        // Only triggered while genuinely rising (this frame and last frame),
+        // to avoid interfering with deliberate ceiling contacts.
+        if (body.linearVelocity.y > 0f && prevVy > 0f) {
+            tryCornerCorrect()
+        }
+
         // Variable jump height — release-cut
         if (!InputManager.isJumpHeld() && body.linearVelocity.y > 0) {
             body.linearVelocity = Vector2(body.linearVelocity.x, body.linearVelocity.y * Constants.PLAYER_JUMP_CUT_MUL)
@@ -296,6 +315,78 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
             ability?.onActionReleased()
         }
         wasActionHeld = actionHeld
+
+        prevVy = body.linearVelocity.y
+    }
+
+    /**
+     * If the player is rising and the head clips an overhead obstacle by
+     * ≤ CORNER_CORRECT_M, snap the body horizontally to a clear column so
+     * the jump continues instead of stalling on the corner.
+     *
+     * Implementation: cast a short ray straight up from the head over a
+     * distance equal to CORNER_CORRECT_M. If it hits, scan small horizontal
+     * offsets (left and right) and snap to the nearest one whose upward ray
+     * is clear. Only ground/wall fixtures are considered as ceilings.
+     */
+    private fun tryCornerCorrect() {
+        val world = body.world ?: return
+        val pos = body.position
+        // A small probe distance above the body's top edge.
+        val probe = Constants.CORNER_CORRECT_M
+
+        // Cast straight up from the centerline of the head.
+        if (!ceilingHit(world, pos.x, pos.y + halfHeight, probe)) return
+
+        // Scan horizontal offsets in 1cm steps up to the player's half-width
+        // (max sideways nudge). Try alternating left/right at increasing
+        // distance and pick the first clear column.
+        val maxNudge = halfWidth // do not move so far that we'd skip over a wall edge
+        val step = 0.01f
+        var d = step
+        while (d <= maxNudge + 1e-4f) {
+            // Try right
+            val rx = pos.x + d
+            if (!ceilingHit(world, rx, pos.y + halfHeight, probe) &&
+                !ceilingHit(world, rx + halfWidth * 0.9f, pos.y + halfHeight, probe) &&
+                !ceilingHit(world, rx - halfWidth * 0.9f, pos.y + halfHeight, probe)) {
+                body.setTransform(rx, pos.y, body.angle)
+                return
+            }
+            // Try left
+            val lx = pos.x - d
+            if (!ceilingHit(world, lx, pos.y + halfHeight, probe) &&
+                !ceilingHit(world, lx + halfWidth * 0.9f, pos.y + halfHeight, probe) &&
+                !ceilingHit(world, lx - halfWidth * 0.9f, pos.y + halfHeight, probe)) {
+                body.setTransform(lx, pos.y, body.angle)
+                return
+            }
+            d += step
+        }
+        // No clear column within nudge range — leave the player alone; normal
+        // collision response will absorb the upward velocity.
+    }
+
+    /**
+     * Returns true if a vertical upward ray from (x, y) over [distance] meters
+     * hits a non-sensor ground/wall fixture.
+     */
+    private fun ceilingHit(world: World, x: Float, y: Float, distance: Float): Boolean {
+        rcHit = false
+        rcFrom.set(x, y)
+        rcTo.set(x, y + distance)
+        world.rayCast({ fixture, _, _, _ ->
+            if (fixture.isSensor) return@rayCast -1f
+            val cat = fixture.filterData.categoryBits.toInt()
+            val solid = (cat and (Constants.BIT_GROUND.toInt() or Constants.BIT_WALL.toInt())) != 0
+            if (solid) {
+                rcHit = true
+                0f // stop at first solid hit
+            } else {
+                -1f // ignore
+            }
+        }, rcFrom, rcTo)
+        return rcHit
     }
 }
 
