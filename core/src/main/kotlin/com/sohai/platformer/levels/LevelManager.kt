@@ -13,7 +13,7 @@ object LevelManager {
      * Ordered list of all levels in sequence.
      *
      * Ordering matters: [getNextLevel] uses list position, not the id string.
-     * World-0 tutorial rooms (Level0_1, Level0_2) are registered here directly
+     * World-0 tutorial rooms (Level0_1 through Level0_4) are registered here directly
      * because they hand-build their geometry procedurally and have no TMX file;
      * all campaign levels come from [LevelRegistry].
      */
@@ -21,6 +21,7 @@ object LevelManager {
         add(Level0_1())
         add(Level0_2())
         add(Level0_3())
+        add(Level0_4())
         LevelRegistry.ALL.forEach { def -> add(TmxLevel(def)) }
     }
 

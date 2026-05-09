@@ -30,15 +30,6 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 
 ## Todo
 
-### T-009 — World 0 Room 4 "First Cleanse" tutorial
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-008 ✅
-- **GDD ref:** §7.1 (table row 0-4) and §7.2 prologue beat
-- **Files:** new `levels/Level0_4.kt`, `LevelManager.kt`, `Hud.kt` (action button hint)
-- **Goal:** Hazard blocks the only path. Action button gets a pulsing-ring hint. After Seed Slam cleanses, the hazard becomes ground. Final transition uses `screenFade` into `level1`.
-- **Done when:** Cleanse is the only solution; HUD action button visibly hints; finishing fades into the existing `level1`.
 
 ### T-021 — Split GameScreen into focused subsystems
 - **Status:** Todo
@@ -232,6 +223,12 @@ Template for moving a task here:
 - **Completed:** 2026-05-09
 - **Outcome:** `CloudAtlasLibraryTest.kt` covers known-ID lookup, unknown-ID null, non-blank fields, and unique IDs.
 - **Commit/PR:** fc297c3
+
+### T-009 — World 0 Room 4 "First Cleanse" tutorial
+- **Status:** Done
+- **Completed:** 2026-05-09
+- **Outcome:** `Level0_4.kt` added; 820 px hazard strip blocks passage; Hud.showActionHint pulses action button at 1.5 Hz; GameScreen enables hint while cleanseRatio==0 in level0_4; Level0_4 registered in LevelManager before campaign levels.
+- **Commit/PR:** this branch
 
 ### T-028 — Android lint + build verification
 - **Status:** Done

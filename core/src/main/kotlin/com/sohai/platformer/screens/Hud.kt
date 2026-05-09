@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.BitmapFont
+import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.Stage
@@ -42,6 +43,11 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
     private val comboLabel: VisLabel
     private var comboLabelTimer = 0f
     private val cooldownBarImage: VisImage
+    private lateinit var btnAction: VisTextButton
+
+    /** When true, the action button pulses with a warm glow to direct player attention. */
+    var showActionHint: Boolean = false
+    private var actionHintTimer = 0f
 
     // Reusable 1×1 white texture for the cooldown bar
     private val whiteTexture: Texture
@@ -91,7 +97,7 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
             }
         })
 
-        val btnAction = VisTextButton("Action")
+        btnAction = VisTextButton("Action")
         btnAction.addListener(object : InputListener() {
             override fun touchDown(e: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
                 InputManager.uiActionPressed = true; InputManager.uiActionJustPressed = true; return true
@@ -206,6 +212,15 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
         if (comboLabelTimer > 0f) {
             comboLabelTimer -= delta
             if (comboLabelTimer <= 0f) comboLabel.isVisible = false
+        }
+        if (showActionHint) {
+            actionHintTimer += delta
+            // Pulse at 1.5 Hz between a muted white and a warm orange
+            val pulse = MathUtils.sin(actionHintTimer * MathUtils.PI2 * 1.5f) * 0.5f + 0.5f  // 0..1
+            btnAction.color.set(1f, 0.55f + 0.45f * pulse, 0.1f + 0.2f * pulse, 1f)
+        } else if (actionHintTimer != 0f) {
+            btnAction.color.set(Color.WHITE)
+            actionHintTimer = 0f
         }
     }
 

@@ -907,6 +907,10 @@ class GameScreen(
             }
         }
 
+        // In the First Cleanse tutorial, pulse the action button until the player
+        // uses Seed Slam at least once (cleanseRatio > 0 means at least one hazard hit).
+        hud.showActionHint = (level.id == "level0_4" && cleanseRatio == 0f)
+
         // Checkpoint activation → auto-save
         for (cp in obstacleManager.checkpoints()) {
             if (cp.fixture.userData == "checkpoint_activated" && cp.id !in activatedCheckpoints) {
