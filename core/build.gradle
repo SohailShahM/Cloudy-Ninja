@@ -1,0 +1,41 @@
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+eclipse.project.name = appName + '-core'
+
+apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
+
+dependencies {
+  api "com.badlogicgames.ashley:ashley:$ashleyVersion"
+  api "com.badlogicgames.box2dlights:box2dlights:$box2dlightsVersion"
+  api "com.badlogicgames.gdx-controllers:gdx-controllers-core:$gdxControllersVersion"
+  api "com.badlogicgames.gdx:gdx-ai:$aiVersion"
+  api "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx:$gdxVersion"
+  api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+
+
+  // Serialization for save/load systems
+  api "org.jetbrains.kotlinx:kotlinx-serialization-json:$kotlinxSerializationVersion"
+
+  // UI improvements
+  api "com.kotcrab.vis:vis-ui:$visuiVersion"
+
+
+  // Testing
+  testImplementation "io.kotest:kotest-runner-junit5:$kotestVersion"
+  testImplementation "io.kotest:kotest-assertions-core:$kotestVersion"
+  testImplementation "io.mockk:mockk:$mockkVersion"
+
+  if(enableGraalNative == 'true') {
+    implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
+  }
+}
+
+jar {
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+test {
+  useJUnitPlatform()
+}
+

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.9" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down"
+     width="112" height="46" tilewidth="16" tileheight="16" infinite="0" nextobjectid="60">
+
+  <!--
+    Cloudy Ninja — Level 2: "Winds of Change"
+    Coordinate system: x right, y UP (virtual pixels, VIRTUAL_WIDTH=1280, VIRTUAL_HEIGHT=720).
+    Load with MapLevelLoader flipY=false.
+    Laya-focused: wide air gaps demand Wind Dash mastery.
+  -->
+
+  <objectgroup name="ground" draworder="index" color="#4CAF50">
+    <!-- Starting safe zone -->
+    <object id="1"  name="spawn_platform"   x="0"    y="0"   width="200" height="40"/>
+    <!-- First hop -->
+    <object id="2"  name="platform_1"       x="320"  y="60"  width="120" height="20"/>
+    <!-- Rising chain -->
+    <object id="3"  name="platform_2"       x="520"  y="130" width="100" height="20"/>
+    <object id="4"  name="platform_3"       x="710"  y="210" width="100" height="20"/>
+    <!-- Mid bridge -->
+    <object id="5"  name="platform_mid"     x="870"  y="270" width="160" height="20"/>
+    <!-- Descending chain -->
+    <object id="6"  name="platform_4"       x="1060" y="220" width="90"  height="20"/>
+    <object id="7"  name="platform_5"       x="1220" y="160" width="90"  height="20"/>
+    <!-- Bounce pad area -->
+    <object id="8"  name="platform_6"       x="1380" y="100" width="80"  height="20"/>
+    <!-- High sky route (optional shortcut) -->
+    <object id="9"  name="sky_1"            x="600"  y="380" width="80"  height="15"/>
+    <object id="10" name="sky_2"            x="800"  y="430" width="80"  height="15"/>
+    <object id="11" name="sky_3"            x="1000" y="480" width="80"  height="15"/>
+    <!-- Final approach -->
+    <object id="12" name="platform_final_a" x="1530" y="140" width="120" height="20"/>
+    <object id="13" name="platform_final_b" x="1700" y="190" width="140" height="20"/>
+    <!-- Exit island -->
+    <object id="14" name="exit_island"      x="1870" y="160" width="180" height="20"/>
+  </objectgroup>
+
+  <objectgroup name="walls" draworder="index" color="#795548">
+    <!-- Left boundary -->
+    <object id="20" name="left_wall"   x="0"    y="0"   width="20"  height="480"/>
+    <!-- Right boundary -->
+    <object id="21" name="right_wall"  x="2020" y="0"   width="20"  height="480"/>
+    <!-- Wall-jump column mid-level -->
+    <object id="22" name="wj_left"     x="840"  y="90"  width="20"  height="180"/>
+    <object id="23" name="wj_right"    x="1020" y="90"  width="20"  height="180"/>
+  </objectgroup>
+
+  <objectgroup name="hazards" draworder="index" color="#F44336">
+    <!-- Gap hazards (wind whirlpools) -->
+    <object id="30" name="gap_1"  x="200"  y="0"  width="120" height="15"/>
+    <object id="31" name="gap_2"  x="440"  y="0"  width="80"  height="15"/>
+    <object id="32" name="gap_3"  x="620"  y="0"  width="90"  height="15"/>
+    <object id="33" name="gap_4"  x="810"  y="0"  width="60"  height="15"/>
+    <object id="34" name="gap_5"  x="1150" y="0"  width="70"  height="15"/>
+    <object id="35" name="gap_6"  x="1460" y="0"  width="70"  height="15"/>
+    <object id="36" name="gap_7"  x="1660" y="0"  width="40"  height="15"/>
+  </objectgroup>
+
+  <objectgroup name="checkpoints" draworder="index" color="#2196F3">
+    <!-- After first air gap -->
+    <object id="40" name="checkpoint_1" x="320"  y="80"  width="36" height="36"/>
+    <!-- Mid-level bridge -->
+    <object id="41" name="checkpoint_2" x="870"  y="290" width="36" height="36"/>
+    <!-- Near exit -->
+    <object id="42" name="checkpoint_3" x="1700" y="210" width="36" height="36"/>
+  </objectgroup>
+
+  <objectgroup name="moving_platforms" draworder="index" color="#FF9800">
+    <!-- Ferries player over gap_5 -->
+    <object id="50" name="ferry_1" x="1150" y="120" width="100" height="15">
+      <properties>
+        <property name="endX" type="float" value="1380"/>
+        <property name="endY" type="float" value="120"/>
+        <property name="speed" type="float" value="2.5"/>
+      </properties>
+    </object>
+    <!-- Vertical lift at exit approach -->
+    <object id="51" name="lift_1" x="1530" y="60" width="80" height="15">
+      <properties>
+        <property name="endX" type="float" value="1530"/>
+        <property name="endY" type="float" value="200"/>
+        <property name="speed" type="float" value="1.8"/>
+      </properties>
+    </object>
+  </objectgroup>
+
+</map>

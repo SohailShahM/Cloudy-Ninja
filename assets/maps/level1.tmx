@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.9" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down"
+     width="125" height="46" tilewidth="16" tileheight="16" infinite="0" nextobjectid="50">
+
+  <!--
+    Cloudy Ninja — Level 1: "The First Rain"
+    Coordinate system: x right, y up (matching ratioToWorldY in ObstacleManager).
+    All values in virtual pixels: VIRTUAL_WIDTH=1280, VIRTUAL_HEIGHT=720.
+    Layer names are the canonical contract with MapLevelLoader:
+      ground | walls | hazards | checkpoints | moving_platforms
+  -->
+
+  <objectgroup name="ground" draworder="index" color="#4CAF50">
+    <!-- Starting platform -->
+    <object id="1"  name="start_ground"   x="0"    y="0"   width="360" height="40"/>
+    <!-- Stepping stone sequence -->
+    <object id="5"  name="step_1"         x="540"  y="95"  width="40"  height="10"/>
+    <object id="6"  name="step_2"         x="680"  y="145" width="40"  height="10"/>
+    <object id="7"  name="step_3"         x="828"  y="205" width="45"  height="10"/>
+    <object id="8"  name="step_4"         x="983"  y="255" width="55"  height="10"/>
+    <!-- Wall-jump shaft floor -->
+    <object id="9"  name="shaft_floor"    x="870"  y="95"  width="60"  height="10"/>
+    <!-- Final island chain -->
+    <object id="10" name="final_island_1" x="1370" y="390" width="140" height="20"/>
+    <object id="11" name="final_island_2" x="1580" y="390" width="120" height="20"/>
+    <object id="12" name="final_island_3" x="1770" y="350" width="100" height="20"/>
+    <!-- Extended platforms after final islands -->
+    <object id="13" name="platform_a"    x="1900" y="300" width="100" height="10"/>
+    <object id="14" name="platform_b"    x="1560" y="500" width="80"  height="10"/>
+  </objectgroup>
+
+  <objectgroup name="walls" draworder="index" color="#795548">
+    <!-- Left boundary -->
+    <object id="20" name="left_wall"         x="0"   y="0"   width="20"  height="480"/>
+    <!-- Wall-jump shaft -->
+    <object id="21" name="shaft_wall_left"   x="810" y="200" width="20"  height="200"/>
+    <object id="22" name="shaft_wall_right"  x="970" y="200" width="20"  height="200"/>
+  </objectgroup>
+
+  <objectgroup name="hazards" draworder="index" color="#F44336">
+    <!-- Spike pit between step_1 and step_2 -->
+    <object id="30" name="spike_pit"      x="620"  y="15"  width="120" height="10"/>
+    <!-- Hazard cluster before final island -->
+    <object id="31" name="hazard_bridge"  x="1280" y="15"  width="80"  height="10"/>
+  </objectgroup>
+
+  <objectgroup name="checkpoints" draworder="index" color="#2196F3">
+    <!-- Mid-level checkpoint (above step_2) -->
+    <object id="40" name="checkpoint_mid"  x="682"  y="162" width="36" height="36"/>
+    <!-- Late checkpoint (on final_island_1) -->
+    <object id="41" name="checkpoint_late" x="1412" y="412" width="36" height="36"/>
+  </objectgroup>
+
+  <objectgroup name="moving_platforms" draworder="index" color="#FF9800">
+    <!-- Carries player from shaft top to final_island_1 -->
+    <object id="45" name="moving_1" x="1030" y="440" width="100" height="20">
+      <properties>
+        <property name="endX" type="float" value="1300"/>
+        <property name="endY" type="float" value="440"/>
+        <property name="speed" type="float" value="2"/>
+      </properties>
+    </object>
+    <!-- Vertical lift on far side of level -->
+    <object id="46" name="moving_2" x="1900" y="300" width="80" height="15">
+      <properties>
+        <property name="endX" type="float" value="1900"/>
+        <property name="endY" type="float" value="500"/>
+        <property name="speed" type="float" value="1.5"/>
+      </properties>
+    </object>
+  </objectgroup>
+
+</map>
