@@ -121,6 +121,10 @@ class GameScreen(
     private val camForwardOffset = 1.5f   // m — camera bias toward facing direction
     private val camLerpSpeed     = 5f     // higher = snappier, lower = smoother
     private var camInitialized   = false
+    // Platform snap (§4.3): camera Y only tracks player when grounded or falling fast,
+    // locking the view during jump arcs so the world doesn't bob with every jump.
+    private val camVertSnapFallThreshold = -3f  // m/s — vy below this = "falling with intent"
+    private var cameraTargetY = 0f              // last committed vertical camera target
 
     // Screen shake (intensity in meters)
     private var shakeIntensity = 0f
@@ -726,6 +730,7 @@ class GameScreen(
 
         if (!camInitialized) {
             camTarget.set(playerX, playerY + 100f / Constants.PPM)
+            cameraTargetY = playerY + 1.0f
             camInitialized = true
         }
 
@@ -737,9 +742,14 @@ class GameScreen(
             val excess = kotlin.math.abs(dx) - camDeadZoneHalfW
             camTarget.x += kotlin.math.sign(dx) * excess
         }
-        // Vertical: lerp smoothly toward player y + small upward bias for headroom.
-        val desiredY = playerY + 1.0f
-        camTarget.y += (desiredY - camTarget.y) * (camLerpSpeed * delta).coerceAtMost(1f)
+        // Vertical platform snap (§4.3): only update the committed target Y when the
+        // player is grounded or falling fast (vy < threshold). During a jump arc the
+        // target freezes so the camera doesn't bob up and down with every hop.
+        val vy = player.body.linearVelocity.y
+        if (player.isGrounded || vy < camVertSnapFallThreshold) {
+            cameraTargetY = playerY + 1.0f
+        }
+        camTarget.y += (cameraTargetY - camTarget.y) * (camLerpSpeed * delta).coerceAtMost(1f)
 
         // Smooth horizontal lerp toward target so dead-zone exit doesn't snap.
         camera.position.x += (camTarget.x - camera.position.x) * (camLerpSpeed * delta).coerceAtMost(1f)
