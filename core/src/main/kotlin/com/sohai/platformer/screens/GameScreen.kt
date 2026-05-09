@@ -50,6 +50,11 @@ class GameScreen(
 
     /** All hot-path colors hoisted out of render() to avoid per-frame allocations. */
     private companion object Palette {
+        /** Filename used exclusively for checkpoint-based autosaves. Created when the
+         *  player activates a checkpoint, deleted on level completion, and consumed on
+         *  death so the player respawns at the last checkpoint instead of level start. */
+        const val CHECKPOINT_AUTOSAVE_FILE = "checkpoint_autosave.json"
+
         // Abilities
         val DROPLET       = Color(0.3f, 0.6f, 1f, 0.7f)
 
@@ -713,6 +718,20 @@ class GameScreen(
             } else {
                 hud.showTransientMessage("$currentCharacter fell  ($spiritHealth spirits left)", 1.2f)
             }
+            // Restore from checkpoint autosave if one exists; otherwise respawn at
+            // the level's default spawn position set during world setup.
+            val cpSave = SaveManager.loadGame(CHECKPOINT_AUTOSAVE_FILE)
+            val hasCpSave = SaveManager.listSaves().contains(CHECKPOINT_AUTOSAVE_FILE)
+            if (hasCpSave && cpSave.checkpoint.levelName == level.id &&
+                (cpSave.checkpoint.x != 0f || cpSave.checkpoint.y != 0f)
+            ) {
+                val cpPos = Vector2(cpSave.checkpoint.x, cpSave.checkpoint.y)
+                player.setSpawn(cpPos)
+                // collectedAtlasIds: union of current session and saved — never lose
+                // items collected before death that were already persisted.
+                score = cpSave.bestScores[level.id]?.coerceAtMost(score) ?: score
+                hud.updateScore(score)
+            }
             player.respawn()
         } else if (!isGameOver && assistSettings.assistInvincible &&
                    player.body.position.y < -10f / Constants.PPM) {
@@ -867,13 +886,22 @@ class GameScreen(
                     spiritHealth = (spiritHealth + 1).coerceAtMost(3)
                     hud.updateSpiritHealth(spiritHealth)
                 }
-                SaveManager.saveGame(
-                    GameState(
-                        level = level.id,
-                        characterName = currentCharacter,
-                        checkpoint = com.sohai.platformer.persist.Checkpoint(level.id, player.spawnPos.x, player.spawnPos.y)
+                // Merge with existing save to preserve completedLevels, bestScores, and
+                // collectedAtlasIds gathered so far this session (including just-collected ones).
+                val existing = SaveManager.loadGame()
+                val cpState = existing.copy(
+                    level = level.id,
+                    characterName = currentCharacter,
+                    checkpoint = com.sohai.platformer.persist.Checkpoint(
+                        levelName = level.id,
+                        x = player.spawnPos.x,
+                        y = player.spawnPos.y
                     )
                 )
+                // Write to both the main slot and the dedicated autosave so the player
+                // can resume from here if they quit, and respawn here on death.
+                SaveManager.saveGame(cpState)
+                SaveManager.saveGame(cpState, CHECKPOINT_AUTOSAVE_FILE)
             }
         }
 
@@ -916,6 +944,10 @@ class GameScreen(
         val prevBest = existing.bestScores[level.id] ?: 0
         val newBest = existing.bestScores + (level.id to maxOf(prevBest, score))
         SaveManager.saveGame(existing.copy(completedLevels = newCompleted, bestScores = newBest))
+
+        // Level is done — the checkpoint autosave is no longer valid; delete it so
+        // that starting the next level (or replaying this one) begins clean.
+        SaveManager.deleteSave(CHECKPOINT_AUTOSAVE_FILE)
     }
 
     private fun switchCharacter() {
