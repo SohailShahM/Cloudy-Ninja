@@ -17,7 +17,11 @@ data class GameState(
     /** IDs of Cloud Atlas entries collected across all runs */
     val collectedAtlasIds: Set<String> = emptySet(),
     /** Best score per level */
-    val bestScores: Map<String, Int> = emptyMap()
+    val bestScores: Map<String, Int> = emptyMap(),
+    /** Cumulative deaths across all sessions for this slot */
+    val totalDeaths: Int = 0,
+    /** ISO-8601 date string of the last save ("yyyy-MM-dd"), empty if never saved */
+    val lastPlayed: String = ""
 )
 
 @Serializable

@@ -77,6 +77,13 @@ object SaveManager {
     }
 
     /**
+     * Returns true if a save file with the given filename exists on disk.
+     */
+    fun hasSave(filename: String): Boolean {
+        return Gdx.files.local("$SAVE_DIR/$filename").exists()
+    }
+
+    /**
      * Delete a specific save file.
      */
     fun deleteSave(filename: String = DEFAULT_SAVE_FILE): Boolean {
