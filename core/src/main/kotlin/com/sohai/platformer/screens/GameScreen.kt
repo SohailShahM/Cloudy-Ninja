@@ -231,6 +231,9 @@ class GameScreen(
         playerLight = PointLight(rayHandler, 128, Color(0.9f, 0.95f, 1f, 0.85f), 4f, 0f, 0f)
         playerLight.attachToBody(player.body)
 
+        // Apply Settings.volSfx so the first sound played uses the user's preference.
+        SoundManager.setVolume(SettingsManager.load().volSfx)
+
         player.onJump = {
             SoundManager.play("jump")
             spawnJumpPuff(player.body.position.x, player.body.position.y - 0.32f)
@@ -671,10 +674,10 @@ class GameScreen(
         particles.update(delta)
         val curVy = player.body.linearVelocity.y
         val curGrounded = player.isGrounded
-        if (!prevGrounded && curGrounded && prevPlayerVy < -8f) {
+        if (!prevGrounded && curGrounded && prevPlayerVy < -4f) {
             spawnLandingDust(player.body.position.x, player.body.position.y - 0.32f, prevPlayerVy)
             SoundManager.play("land")
-            // Tiny shake scaled with how hard you landed
+            // Tiny shake scaled with how hard you landed (only shake above -8f threshold)
             val mag = ((-prevPlayerVy - 8f) / 20f).coerceIn(0f, 0.08f)
             if (mag > 0.02f) triggerShake(intensityMeters = mag, durationSec = 0.10f)
         }
@@ -687,6 +690,8 @@ class GameScreen(
         }
 
         val assistSettings = SettingsManager.load()
+        // Keep SoundManager volume in sync with Settings.volSfx at all times.
+        SoundManager.setVolume(assistSettings.volSfx)
         val playerDied = !isGameOver && !assistSettings.assistInvincible &&
             (player.isDead || player.body.position.y < -10f / Constants.PPM)
         if (playerDied) {
@@ -798,7 +803,7 @@ class GameScreen(
             score += collected.size * 10 * comboMultiplier
             comboTimer = 1.5f
             hud.updateScore(score)
-            SoundManager.play("collect")
+            SoundManager.play("collect_token")
             if (comboMultiplier > 1) hud.showCombo(comboMultiplier)
             collected.forEach {
                 // Capture position BEFORE queuing destroy
@@ -816,7 +821,7 @@ class GameScreen(
         // Cloud Atlas snapshots — detect collection, show overlay, persist
         val collectedSnap = snapshotPickups.firstOrNull { it.isCollected }
         if (collectedSnap != null && atlasOverlay == null) {
-            SoundManager.play("collect")
+            SoundManager.play("collect_snapshot")
             score += 25  // bonus score for a snapshot
             hud.updateScore(score)
             spawnCollectSparkle(collectedSnap.body.position.x, collectedSnap.body.position.y, Color(0.3f, 0.95f, 1f, 0.9f))
@@ -842,7 +847,7 @@ class GameScreen(
         val cleanseEvents = CleanseEventQueue.drain()
         for (pos in cleanseEvents) {
             spawnCleanseburst(pos.x, pos.y)
-            SoundManager.play("cleanse", pitch = com.badlogic.gdx.math.MathUtils.random(0.9f, 1.1f))
+            SoundManager.play("hazard_cleansed", pitch = com.badlogic.gdx.math.MathUtils.random(0.9f, 1.1f))
         }
 
         // World-state persistence: update cleanse ratio
