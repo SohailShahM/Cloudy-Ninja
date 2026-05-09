@@ -149,6 +149,7 @@ class GameScreen(
     private val snapshotPickups = mutableListOf<SnapshotPickup>()
     private var atlasOverlay: CloudAtlasOverlay? = null
     private var levelCompleteOverlay: LevelCompleteOverlay? = null
+    private var gameOverOverlay: GameOverOverlay? = null
     private var spiritHealth = 3
     private var isGameOver = false
     private var gameOverTimer = 0f
@@ -505,6 +506,9 @@ class GameScreen(
         // Layer 8: level-complete card (shown above everything, including pause)
         levelCompleteOverlay?.render()
 
+        // Layer 9: game-over card
+        gameOverOverlay?.render()
+
         // Game over transition — always at the tail of render() so dispose() is never called
         // while bodies are still being accessed mid-frame (MovingPlatform, player, etc.)
         if (isGameOver && gameOverTimer <= 0f && game != null) {
@@ -549,10 +553,13 @@ class GameScreen(
 
             if (apActive) {
                 val playerX = player.body.position.x
-                val playerY = player.body.position.y
                 val onGround = player.isGrounded
                 val touchWall = player.isTouchingWallLeft || player.isTouchingWallRight
-                val falling = player.body.linearVelocity.y < -3f
+
+                // Coyote-window edge detection: player just stepped off a ledge while
+                // moving right — fire jump immediately so we still clear the gap.
+                // prevGrounded is already tracked by the landing-dust system.
+                val justLeftGround = !onGround && prevGrounded && player.body.linearVelocity.y >= -1.5f
 
                 // Stuck detection: if X hasn't advanced > 0.05m in 0.35s, trigger jump
                 if (playerX > apLastX + 0.05f) {
@@ -563,19 +570,22 @@ class GameScreen(
                 }
                 val isStuck = apStuckTimer > 0.35f
 
-                // Periodic preemptive jump (clears gaps before falling into them)
+                // Periodic preemptive jump — 0.8s keeps the player hopping so gaps
+                // are cleared without relying solely on edge detection.
                 apPeriodicJumpTimer -= delta
                 val periodicJump = apPeriodicJumpTimer <= 0f && onGround
-                if (periodicJump) apPeriodicJumpTimer = 1.8f
+                if (periodicJump) apPeriodicJumpTimer = 0.8f
 
                 // Ability fire every ~4s
                 apAbilityTimer -= delta
                 val fireAbility = apAbilityTimer <= 0f
                 if (fireAbility) apAbilityTimer = 4.0f
 
-                // Jump cooldown prevents spamming
+                // Jump cooldown prevents spamming; coyote trigger skips cooldown check
+                // because the window is only one frame wide.
                 if (apJumpCooldown > 0f) apJumpCooldown -= delta
-                val wantJump = apJumpCooldown <= 0f && (isStuck || touchWall || periodicJump || (falling && !onGround))
+                val wantJump = justLeftGround ||
+                    (apJumpCooldown <= 0f && (isStuck || touchWall || periodicJump))
                 if (wantJump) {
                     apJumpCooldown = 0.4f
                     apStuckTimer = 0f
@@ -666,21 +676,37 @@ class GameScreen(
             if (switchCooldownTimer <= 0f) canSwitchCharacter = true
         }
 
-        if (!isGameOver && (player.isDead || player.body.position.y < -10f / Constants.PPM)) {
+        val assistSettings = SettingsManager.load()
+        val playerDied = !isGameOver && !assistSettings.assistInvincible &&
+            (player.isDead || player.body.position.y < -10f / Constants.PPM)
+        if (playerDied) {
             SoundManager.play("death")
             triggerShake(intensityMeters = 0.18f, durationSec = 0.25f)
             triggerHitstop(frames = 5)
             // Death sparkle burst
             spawnCollectSparkle(player.body.position.x, player.body.position.y, Color(1f, 0.3f, 0.3f, 0.95f))
-            spiritHealth--
-            hud.updateSpiritHealth(spiritHealth)
-            if (spiritHealth <= 0) {
+
+            if (!assistSettings.assistInfiniteSpirits) {
+                spiritHealth--
+                hud.updateSpiritHealth(spiritHealth)
+            }
+
+            if (spiritHealth <= 0 && !assistSettings.assistInfiniteSpirits) {
                 isGameOver = true
-                gameOverTimer = 2.5f
-                hud.showTransientMessage("Spirit Exhausted...", 2.5f)
+                gameOverTimer = 4f
+                hud.showTransientMessage("Spirit Exhausted...", 2f)
+                gameOverOverlay = GameOverOverlay(
+                    onRestart  = { if (game != null) { game.screen = GameScreen(level, game); dispose() } },
+                    onMainMenu = { if (game != null) { game.screen = MainMenuScreen(game); dispose() } }
+                )
+                Gdx.input.inputProcessor = gameOverOverlay!!.stage
             } else {
                 hud.showTransientMessage("$currentCharacter fell  ($spiritHealth spirits left)", 1.2f)
             }
+            player.respawn()
+        } else if (!isGameOver && assistSettings.assistInvincible &&
+                   player.body.position.y < -10f / Constants.PPM) {
+            // Invincible mode: still respawn if player falls off-screen, no spirit loss.
             player.respawn()
         }
 
@@ -1003,6 +1029,7 @@ class GameScreen(
         pauseOverlay.resize(width, height)
         atlasOverlay?.resize(width, height)
         levelCompleteOverlay?.resize(width, height)
+        gameOverOverlay?.resize(width, height)
     }
 
     override fun pause() {}
@@ -1018,6 +1045,8 @@ class GameScreen(
         atlasOverlay = null
         levelCompleteOverlay?.dispose()
         levelCompleteOverlay = null
+        gameOverOverlay?.dispose()
+        gameOverOverlay = null
         ecoTokens.forEach { world.destroyBody(it.body) }
         ecoTokens.clear()
         obstacleManager.clear()
