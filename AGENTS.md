@@ -3,94 +3,198 @@
 ## Multi-agent coordination
 Open tasks live in [TASKS.md](TASKS.md). Before starting work, claim a task there (move it to `In Progress`, fill in your agent name + branch, push to `main`). Work in a git worktree on the branch you claimed. When done, merge to `main` and move the task to `Done`.
 
-## Project snapshot
-- This is a multi-module **libGDX** game generated with gdx-liftoff.
-- The current design is a momentum-based 2D physics platformer built on Box2D, focused on climate-change education, the water cycle, and eco-restoration.
-- Controls are intended for a two-thumb mobile UI: movement on the left, context-sensitive action on the right.
-- Shared gameplay code lives in `core/`; platform launchers live in `lwjgl3/` and `android/`.
-- `settings.gradle` includes exactly these modules: `core`, `lwjgl3`, `android`.
+Required reading before claiming a task:
+1. This file (architecture, conventions, module layout)
+2. [GDD_ADDENDUM.md](GDD_ADDENDUM.md) (technical spec, calibration numbers, sprint plans, P0 bug history, feature specs)
+3. [GAME_PLAN.md](GAME_PLAN.md) (high-level roadmap, content themes, educational goals)
+
+---
+
+## Project snapshot (May 2026, post Sprint B)
+- **Engine:** libGDX 1.14.0 + Box2D, Kotlin, multi-module Gradle
+- **Modules:** `core` (shared gameplay), `lwjgl3` (desktop launcher), `android` (Android launcher) — see `settings.gradle`
+- **Resolution:** 1280×720 virtual, PPM = 100, y-up world coords
+- **Levels shipped:** 7 (4 tutorial rooms in World 0, 3 campaign in Worlds 1–3)
+- **Characters:** 3 (Ebo / Laya / Zephyr) — switch with Swap button or `S` keyboard
+- **Tests:** 9 specs covering player movement, persistence, contacts, particles, atlas, TMX coords
+- **Audio:** 8 procedurally-generated SFX, no music system yet
+- **Controls:** two-thumb mobile UI (HUD buttons), keyboard alt (WASD/arrows + space + E + S)
+
+---
+
+## Module / package layout
+
+```
+core/src/main/kotlin/com/sohai/platformer/
+├── Main.kt                  # Game entry point → MainMenuScreen
+├── Constants.kt             # Tuning hub: physics, jump windows, collision bits, virtual size
+├── FontManager.kt           # Shared FreeType font cache (getShared(size) — DO NOT dispose)
+├── abilities/
+│   ├── CharacterAbility.kt  # Interface: onActionPressed/Held/Released, update, getCooldownRatio
+│   ├── EboAbility.kt        # Seed Slam — spawns water droplets, cleanses hazards
+│   ├── LayaAbility.kt       # Wind Dash — forward+up impulse, brief gravity reduction
+│   └── ZephyrAbility.kt     # Float — 0.2× gravity for 1.5 s on cooldown
+├── atlas/
+│   └── CloudAtlasLibrary.kt # Registry of educational snapshot entries (id → entry)
+├── audio/
+│   ├── SoundManager.kt      # SFX playback singleton (8 canonical sounds)
+│   └── ProceduralSoundGenerator.kt  # Generates WAVs at first run if assets missing
+├── effects/
+│   ├── WaterDroplet.kt      # Box2D droplet body w/ lifetime — managed by EboAbility
+│   └── WindTrail.kt         # Visual-only fading particle — Laya feedback
+├── entities/
+│   ├── PlayerController.kt  # Movement, coyote/buffer, wall-jump, corner-correct, ability hooks
+│   ├── EcoToken.kt          # Floating collectible
+│   ├── SnapshotPickup.kt    # Cloud Atlas pickup (educational reward)
+│   └── MovingPlatform.kt    # Kinematic platform; player carry via friction
+├── input/
+│   └── InputManager.kt      # Single input gate: keyboard + HUD button flags + debug overrides
+├── levels/
+│   ├── Level.kt             # Abstract base — id, spawn, setup, getCheckpoints, etc.
+│   ├── LevelManager.kt      # Static registry, ordered traversal, getNextLevel
+│   ├── LevelRegistry.kt     # Aliased re-export of TmxLevelDefinition.LevelRegistry
+│   ├── TmxLevelDefinition.kt # Data class + TmxLevel concrete + LevelRegistry.ALL
+│   ├── Level0_1.kt … 0_4.kt # Hand-built tutorial rooms (no TMX)
+│   └── (Level1/2/3 are data-driven via LevelRegistry)
+├── persist/
+│   ├── GameState.kt         # @Serializable save model: completedLevels, bestScores, bestTimes
+│   ├── SaveManager.kt       # Atomic JSON read/write, listSaves, deleteSave
+│   ├── Settings.kt          # @Serializable settings: volume, screenShake, assist flags
+│   └── SettingsManager.kt   # Settings load/save (separate file from GameState)
+├── physics/
+│   ├── WorldContactListener.kt  # Maps fixture userData → gameplay state
+│   └── CleanseEventQueue.kt    # Buffers hazard-cleanse events for the renderer
+├── rendering/
+│   ├── CharacterAnimator.kt    # Sprite state machine (idle/run/jump/fall/wall)
+│   ├── CharacterAtlas.kt       # Texture region holder per character
+│   ├── SpriteFactory.kt        # createEbo / createLaya / createZephyr atlas builders
+│   ├── ParallaxBackground.kt   # 2-layer parallax + sky lerp; ParallaxTheme = ARID/WIND/ECO
+│   ├── ParticleSystem.kt       # 200-particle pool, additive blend, gravity per particle
+│   └── ScreenFade.kt           # Async fade-in/out with completion callback
+├── screens/
+│   ├── MainMenuScreen.kt       # Title + 3 save slots + settings/atlas/quit
+│   ├── LevelSelectScreen.kt    # Pick level, locked indicator
+│   ├── GameScreen.kt           # Lifecycle coordinator (~350 LOC) — NO update logic, NO drawing
+│   ├── LevelRunState.kt        # All mutable session state + main update() loop
+│   ├── LevelRenderer.kt        # All ShapeRenderer/SpriteBatch drawing + Palette + particle helpers
+│   ├── LevelTransitionController.kt  # Level-complete persistence + next-screen navigation
+│   ├── Hud.kt                  # On-screen buttons + status/score/timer/stopwatch labels
+│   ├── PauseOverlay.kt, GameOverOverlay.kt, LevelCompleteOverlay.kt, CloudAtlasOverlay.kt
+│   ├── SettingsScreen.kt, CloudAtlasScreen.kt, VictoryScreen.kt
+│   └── ...
+└── world/
+    ├── ObstacleManager.kt      # Owns all static-obstacle Box2D bodies (rect / checkpoint / exit)
+    ├── ObstacleKind.kt         # Enum: GROUND, WALL, HAZARD, CHECKPOINT, EXIT
+    └── MapLevelLoader.kt       # Loads .tmx into ObstacleManager + MovingPlatforms (flipY = false)
+```
+
+---
 
 ## Core architecture
-- `core/src/main/kotlin/com/sohai/platformer/Main.kt` is the shared entry point and immediately opens `GameScreen`.
-- `GameScreen.kt` owns the Box2D world, level setup, camera, HUD, and the main update loop; manages effect rendering and character switching.
-- `InputManager.kt` is the single input gate: keyboard, touch zones, and UI buttons all feed through it; supports left/right movement, jump, and action (ability) input.
-- `PlayerController.kt` owns movement, coyote time, jump buffering, wall jumps, and wall sliding; accepts an optional `CharacterAbility` to enable character-specific actions; can swap abilities on the fly via `changeAbility()`.
-- `PlayerController.kt` is the shared physics base for the character roster (`Ebo`, `Laya`, and later assist characters); differentiation comes through context-sensitive action abilities.
-- `abilities/CharacterAbility.kt` is an interface for character abilities; implement `onActionPressed()`, `onActionHeld()`, `onActionReleased()`, and `update(deltaTime)`.
-- `abilities/EboAbility.kt` implements Ebo's Seed Slam: cooldown-based ability that spawns rain droplets, applies downward impulse, and manages droplet lifecycle.
-- `abilities/LayaAbility.kt` implements Laya's Wind Dash: cooldown-based mobility ability that applies forward and upward impulses for fast traversal; spawns wind trail effects on activation.
-- `effects/WaterDroplet.kt` represents a single water droplet with physics body, visual radius, and lifetime; managed by abilities.
-- `effects/WindTrail.kt` represents a wind trail particle (visual-only, no physics) that fades over time; spawned by Laya's Wind Dash for feedback.
-- `MovingPlatform.kt` defines the kinematic moving platform used in `GameScreen.createTestEnvironment()`; mirror that pattern when adding moving ground.
-- `WorldContactListener.kt` turns Box2D fixture `userData` strings into gameplay state (`ground`, `hazard`, `player_foot`, `player_wall_left`, `player_wall_right`).
-- `Constants.kt` is the tuning hub for physics, jump timing, and collision bits; prefer changing values there before scattering literals.
+
+### Game lifecycle (top-down)
+1. `Main.kt` → `MainMenuScreen` (title, slot cards, settings/atlas/quit)
+2. Slot card → `GameScreen(level, game, resumeCheckpoint?, isTimeTrial?)`
+3. `GameScreen.init` builds the world + the three subsystems below, then renders/updates them
+4. Level-complete → `LevelTransitionController.goToNextLevel` → next `GameScreen` or `VictoryScreen`
+
+### GameScreen subsystem split (T-021)
+`GameScreen.kt` is a thin coordinator (~350 LOC). It owns the libGDX lifecycle (render/resize/dispose) and wires three focused subsystems:
+
+- **`LevelRunState`** — owns all mutable session state (score, spirit health, combo timers, level timer, completion flags, camera tracking, screen shake, hitstop, debug autopilot) **and** the main `update(delta)` loop. Side effects that need GameScreen-level objects (atlas overlay, game-over overlay) are routed via callbacks (`onAtlasCollected`, `onGameOverStart`).
+- **`LevelRenderer`** — owns *all* ShapeRenderer/SpriteBatch drawing, the `Palette` color constants, and helper methods to spawn particles (footsteps, jump puff, landing dust, sparkles, cleanse bursts). GameScreen calls `renderer.renderWorld(...)` and `renderer.renderPlayer(...)`.
+- **`LevelTransitionController`** — owns level-complete persistence and screen transitions. `startLevelComplete` returns the overlay; `goToNextLevel` advances to the next `GameScreen` or `VictoryScreen`.
+
+When adding gameplay logic, decide which subsystem owns it. Drawing → Renderer. State → RunState. Inter-screen flow → TransitionController. **Do not** add update/draw code back into `GameScreen.kt` — keep it a coordinator.
+
+### Player movement
+`PlayerController.kt` owns:
+- Direct horizontal velocity (target speed × input axis); friction-based slowdown
+- Coyote time (0.10 s), jump buffer (0.10 s), variable jump cut (0.4× on release)
+- Asymmetric gravity (apex hang at 0.5×, fall at 1.45×) — set per-frame via `body.gravityScale`
+- Wall slide cap, wall-jump impulse, wall-jump lock-out (0.13 s)
+- Corner-correction raycast (≤ 6 cm) when rising into clipped overhead
+- Footstep callback every ~12 cm of grounded horizontal travel
+- Optional `CharacterAbility` swap via `changeAbility()`
+
+`Constants.kt` is the single tuning hub. Change values there before scattering literals.
+
+### Abilities
+All abilities implement `CharacterAbility`. Swap by character (Ebo / Laya / Zephyr) via the Swap button — `LevelRunState.switchCharacter()` cycles them and triggers a colored sparkle burst. `PlayerController.update()` invokes `onActionPressed/Held/Released` and `update(dt)` automatically.
+
+### Levels
+- **Tutorial rooms (World 0):** hand-built — `Level0_1.kt` through `Level0_4.kt` extend `Level` directly and override `setup()` to build geometry programmatically.
+- **Campaign (Worlds 1–3):** data-driven — `LevelRegistry.ALL` is a list of `TmxLevelDefinition(id, name, mapPath, spawnX, spawnY, levelWidthPx, exitXPx, ecoTokens, snapshots, checkpoints)`. Adding a campaign level = appending one entry. The shared `TmxLevel` class loads the `.tmx` via `MapLevelLoader` (always `flipY = false` — Cloudy Ninja uses y-up TMX).
+
+### Persistence
+- `GameState` (per-slot) — completedLevels, collectedAtlasIds, bestScores, bestTimes, totalDeaths, lastPlayed
+- `Settings` (shared across slots) — volume, keybinds (placeholder), screen-shake, assist-mode flags
+- Atomic write: temp file → copy → delete (defends against mid-write crashes)
+- Three save slots wired through MainMenuScreen
+- Checkpoint autosave: separate file (`checkpoint_autosave.json`) written on checkpoint touch; suppressed in time trial mode
+
+### Audio
+- `SoundManager` (singleton) plays the 8 canonical SFX: `jump`, `land`, `collect_token`, `collect_snapshot`, `death`, `checkpoint`, `level_complete`, `hazard_cleansed`
+- `ProceduralSoundGenerator` writes WAVs to `assets/audio/sfx/` if missing on first run
+- **No music system yet** — see GDD_ADDENDUM §16 (Sprint C plan)
+
+### Visual systems
+- `ParallaxBackground` — 3 themes (ARID/WIND/ECO), 2-layer scrolling, sky lerps from corrupted → cleansed palette as `cleanseRatio` rises
+- `ParticleSystem` — 200-particle pool, owned by GameScreen, mutated by Renderer helpers
+- Box2DLights `RayHandler` — ambient + a single PointLight attached to the player body
+- `ScreenFade` — owned by GameScreen, used at level start (fade-in) and on level-complete (fade-out)
+
+---
 
 ## Editing conventions
-- Keep gameplay logic in `core/`; launcher modules should stay thin wrappers.
-- Keep the current gray-box momentum test level in `GameScreen.createTestEnvironment()` as the tuning ground before layering art, world-state persistence, or hub-world flow on top.
-- When adding character-specific abilities, preserve the shared base controller and branch only the action logic (for example, rain/Seed Slam for `Ebo` and wind-based mobility for `Laya`). Each ability is a separate `.kt` file in `abilities/` that implements `CharacterAbility`.
-- To add a new character: create a new ability class (e.g., `LayaAbility.kt`), instantiate it in `GameScreen`, wire it to the `PlayerController`, and set any deferred references via setter methods.
-- Ability input is routed through `InputManager.isActionPressed()` and `InputManager.isActionJustPressed()` (mapped to keyboard `E` or the HUD **ACTION** button); the `PlayerController.update()` method calls ability callbacks automatically.
-- Characters are visually differentiated in `GameScreen.render()` by rendering the player body as a colored circle: Ebo is brown (earth/nature), Laya is white/light-blue (wind/air). Each ability spawns distinct visual effects (water droplets vs. wind trails).
-- Preserve the existing fixture `userData` strings and collision-bit scheme when touching contact or sensor logic.
-- `GameScreen.createTestEnvironment()` is a hand-built level; treat it as the canonical example for new static bodies, slopes, hazards, and moving platforms.
-- `Hud` (created from `GameScreen`) sets UI flags on `InputManager`; gameplay code should not read platform-specific input APIs directly.
+
+- Keep all gameplay code in `core/`. Launchers stay thin.
+- **Constants live in `Constants.kt`.** Tune one at a time, playtest, write down the feel difference.
+- **Hot-path renders are in `LevelRenderer.kt`.** Don't allocate Color/Vector2 inside its draw methods — use the `Palette` companion or pre-allocated temporaries.
+- **Fonts are shared.** Use `FontManager.getShared(size)`; DO NOT dispose shared fonts in screen `dispose()` — they live for the app lifetime.
+- When adding a level: append one `TmxLevelDefinition` to `LevelRegistry.ALL` (campaign) or write a new `Level0_X.kt` (tutorial). LevelManager picks them up by registration order.
+- When adding a character: implement `CharacterAbility`, instantiate in `GameScreen.init`, add to the `LevelRunState.switchCharacter()` rotation, give it a distinct sparkle color.
+- Preserve fixture `userData` strings (`ground`, `hazard`, `player_foot`, `player_wall_left/right`, `checkpoint_activated`, `hazard_cleaned`) — they're how `WorldContactListener` and gameplay code communicate.
+- `Hud` only flips flags on `InputManager`. Gameplay code never reads platform input APIs directly.
+- TMX files are **y-up** (Cloudy Ninja convention). Load with `flipY = false`. `MapLevelLoader.load(...)`.
+- **Body destruction is queued.** Use `pendingBodyDestroy.add(body)` in update code — never call `world.destroyBody` from a contact callback or mid-`world.step`.
+
+---
 
 ## Build / run workflow
+
 - Desktop run: `./gradlew lwjgl3:run`
-- Desktop jar: `./gradlew lwjgl3:jar`
-- Desktop packaging extras: `./gradlew lwjgl3:dist`, `./gradlew lwjgl3:jarMac`, `./gradlew lwjgl3:jarLinux`, `./gradlew lwjgl3:jarWin`
-- Android validation: `./gradlew android:lint`
+- Desktop jar: `./gradlew lwjgl3:jar` (variants: `jarMac`, `jarLinux`, `jarWin`, `dist`)
+- Tests: `./gradlew :core:test`
+- Compile-only check: `./gradlew :core:compileKotlin`
+- Android lint: `./gradlew android:lint`
+- Android device launch: `./gradlew android:run` (requires `local.properties` / `ANDROID_SDK_ROOT`)
 - Full build: `./gradlew build`
-- Tests: `./gradlew test` (the repo currently has no `*Test` sources)
-- Android launch task: `./gradlew android:run` (requires `local.properties` or `ANDROID_SDK_ROOT` and a connected device/emulator)
+- CI: `.github/workflows/ci.yml` runs compile + test + android lint on push/PR to `main`
+
+**Before declaring a feature done:** run `./gradlew :core:compileKotlin && ./gradlew :core:test`. Where feasible, also run `./gradlew lwjgl3:run` and confirm no `[Perf]` log shows fps < 100 or maxDelta > 0.05.
+
+---
 
 ## Integration points
-- Root `build.gradle` generates `assets/assets.txt` from `assets/`; do not edit that file manually.
-- `android/src/main/kotlin/com/sohai/platformer/android/AndroidLauncher.kt` initializes `Main()` with immersive mode on Android.
-- `android/build.gradle` packages native libs into `android/libs/*`, wires the Android app entry point, targets/compiles SDK 35, and uses core library desugaring.
-- `lwjgl3/src/main/kotlin/com/sohai/platformer/lwjgl3/Lwjgl3Launcher.kt` starts the desktop `Lwjgl3Application`; `lwjgl3/src/main/java/com/sohai/platformer/lwjgl3/StartupHelper.java` handles desktop JVM relaunch quirks.
-- `lwjgl3/build.gradle` sets the desktop window, icons, assets working directory, and `StartupHelper` startup quirks; it also drives Construo packaging and the optional `enableGraalNative` path.
-- `settings.gradle` applies the Foojay resolver convention plugin so Gradle can auto-download the JDK it needs.
-- `android/AndroidManifest.xml` and `android/res/` contain the Android-specific app shell.
 
-## Tier 1 Library Integration (Completed May 8, 2026)
-Integrated foundation libraries for save/load, testing, and improved UI:
+- Root `build.gradle` regenerates `assets/assets.txt` from `assets/` — do not hand-edit
+- `android/AndroidLauncher.kt` initializes `Main()` with immersive mode
+- `lwjgl3/Lwjgl3Launcher.kt` starts the desktop app; `StartupHelper.java` handles JVM relaunch quirks
+- `settings.gradle` applies the Foojay resolver convention plugin (auto-downloads JDK)
 
-### **kotlinx.serialization** (v1.7.3)
-- **Files added:** `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt`, `SaveManager.kt`
-- **Status:** ✅ Fully functional
-- **Purpose:** Enable clean JSON serialization for game state, settings, and progression
-- `GameState.kt` defines `@Serializable` data classes for level, character, checkpoints, and player stats
-- `SaveManager.kt` provides `saveGame()`, `loadGame()`, `listSaves()`, `deleteSave()` methods
-- Ready for: save slots, checkpoint data, settings persistence, player progress tracking
+### Library tier
+| Library | Use |
+|---|---|
+| kotlinx.serialization 1.7.3 | All `@Serializable` save data |
+| VisUI 1.5.4 | Buttons, labels, tables across all screens |
+| MockK 1.13.14 | Mocking inside Kotest specs |
+| Kotest 5.8.1 | Behavior/Description specs (`*Test.kt`) |
+| Box2DLights | Player point light, ambient illumination |
 
-### **VisUI** (v1.5.4)
-- **Status:** ✅ Dependency added, ready for UI refactoring
-- **Purpose:** Polished Scene2D UI widgets for menus, buttons, dialogs
-- Current `Hud.kt` can be incrementally migrated to VisUI buttons/labels for better consistency
-- Blocks future work: pause menus, settings menus, onboarding dialogs
-
-### **MockK** (v1.13.14) + **Kotest** (v5.8.1)
-- **Files added:** `core/src/test/kotlin/com/sohai/platformer/persist/GameStateSerializationTest.kt`
-- **Status:** ✅ Both frameworks integrated; JUnit 5 test runner enabled
-- **Purpose:** Behavioral testing with mocking for gameplay logic verification
-- `GameStateSerializationTest` demonstrates round-trip JSON serialization
-- Ready for: testing `PlayerController` state machine, ability callbacks, contact handling, screen transitions
-
-### **Build Status**
-- Updated `gradle.properties` with 5 new version properties
-- Updated root `build.gradle` to include `kotlin-serialization` plugin
-- Updated `core/build.gradle` with all dependencies and test runner configuration
-- ✅ `./gradlew :core:compileKotlin` passes with zero errors
-- ✅ `./gradlew :core:test` runs 3 Kotest tests (2 pass, 1 documentation note on default JSON field omission)
-
-### **Next Steps (Tier 2+)**
-- Migrate `Hud.kt` buttons/labels to VisUI for polish
-- Add more Kotest specs for `PlayerController`, `WorldContactListener`, ability logic
-- Implement save/load UI in settings menu
-- Refactor GameScreen to use serialized `GameState` for checkpoint restart
+---
 
 ## Formatting / generated files
-- Follow `.editorconfig`: 4 spaces for Kotlin/Java/Groovy, 2 for Gradle, UTF-8, LF.
-- Ignore generated outputs such as `build/`, `core/bin/`, `lwjgl3/bin/`, `android/bin/`, and `assets/assets.txt`.
+
+- Follow `.editorconfig`: 4 spaces for Kotlin/Java/Groovy, 2 for Gradle, UTF-8, LF
+- Ignore generated outputs: `build/`, `core/bin/`, `lwjgl3/bin/`, `android/bin/`, `assets/assets.txt`

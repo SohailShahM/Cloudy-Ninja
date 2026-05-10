@@ -30,8 +30,141 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 
 ## Todo
 
+<!-- ═══════════════════════════════════════════════════════════════
+     SPRINT C — "Content & Combat"  (GDD_ADDENDUM §16)
+     Priority order: P1 first (enemies, music), then P2, then P3.
+     P1 tasks have no blocking dependencies and can run in parallel.
+═══════════════════════════════════════════════════════════════ -->
 
+### T-029 — Enemy framework + Smog Sprite patroller  [P1]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §17 ("Enemy Design Spec")
+- **Files:** `entities/Enemy.kt` (new), `entities/SmogSprite.kt` (new), `levels/TmxLevelDefinition.kt`, `levels/LevelRegistry.kt`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`
+- **Goal:** Add abstract `Enemy` base class (update/draw/takeDamage) and `SmogSprite` concrete patroller. SmogSprite patrols between two x-waypoints, kills player on lateral contact, and can be defeated by Seed Slam droplets (2 hits). Add `enemies: List<EnemyDef>` to `TmxLevelDefinition`; populate Level 1 with 3 Smog Sprites. `LevelRunState` updates all enemies and queues body-destroy on defeat. `LevelRenderer` draws them as dark-grey ShapeRenderer ovals.
+- **Done when:** Smog Sprites patrol Level 1, kill the player on contact, die to 2 Seed Slam hits, compile clean, no crash.
 
+### T-030 — Background music system + 3 ambient tracks  [P1]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §18 ("Music System Spec")
+- **Files:** `audio/MusicManager.kt` (new), `audio/ProceduralMusicGenerator.kt` (new), `screens/GameScreen.kt`, `levels/TmxLevelDefinition.kt`
+- **Goal:** Add `MusicManager` singleton with crossfade (1.5 s) between tracks and separate `volMusic` knob. Add `ProceduralMusicGenerator` that writes 60-second looping WAVs (`ambient_arid`, `ambient_wind`, `ambient_eco`) to `assets/audio/music/` on first run. Add `musicTrack: String` field to `TmxLevelDefinition`. `GameScreen.init` calls `MusicManager.play(level.musicTrack, fadeIn = true)`; `GameScreen.render` calls `MusicManager.update(delta)`. Tutorial rooms play `ambient_arid` by default.
+- **Done when:** Music plays and crossfades between levels, volume knob works, compile clean.
+
+### T-040 — Projectile / lightning hazard entity  [P1]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §17.3 ("Projectile entity")
+- **Files:** `entities/Projectile.kt` (new), `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`
+- **Goal:** Add `Projectile(world, x, y, vx, vy, lifetime)` with a kinematic Box2D body (category=HAZARD_BITS). `LevelRunState` holds `val projectiles = mutableListOf<Projectile>()`, updates each frame, queues body-destroy on expiry or wall-hit. `LevelRenderer` draws projectiles as small orange circles. Expose `LevelRunState.spawnProjectile(x, y, vx, vy)` for boss use. No spawner placed in levels yet — that comes with T-034.
+- **Done when:** Projectiles move, kill the player on contact, auto-expire, compile clean.
+
+### T-032 — Stomp-defeat mechanic  [P1]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-029
+- **GDD ref:** §17.2 ("Stomp mechanic")
+- **Files:** `physics/WorldContactListener.kt`, `entities/Enemy.kt`, `screens/LevelRunState.kt`
+- **Goal:** In `WorldContactListener.beginContact`, detect player landing on enemy from above (player `vy < -3 m/s`, contact normal pointing up). Mark enemy for defeat + bounce player upward (+5 m/s). `LevelRunState` processes defeat the same way as droplet-hit. Play `land` SFX + smoke burst particle. Stomp must NOT trigger player death even though the enemy fixture is normally lethal.
+- **Done when:** Jumping on a Smog Sprite defeats it and bounces player; lateral contact still kills player. Compile clean.
+
+### T-031 — Tile-based terrain rendering  [P2]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §21 ("Tile Rendering Spec")
+- **Files:** `rendering/TileRenderer.kt` (new), `screens/LevelRenderer.kt`, `assets/tilesets/` (3 new PNG atlases)
+- **Goal:** Create three 128×64 px tileset PNGs (`tiles_arid.png`, `tiles_wind.png`, `tiles_eco.png`) — each with at least 2 tiles: solid-interior and grass/rock-top. Add `TileRenderer` that tile-fills each `ObstacleRect` using `SpriteBatch` instead of the current `ShapeRenderer` solid-rect pass. `LevelRenderer` selects the tileset by `ParallaxTheme`. Remove the ShapeRenderer obstacle-rect draw loop after verifying tile coverage is complete.
+- **Done when:** All three levels show tiled terrain instead of solid grey/red rectangles; no visual gaps; compile clean.
+
+### T-033 — Hub world: Sky Sanctuary (Level 0-0)  [P2]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §19 ("Hub World Spec")
+- **Files:** `levels/Level0_0.kt` (new), `levels/LevelManager.kt`, `screens/MainMenuScreen.kt`, `screens/LevelRunState.kt`
+- **Goal:** Add `Level0_0` — single-screen hub room with 4 portal sensor doors (one per world). Portals activate on player contact and navigate to the first level of that world. Locked worlds show a greyed portal (check `GameState.completedLevels`). Register Level0_0 as index 0 in `LevelManager`. Main menu "Play" button goes to `GameScreen(Level0_0)` instead of directly to Level 1. World 0 portal always unlocked; World 1 portal unlocked if World 0 completed.
+- **Done when:** Hub loads, player can walk through portals into each world's first level, locked worlds show visually distinct portals. Compile clean.
+
+### T-034 — Boss encounter: Storm Sentinel  [P2]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-029, T-040
+- **GDD ref:** §20 ("Boss Design Spec")
+- **Files:** `entities/StormSentinel.kt` (new), `assets/maps/level3.tmx`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `levels/TmxLevelDefinition.kt`
+- **Goal:** Extend `level3.tmx` with a 640 px boss arena past the current exit. Add `StormSentinel` — a static sensor entity with 3-phase attack cycle (lightning columns → wind sweep → rest/Seed-Slam window). 3 Seed Slam hits defeat the boss; defeat triggers level exit + unlocks `storm_system` Cloud Atlas entry. Move the Level 3 exit sensor inside the boss room. `LevelRunState` holds an optional `sentinel: StormSentinel?` and updates it if non-null.
+- **Done when:** Player reaches boss arena in Level 3, boss cycles attacks, can be defeated in 3 hits, defeat triggers level complete. Compile clean.
+
+### T-035 — Audio bus sliders: music / sfx / ui  [P2]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-030
+- **GDD ref:** §18.4 ("Audio bus sliders")
+- **Files:** `persist/Settings.kt`, `screens/SettingsScreen.kt`, `audio/MusicManager.kt`, `audio/SoundManager.kt`
+- **Goal:** Add `volMusic: Float = 0.7f` and `volUi: Float = 0.9f` to `Settings` (existing `volSfx` stays). Replace the single SFX slider in `SettingsScreen` with three VisUI sliders labelled "Music", "SFX", "UI". On slider change: call `MusicManager.setMusicVolume(v)` and `SoundManager.setVolume(v)` respectively. Persist immediately via `SettingsManager.save()`. `GameScreen.init` applies all three volumes.
+- **Done when:** Three sliders visible in Settings, all three volumes respond in real-time, persist across sessions. Compile clean.
+
+### T-036 — Key rebinding UI in Settings  [P2]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GDD_ADDENDUM §16 gap analysis
+- **Files:** `persist/Settings.kt`, `screens/SettingsScreen.kt`, `input/InputManager.kt`
+- **Goal:** Add `keybinds: Map<String, Int> = defaultKeybinds()` to `Settings` where keys are action names (`"left"`, `"right"`, `"jump"`, `"action"`, `"swap"`) and values are `Input.Keys.*` ints. Add a "Controls" section in `SettingsScreen` — for each action, show a VisTextButton displaying the current key name; clicking it enters "press a key" mode and records the next key press. `InputManager` reads keybinds from `SettingsManager.load().keybinds` on each poll instead of hardcoded constants.
+- **Done when:** Player can rebind all 5 actions in Settings, new bindings work in gameplay, persist across sessions. Compile clean.
+
+### T-037 — Achievement system + toast notifications  [P3]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §22 ("Achievement System Spec")
+- **Files:** `progression/Achievement.kt` (new), `progression/AchievementRegistry.kt` (new), `screens/AchievementToast.kt` (new), `persist/GameState.kt`, `screens/LevelRunState.kt`, `screens/GameScreen.kt`, `screens/StatsScreen.kt` (see T-041)
+- **Goal:** Implement the 12 achievements from GDD §22.1. Add `unlockedAchievements: Set<String>` to `GameState`. Add `AchievementToast` — slides in from top-right, holds 2.4 s, fades out, never overlaps. `LevelRunState.update()` checks unlock conditions for in-game achievements (first_jump, first_cleanse, eco_sweep, no_death_run). `LevelTransitionController` checks speed_demon and world clear achievements. `GameScreen` renders toast above Layer 4 (HUD).
+- **Done when:** At least 6 achievements can be unlocked during normal play; toast appears and dismisses cleanly; unlocked set persists. Compile clean.
+
+### T-038 — Ghost replay in time trials  [P3]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** §23 ("Ghost Replay Spec")
+- **Files:** `persist/GhostRecording.kt` (new), `persist/SaveManager.kt`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`
+- **Goal:** During a time-trial run, `LevelRunState` records one `GhostFrame(x, y, facingRight, character)` every 3 rendered frames. On new best time, serialize to `saves/ghost_{levelId}.json` via a new `SaveManager.saveGhost/loadGhost` pair. On subsequent time-trial runs for the same level, load the ghost and advance a `ghostFrameIndex` each frame. `LevelRenderer` draws the ghost as a 35%-alpha tinted circle/sprite at the ghost position.
+- **Done when:** Setting a new best saves a ghost; next run shows the ghost moving through the level; ghost does not interfere with gameplay. Compile clean.
+
+### T-041 — Stats screen on main menu  [P3]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GDD_ADDENDUM §16 gap analysis
+- **Files:** `screens/StatsScreen.kt` (new), `screens/MainMenuScreen.kt`
+- **Goal:** Add a "Stats" button to `MainMenuScreen` that opens `StatsScreen`. Stats screen shows per-slot: total deaths, levels completed (count + list), eco-tokens collected (running total from completed runs), best times per level, achievements unlocked (count/12 + list). All data read from `SaveManager.loadGame()` + `AchievementRegistry`. Back button returns to main menu.
+- **Done when:** Stats screen opens from main menu, displays accurate data for the active slot, back button works. Compile clean.
+
+### T-045 — Cloud Atlas expansion to 12 entries  [P3]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-034
+- **GDD ref:** GAME_PLAN §2 (educational goals), GDD_ADDENDUM §22 (atlas_full achievement)
+- **Files:** `atlas/CloudAtlasLibrary.kt`, `levels/TmxLevelDefinition.kt` (level1/2/3 snapshot lists)
+- **Goal:** Expand `CloudAtlasLibrary.ALL` from 5 to 12 entries, each with a real educational fact about the water cycle or climate systems. Distribute new snapshots across levels (2–3 per level, including the boss-room `storm_system` from T-034). Update LevelRegistry snapshot lists. Entries should cover: water_cycle, silver_iodide, temperature_inversion, albedo_effect, transpiration, groundwater_recharge, carbon_sequestration, storm_system, biodiversity_index, soil_microbiome, ocean_acidification, cloud_seeding.
+- **Done when:** 12 entries in registry, all reachable in gameplay, atlas screen displays all 12 cards with correct text. Compile clean.
 
 
 ---

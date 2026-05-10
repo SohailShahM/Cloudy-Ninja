@@ -1,6 +1,6 @@
-# Cloudy Ninja — Technical GDD Addendum (v2)
+# Cloudy Ninja — Technical GDD Addendum (v3)
 
-**Last updated:** 2026-05-09 (Sprint A complete + Sprint B partial)
+**Last updated:** 2026-05-09 (Sprint A complete + Sprint B complete + Sprint C plan)
 **Audience:** Future AI agents and human contributors continuing development.
 **Companion to:** the original Cloudy Ninja GDD (theme, characters, worlds 0–5, Sky Sanctuary, Cloud Atlas).
 **Purpose:** Translate the design vision into concrete engineering targets, calibration numbers from successful 2D platformers, and a prioritized work plan.
@@ -559,11 +559,404 @@ If you (an AI agent) are continuing this project:
 
 - **Read this addendum and the original GDD before making non-trivial changes.**
 - Constants live in `core/.../Constants.kt`. Tune one at a time.
-- Hot-path renders are in `screens/GameScreen.kt`. Don't allocate inside `render()`.
-- `Hud`, `PauseOverlay`, `LevelSelectScreen`, `VictoryScreen`, `CloudAtlasOverlay` all create their own fonts — replace with `FontCache.get(...)` once §10.2 lands.
+- Hot-path renders are in `LevelRenderer.kt` (NOT GameScreen — that was refactored). Don't allocate inside `renderWorld()`.
+- `Hud`, `PauseOverlay`, `LevelSelectScreen`, `VictoryScreen`, `CloudAtlasOverlay` all call `FontManager.getShared(size)` — this is the correct pattern. Do NOT dispose shared fonts in screen `dispose()`.
 - The default BitmapFont fallback can't render emoji or non-ASCII. Use ASCII glyphs (`[+]`, `[X]`, `***`) until a TTF is shipped in `assets/fonts/main.ttf`.
-- Tile coordinates from `.tmx` files use libGDX's `flipY = true` translation. See `MapLevelLoader.kt` and the dramatic playerY=-0.27 vs 0.73 bug history (resolved May 2026).
-- The smart-approve PreToolUse hook is configured at `~/.claude/settings.json` — bash compound commands like `cd <path> && git status` auto-approve if all sub-commands are in the allow list.
-- **Before declaring a feature done, run** `./gradlew core:compileKotlin` *and* `./gradlew lwjgl3:run` and confirm no `[Perf]` log shows fps < 100 or maxDelta > 0.05.
+- TMX files use y-up coordinates (`flipY = false` in `MapLevelLoader.load`). The old `flipY = true` bug was fixed in T-025 (May 2026).
+- **Before declaring a feature done, run** `./gradlew :core:compileKotlin` and `./gradlew :core:test` and confirm no regressions.
 
 Welcome aboard. Cloudy Ninja's mission is too important to ship feeling mushy. Make it snap.
+
+---
+
+## 16. Sprint C Plan — "Content & Combat" (Weeks 5–6)
+
+Sprint A fixed the core feel. Sprint B added persistence, world structure, and UX polish. Sprint C adds the missing gameplay depth: enemies, music, hub world, and the visual/UX gaps that stop this from feeling like a released indie title.
+
+### Gap analysis vs. polished 2D platformers (Celeste, Hollow Knight, Ori, Rayman)
+
+| Gap | Impact | Sprint C priority |
+|---|---|---|
+| No enemies — all challenge is geometry only | High — limits mechanical variety | **P1** |
+| No background music | High — biggest atmospheric hole | **P1** |
+| Solid-color rectangle terrain (no tile sprites) | Medium — poor visual identity | **P2** |
+| No hub world (Sky Sanctuary from GDD) | Medium — no sense of world structure | **P2** |
+| No boss fights | Medium — no climactic moments | **P2** |
+| No per-bus audio sliders (music/sfx/ui) | Low-medium — expected by players | **P2** |
+| No key rebinding | Low-medium — accessibility | **P2** |
+| No achievement / meta-progression | Low — replay incentive | **P3** |
+| Ghost replay in time trials | Low — nice speedrun feature | **P3** |
+| Cloud Atlas only 5 entries | Low — educational content thin | **P3** |
+| No stats screen | Low — meta-progression visibility | **P3** |
+
+### Sprint C task list (see TASKS.md for full specs)
+
+**P1 — Do first:**
+- T-029: Enemy framework + Patroller (patrolling enemy that responds to abilities)
+- T-030: Music system + 3 procedural ambient tracks
+- T-032: Stomp-defeat mechanic (jump on enemy from above)
+- T-040: Projectile/lightning hazard entity
+
+**P2 — Do after P1:**
+- T-031: Tile-based terrain rendering
+- T-033: Hub world — Sky Sanctuary (Level 0-0)
+- T-034: Boss encounter — Storm Sentinel (Level 3 finale)
+- T-035: Audio bus sliders (music / sfx / ui — separate from existing volSfx)
+- T-036: Key rebinding UI in Settings
+
+**P3 — Polish pass:**
+- T-037: Achievement system + toast notifications
+- T-038: Ghost replay in time trials
+- T-041: Stats screen on main menu
+- T-045: Cloud Atlas expansion to 12 entries
+
+---
+
+## 17. Enemy Design Spec (T-029, T-032, T-040)
+
+### Philosophy
+Every enemy in Cloudy Ninja must *teach* an ability while also threatening the player. The game's eco-restoration theme means enemies are polluted/corrupted entities — defeated by the character's cleansing ability, not conventional violence. Three archetype slots:
+
+| Slot | Archetype | Teaches | Defeated by |
+|---|---|---|---|
+| Ground Patroller | Smog Sprite | Dodging, timing stomp window | Seed Slam droplets or stomp |
+| Air Floater | Haze Wisp | Precision movement, Laya timing | Wind Dash pass-through |
+| Projectile Shooter | Storm Node | Projectile awareness | (static, destroyed by 3 Seed Slams) |
+
+### 17.1 Smog Sprite (first enemy — T-029)
+
+```
+entities/Enemy.kt        — abstract base class
+entities/SmogSprite.kt   — first concrete enemy
+```
+
+**Behaviour:**
+- Patrols between two x-waypoints (read from TMX `enemy_patrol` objectgroup, or set in LevelRegistry)
+- On reaching a wall or waypoint edge, flips direction
+- Kills player on lateral body contact
+- Stomped (player vy < -3 m/s, contact from above) → defeated; player gets a bounce impulse +5 m/s upward
+- Hit by Seed Slam droplet (fixture userData == "water_droplet") → defeated after 2 hits
+- On defeat: spawn 6-particle smoke burst (grey), play `hazard_cleansed` SFX, queue body destroy
+
+**Box2D setup:**
+- Dynamic body, `linearDamping = 0f`
+- Fixture: 0.3 × 0.3 m box sensor (detection) + 0.28 × 0.26 m box solid (collision)
+- Category: `ENEMY_BITS = 0x0010`, Mask: `GROUND | PLAYER`
+- Set horizontal velocity in `update()` — do NOT use Box2D forces (too springy)
+
+**Data definition in LevelRegistry:**
+```kotlin
+data class EnemyDef(val type: String, val x: Float, val y: Float,
+                    val patrolLeft: Float, val patrolRight: Float)
+// Add: val enemies: List<EnemyDef> = emptyList() to TmxLevelDefinition
+```
+
+**TMX alternative:** parse `objectgroup name="enemies"` in `MapLevelLoader`; look for objects with `type="smog_sprite"` and `property patrol_left/right`.
+
+### 17.2 Stomp mechanic (T-032)
+
+In `WorldContactListener.beginContact`:
+```kotlin
+// Detect player stomping enemy
+if (aIsPlayer && bIsEnemy && playerVelocityY < -3f) {
+    CleanseEventQueue.push(enemy.body.position.copy())  // reuse cleanse queue for defeat events
+    enemy.takeDamage(fatal = true)
+    player.body.linearVelocity = Vector2(player.body.linearVelocity.x, 5f)  // bounce
+}
+```
+
+### 17.3 Projectile entity (T-040)
+
+```kotlin
+class Projectile(world: World, x: Float, y: Float,
+                 val vx: Float, val vy: Float, val lifetime: Float = 3f) {
+    val body: Body  // kinematic, sensor=false, category=HAZARD_BITS
+    var age = 0f
+    val isExpired get() = age >= lifetime || hitWall
+}
+```
+
+`GameScreen` / `LevelRunState` updates each `Projectile` per frame and queues body-destroy when expired. Rendered as a small orange ShapeRenderer circle. Used by Storm Sentinel boss and Storm Node static emitters.
+
+---
+
+## 18. Music System Spec (T-030, T-035)
+
+### 18.1 MusicManager architecture
+
+```kotlin
+object MusicManager {
+    private var current: Music? = null
+    private var next: Music?    = null
+    private var fadeTimer       = 0f
+    private var fadeDuration    = 1.5f
+    private var volMusic        = 0.7f  // separate from SFX
+
+    fun play(track: String, fadeIn: Boolean = true) { … }
+    fun update(delta: Float) {  // crossfade logic
+        if (next != null) {
+            fadeTimer += delta
+            val t = (fadeTimer / fadeDuration).coerceIn(0f, 1f)
+            current?.volume = volMusic * (1f - t)
+            next?.volume = volMusic * t
+            if (t >= 1f) { current?.stop(); current = next; next = null }
+        }
+    }
+    fun setMusicVolume(vol: Float) { volMusic = vol; current?.volume = vol }
+}
+```
+
+`MusicManager.update(delta)` is called from `GameScreen.render` each frame (after `runState.update`).
+
+### 18.2 Per-level track selection
+
+Add `musicTrack: String` field to `TmxLevelDefinition` (default `"ambient_arid"`). `GameScreen.init` calls `MusicManager.play(level.musicTrack)`.
+
+| Level ID | Track | Mood |
+|---|---|---|
+| level0_* | `ambient_prologue` | Calm, sparse — player learning |
+| level1 | `ambient_arid` | Dry, hopeful undertones |
+| level2 | `ambient_wind` | Airy, flowing, slightly tense |
+| level3 | `ambient_eco` | Dense, forest-alive, builds in second loop |
+
+### 18.3 Procedural track generation
+
+`ProceduralSoundGenerator` already exists. Extend it (or add `ProceduralMusicGenerator`) to produce 60-second looping WAV files:
+- Layered sine/triangle oscillators at harmonically related frequencies
+- Amplitude-modulated at 0.5–2 Hz for "breathing" texture
+- Output: `assets/audio/music/{trackId}.wav`
+
+### 18.4 Audio bus sliders (T-035)
+
+Extend `Settings.kt`:
+```kotlin
+val volMusic: Float = 0.7f
+val volSfx:   Float = 0.8f   // already exists
+val volUi:    Float = 0.9f
+```
+
+`SettingsScreen` gets three VisUI sliders (Music / SFX / UI). On change:
+```kotlin
+MusicManager.setMusicVolume(settings.volMusic)
+SoundManager.setVolume(settings.volSfx)
+// UI sounds TBD — placeholder for now
+```
+
+---
+
+## 19. Hub World Spec (T-033)
+
+### 19.1 Sky Sanctuary — Level0_0
+
+Per the original GDD, the Sky Sanctuary is the prologue home. In gameplay terms it's a **hub world** — a single-screen room with portal doors to each unlocked World.
+
+```kotlin
+class Level0_0 : Level() {
+    override val id = "level0_0"
+    override val name = "Sky Sanctuary"
+    override val spawnX = 640f; override val spawnY = 160f
+    override val levelWidthPx = 1280f  // one-screen hub
+}
+```
+
+**Layout (1280×720 screen):**
+- Wide central platform (0–1280, y=0..40) — the sanctuary floor
+- Tall stone pillars at x=200 and x=1080 — decorative only
+- Four portal doors (sensor bodies) at x=280, 480, 680, 880 — one per world
+- Each door has a `name` in ObstacleManager: `portal_world0`, `portal_world1`, etc.
+
+**Portal activation:**
+- `WorldContactListener` adds `"portal_activated"` userData to portal fixtures
+- `LevelRunState` detects portal contact → triggers callback to GameScreen → GameScreen loads first level of that world
+- Locked worlds: portal renders as greyed-out, ignores contact. Unlocked = check `GameState.completedLevels` for last level of previous world.
+
+**Entry from main menu:** `LevelManager` places `Level0_0` as index 0 (before Level0_1). Main menu "Play" → `GameScreen(Level0_0)`. First-time players start in hub, walk right to portal_world0 to enter the tutorial.
+
+---
+
+## 20. Boss Design Spec (T-034)
+
+### Storm Sentinel — Level 3 Finale
+
+A static storm-entity that occupies a dedicated arena room appended to Level 3's Ketsu zone. Not a full movement-AI boss — a pattern-based hazard machine (Shovel Knight "sub-boss" style).
+
+**Arena layout:**
+- 640×720 room at x=2200..2840 (extends Level 3 map 640 px)
+- Boss body: 80×80 px static sensor at center-top (x=2520, y=580–660)
+- Platforms at y=160, y=300 (player fight platforms)
+
+**Attack pattern (3-phase cycling, 8-second period):**
+1. **Lightning column** (1.5 s telegraph, then 3 `Projectile` objects drop vertically at random x)
+2. **Wind sweep** (sweep 5 projectiles horizontally at y=160 — player must jump)
+3. **Rest** (2 s safe window — Seed Slam window)
+
+**Defeat condition:**
+- Boss takes 3 Seed Slam hits (droplet contact). Each hit: flash red, spawn burst, play `hazard_cleansed` SFX.
+- On defeat: 30-particle burst, `level_complete` SFX, auto-trigger level exit.
+- Defeat also unlocks a Cloud Atlas snapshot entry (`storm_system`).
+
+**Implementation notes:**
+- `entities/StormSentinel.kt` — not a `MovingPlatform` or `Enemy` subclass; manages its own attack timer and `List<Projectile>`
+- `LevelRunState` updates sentinel each frame alongside moving platforms
+- Level 3 exit sensor is placed INSIDE the boss room (only reachable after sentinel is destroyed)
+
+---
+
+## 21. Tile Rendering Spec (T-031)
+
+Current terrain uses ShapeRenderer colored rectangles (GROUND = grey gradient, HAZARD = red). This is fast but visually flat. Replace with a lightweight tile-sprite overlay that preserves the Box2D geometry unchanged.
+
+### 21.1 Tileset structure
+
+```
+assets/tilesets/
+├── tiles_arid.png   — 64×64 px atlas: rock, dirt, grass-top (3 tiles × variants)
+├── tiles_wind.png   — 64×64 px atlas: slate, cloud-stone, ice-edge
+└── tiles_eco.png    — 64×64 px atlas: mossy-stone, roots, leaf-top
+```
+
+Each tileset: 3 columns × 2 rows (6 tiles):
+- [0,0] solid interior, [1,0] top-face, [2,0] corner-cap
+- [0,1] hazard interior, [1,1] hazard-top, [2,1] hazard-surface
+
+### 21.2 TileRenderer class
+
+```kotlin
+class TileRenderer(private val batch: SpriteBatch, private val tilesetTexture: Texture) {
+    private val tileSize = 16f / Constants.PPM  // 16 px tiles → 0.16 m in world space
+    fun renderObstacles(obstacles: List<ObstacleRect>, camera: OrthographicCamera) {
+        batch.projectionMatrix = camera.combined
+        batch.begin()
+        for (obs in obstacles) {
+            val region = selectRegion(obs.kind)  // map GROUND→[1,0], HAZARD→[0,1] etc.
+            // tile-fill the obstacle bounds
+            val x0 = obs.centerX - obs.halfW; val y0 = obs.centerY - obs.halfH
+            for (ty in 0 until ceil(obs.halfH*2 / tileSize).toInt()) {
+                for (tx in 0 until ceil(obs.halfW*2 / tileSize).toInt()) {
+                    batch.draw(region, x0 + tx*tileSize, y0 + ty*tileSize, tileSize, tileSize)
+                }
+            }
+        }
+        batch.end()
+    }
+}
+```
+
+`LevelRenderer` calls `tileRenderer.renderObstacles(...)` INSTEAD OF the current `shapeRenderer` rect loop. The ShapeRenderer rect code is removed.
+
+### 21.3 Tileset selection
+
+`LevelRenderer` receives the `ParallaxTheme` from `GameScreen`. Map theme → tileset:
+```kotlin
+val tilesetTexture = when (theme) {
+    ARID -> Texture("tilesets/tiles_arid.png")
+    WIND -> Texture("tilesets/tiles_wind.png")
+    ECO  -> Texture("tilesets/tiles_eco.png")
+}
+```
+
+---
+
+## 22. Achievement System Spec (T-037)
+
+### 22.1 Achievement registry
+
+```kotlin
+@Serializable
+data class Achievement(val id: String, val title: String, val desc: String)
+
+object AchievementRegistry {
+    val ALL = listOf(
+        Achievement("first_jump",      "First Flight",    "Complete your first jump"),
+        Achievement("first_cleanse",   "Seed Planter",    "Cleanse your first hazard with Seed Slam"),
+        Achievement("eco_sweep",       "Eco Champion",    "Collect all eco-tokens in any one level"),
+        Achievement("no_death_run",    "Ghost Walker",    "Complete a level without dying"),
+        Achievement("speed_demon",     "Speed Demon",     "Complete any level under 2 minutes in Time Trial"),
+        Achievement("atlas_half",      "Cloud Watcher",   "Collect 6 Cloud Atlas snapshots"),
+        Achievement("atlas_full",      "Sky Scholar",     "Collect all 12 Cloud Atlas snapshots"),
+        Achievement("first_enemy",     "Cleanse Warrior", "Defeat your first Smog Sprite"),
+        Achievement("stomp_10",        "Stomper",         "Stomp 10 enemies"),
+        Achievement("boss_defeated",   "Storm Breaker",   "Defeat the Storm Sentinel"),
+        Achievement("world_1_clear",   "The First Rain",  "Complete World 1"),
+        Achievement("all_clear",       "Eco Restored",    "Complete all worlds")
+    )
+}
+```
+
+### 22.2 Persistence
+
+Add to `GameState`:
+```kotlin
+val unlockedAchievements: Set<String> = emptySet()
+```
+
+### 22.3 Toast notification
+
+`AchievementToast` — overlaid above HUD, auto-dismissed after 3 s:
+```kotlin
+class AchievementToast {
+    fun show(achievement: Achievement)  // fades in, holds 2s, fades out
+    fun update(delta: Float)
+    fun render(batch: SpriteBatch)
+}
+```
+
+`LevelRunState` holds a reference; `GameScreen` renders it above Layer 4 (HUD) but below Layer 7 (pause).
+
+### 22.4 Unlock triggers
+
+Unlocks are checked in `LevelRunState.update()` after relevant events:
+- `first_jump` → on first `player.onJump` callback
+- `eco_sweep` → when `ecoTokens.isEmpty()` for the first time
+- `no_death_run` → when `levelCompleted && spiritHealth == 3` (never took damage)
+- `speed_demon` → in `LevelTransitionController` when `isTimeTrial && levelTimer < 120f`
+
+---
+
+## 23. Ghost Replay Spec (T-038)
+
+### Design intent
+After setting a time-trial best, the player's next run sees a translucent "ghost" of their record run. Creates natural speedrun tension without online infrastructure.
+
+### 23.1 Recording
+
+During a time-trial run, `LevelRunState` records a snapshot every 3 frames (≈50 ms at 60 fps):
+```kotlin
+data class GhostFrame(val x: Float, val y: Float, val facingRight: Boolean, val character: String)
+```
+
+On run completion (new best), serialize the frame list to `saves/ghost_{levelId}.json`. Max 4000 frames (200 s at 50 ms cadence) → ~200 KB; acceptable.
+
+### 23.2 Playback
+
+Next time-trial run: load ghost frames into `GhostPlayer`. Each frame, `GhostPlayer.currentFrame` advances by `elapsed / frameDelta`. `LevelRenderer` draws the ghost as a translucent (alpha=0.35) version of the player circle/sprite at that position, in the opposite character color.
+
+### 23.3 Data model extension
+
+```kotlin
+// persist/GhostRecording.kt
+@Serializable
+data class GhostRecording(
+    val levelId: String,
+    val timeSeconds: Float,
+    val frames: List<GhostFrame>
+)
+```
+
+`SaveManager` gains `saveGhost(rec, levelId)` and `loadGhost(levelId): GhostRecording?`.
+
+---
+
+## 24. Reference numbers update (Sprint C additions)
+
+| What | Value | Source |
+|---|---|---|
+| Enemy patrol speed | 2.5 m/s | Celeste: Crumble-block guardian speed |
+| Stomp bounce impulse | 5 m/s upward | Mario 64, Hollow Knight stomp |
+| Projectile speed | 6 m/s horizontal, 8 m/s vertical | Shovel Knight |
+| Boss hit window | 2 s per phase rest | Shovel Knight sub-boss pattern |
+| Ghost recording interval | 3 frames @ 60 fps = 50 ms | Trackmania ghost standard |
+| Achievement toast duration | 3 s (0.3 s fade in, 2.4 s hold, 0.3 s fade out) | Hollow Knight, Ori |
+| Music crossfade | 1.5 s | Celeste room transitions |
+| Music volume LUFS | -18 LUFS | Game audio standard (see §5.3) |
+| Tile size | 16 px (0.16 m at PPM=100) | Standard pixel-art platformer |
