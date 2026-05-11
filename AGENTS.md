@@ -1,12 +1,19 @@
 # AGENTS.md
 
 ## Multi-agent coordination
-Open tasks live in [TASKS.md](TASKS.md). Before starting work, claim a task there (move it to `In Progress`, fill in your agent name + branch, push to `main`). Work in a git worktree on the branch you claimed. When done, merge to `main` and move the task to `Done`.
+
+**Every AI agent must read `START_HERE.md` first.** It is the single entry point — identifies tools, capability gates, claim protocol, and the routing table.
+
+For human contributors and the planning AI (Claude Code Opus): work tickets live in [TASKS.md](TASKS.md). For non-obvious gotchas other agents have hit, see [LEARNINGS.md](LEARNINGS.md) — read before claiming. For open questions awaiting user input, see [QUESTIONS.md](QUESTIONS.md).
+
+**Strict routing model:** every ticket in TASKS.md has a `Tool:` field tagged by the planner. Each AI is hard-restricted to tickets matching its identity tag. AIs do NOT self-route. The routing table is in `START_HERE.md` §9.
 
 Required reading before claiming a task:
-1. This file (architecture, conventions, module layout)
-2. [GDD_ADDENDUM.md](GDD_ADDENDUM.md) (technical spec, calibration numbers, sprint plans, P0 bug history, feature specs)
-3. [GAME_PLAN.md](GAME_PLAN.md) (high-level roadmap, content themes, educational goals)
+1. `START_HERE.md` — the entry point (this file describes architecture; START_HERE describes process)
+2. This file (architecture, conventions, module layout)
+3. `LEARNINGS.md` — gotchas log
+4. [GDD_ADDENDUM.md](GDD_ADDENDUM.md) — technical reference, read sections relevant to your ticket
+5. [GAME_PLAN.md](GAME_PLAN.md) — vision and roadmap
 
 ---
 
