@@ -62,3 +62,19 @@ Format per entry:
 **Cost:** ~20 min of analysis before pivoting.
 
 **Lesson:** "Headless libGDX" is a trap for games that rely on rendering systems. Use `xvfb-run` instead.
+
+## 2026-05-11 — Smoke autopilot hopping levels via portals (T-A1)
+
+**Symptom:** AI smoke workflow stuck on 5 of 8 levels for 9+ minutes per job; same 3 levels always passed (level0_3, level2, level3), same 5 always hung (level0_0, level0_1, level0_2, level0_4, level1). Eventually killed by GitHub's 6-hour job timeout.
+
+**Cause:** The smoke autopilot walked the player into a portal sensor (hub world) or exit sensor (tutorials/campaign). That triggered `GameScreen.render()` to deferred-construct a new `GameScreen`, which built a fresh `LevelRunState` with `debugAutoQuitTimer` reset to 10s. The smoke autoquit could never fire because the autopilot kept hopping levels and resetting the timer.
+
+The 3 levels that *did* pass were ones where BasicAutopilot can't reach an exit: level0_3 (vertical wall-climb shaft), level2 (needs Laya wind dash), level3 (boss arena). They hit autoquit cleanly.
+
+**Fix:** Added `Constants.SMOKE_MODE` flag bound to `-Dcloudy.smokeMode=true`. `GameScreen.render()` now suppresses portal-transition, level-complete-transition, and game-over→MainMenu transitions when this flag is on. Smoke runs stay in the level they were launched into for the full 10s autoquit window.
+
+**Belt-and-suspenders:** Added `timeout 90` wrapper around the smoke shell command in `.github/workflows/ai-smoke.yml`. If the JVM ever hangs again for any reason, the shell forces exit at 90s. Exit code 124 = timeout fired, which counts as a CI failure.
+
+**Cost:** ~30 min of confused CI debugging across 3+ runs. Looked at it from queue/concurrency angles first; the smoke-mode-transition theory landed only after I noticed the pass/fail split correlated with "can the autopilot reach an exit in this level."
+
+**Lesson:** When designing an autonomous test runner, think about every state-machine path the bot's inputs could trigger. If the system being tested can swap out from under the bot (screen change, level reload, etc.), the test harness needs to either survive that or actively suppress it.
