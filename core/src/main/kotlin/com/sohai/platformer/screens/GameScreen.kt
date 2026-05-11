@@ -331,7 +331,14 @@ class GameScreen(
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) setPaused(!isPaused)
 
-        if (!isPaused && atlasOverlay == null) {
+        if (Constants.SMOKE_MODE) {
+            // Smoke mode: always tick update() so the auto-quit timer fires
+            // regardless of overlays (Cloud Atlas snapshots), pause state, or
+            // hitstop. Without this, the smoke autopilot collects a snapshot,
+            // the atlas overlay opens, update halts, and the JVM hangs until
+            // CI's 240s wall-clock timeout fires — losing the [smoke] log line.
+            runState.update(clampedDelta)
+        } else if (!isPaused && atlasOverlay == null) {
             if (runState.hitstopFrames > 0) runState.hitstopFrames--
             else runState.update(clampedDelta)
         }

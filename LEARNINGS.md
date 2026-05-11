@@ -78,3 +78,22 @@ The 3 levels that *did* pass were ones where BasicAutopilot can't reach an exit:
 **Cost:** ~30 min of confused CI debugging across 3+ runs. Looked at it from queue/concurrency angles first; the smoke-mode-transition theory landed only after I noticed the pass/fail split correlated with "can the autopilot reach an exit in this level."
 
 **Lesson:** When designing an autonomous test runner, think about every state-machine path the bot's inputs could trigger. If the system being tested can swap out from under the bot (screen change, level reload, etc.), the test harness needs to either survive that or actively suppress it.
+
+## 2026-05-11 — Smoke autoquit blocked by Cloud Atlas overlay (T-A1, follow-up)
+
+**Symptom:** Smoke runs hung at 240s CI timeout. Game-side log showed normal startup + autopilot firing + `[SaveManager] Saved`, then silence. No `Auto-quit.` log line. No `[smoke]` summary line.
+
+**Cause:** `GameScreen.render()` gates `runState.update(delta)` on `!isPaused && atlasOverlay == null`. The smoke autopilot drives the player right, hits a Cloud Atlas snapshot pickup (e.g. `silver_iodide` at x=4.5m on Level 1, reachable in ~1 second), the overlay opens, update() stops being called, and the autoquit timer in `LevelRunState` never decrements. The JVM is technically alive — it's still rendering the overlay — but the smoke-test exit path can't fire.
+
+**Fix:** In smoke mode, bypass the gate entirely. `GameScreen.render()` now does:
+```kotlin
+if (Constants.SMOKE_MODE) {
+    runState.update(clampedDelta)  // unconditional — keeps autoquit ticking
+} else if (!isPaused && atlasOverlay == null) {
+    ...
+}
+```
+
+**Cost:** Two failed CI runs (one at 90s timeout, one at 240s timeout) before identifying the overlay as the blocker. About ~25k tokens of debugging.
+
+**Lesson:** When building a smoke-test harness that relies on a game-internal timer to exit cleanly, audit EVERY code path that can pause/gate the game's update loop. Overlays, pause menus, hitstop, game-over modal — all of them break the exit timer. Either bypass them in test mode, or move the test-exit timer somewhere that ticks unconditionally (e.g. directly inside `render(delta)` not gated by any state).
