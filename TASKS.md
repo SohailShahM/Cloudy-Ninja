@@ -90,21 +90,35 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Jumping on a Smog Sprite defeats it and bounces player; lateral contact still kills player. Compile clean.
 
 ### T-031 — Tile-based terrain rendering  [P2]
-- **Status:** Todo
-- **Tool:** `human-then-claude-code-sonnet`  *(user downloads Kenney `pixel-platformer` zip from https://kenney.nl/assets/pixel-platformer and extracts to `assets/tilesets/kenney_pixel_platformer/`; then Claude wires `TileRenderer`)*
+- **Status:** Todo  *(unblocked — Kenney pack now in `assets/tilesets/kenney_pixel_platformer/`)*
+- **Tool:** `claude-code-sonnet`
 - **Tier:** M
-- **Autonomous-eligible:** no  *(blocks on user asset download; Kenney's site has an optional donation gate that automation shouldn't bypass)*
+- **Autonomous-eligible:** yes
 - **Agent:** _unclaimed_
 - **Branch:** _none_
 - **Depends on:** _none_
 - **GDD ref:** §21 ("Tile Rendering Spec")
 - **Art decision (resolved 2026-05-12 via T-046a):**
-  - **Base pack:** Kenney `pixel-platformer` (CC0, ~350 files, side-scroller perspective) — provides terrain, characters, enemies, pickups, hazards
-  - **ECO accent:** [OpenGameArt Pixel Art Forest](https://opengameart.org/content/pixel-art-forest-tilesets) (CC0) for vines, foliage
-  - **ARID/WIND:** use Kenney's sandy/sky tiles within the base pack (no separate tilesets needed)
-- **Files:** `rendering/TileRenderer.kt` (new), `screens/LevelRenderer.kt`, `assets/tilesets/kenney_pixel_platformer/` (user-supplied), `assets/tilesets/eco_accents/` (optional)
-- **Goal:** Wire Kenney's `pixel-platformer` tileset (and ECO accent) into a new `TileRenderer` that tile-fills each `ObstacleRect` using `SpriteBatch` instead of the current `ShapeRenderer` solid-rect pass. `LevelRenderer` selects tiles by `ParallaxTheme` (ARID/WIND uses Kenney base, ECO mixes in forest accents). Remove the ShapeRenderer obstacle-rect draw loop after verifying tile coverage is complete.
-- **Done when:** All three levels show tiled terrain instead of solid grey/red rectangles; no visual gaps; compile clean.
+  - **Base pack:** Kenney `pixel-platformer` (CC0, ~350 files, side-scroller perspective) — provides terrain, characters, enemies, pickups, hazards. **Already in repo at `assets/tilesets/kenney_pixel_platformer/`** (Tiles/, Tilemap/, Tiled/ subdirs + sample images + license).
+  - **ECO accent:** [OpenGameArt Pixel Art Forest](https://opengameart.org/content/pixel-art-forest-tilesets) (CC0) for vines, foliage — fetch as a follow-up if needed; not required for v1 of T-031.
+  - **ARID/WIND:** use Kenney's sandy/sky tiles within the base pack (no separate tilesets needed for v1).
+- **Files:** `rendering/TilesetPack.kt` (new), `rendering/TilesetRegistry.kt` (new), `rendering/TileRenderer.kt` (new), `screens/LevelRenderer.kt`, `persist/Settings.kt` (add `tilesetPackId` field)
+- **Goal:**
+  1. **Art-style abstraction (must come first — design for future swap):**
+     - `TilesetPack` data class with: `id: String`, `displayName: String`, `basePath: String`, mapping from `ObstacleKind` (GROUND/WALL/HAZARD/etc.) to tile region(s), thematic variants per `ParallaxTheme`. Pure data; no I/O.
+     - `TilesetRegistry` singleton: `register(pack)`, `get(id)`, `current` (reads `Settings.tilesetPackId`). Default-registers the Kenney pack at startup.
+     - `Settings.tilesetPackId: String = "kenney_pixel_platformer"` — persisted. Foundation for a future Settings-screen art-style dropdown.
+     - **Why this layering:** the user wants the option to swap art styles later (custom-commissioned pixel art, asset-store packs, mod support). Centralizing tile paths + thematic variants behind `TilesetPack` means future packs slot in via one `register(...)` call — no renderer rewrites.
+  2. **Renderer wiring:**
+     - `TileRenderer.kt` uses `TilesetRegistry.current` to look up tile regions per `ObstacleKind` + `ParallaxTheme`. Tile-fills each `ObstacleRect` via `SpriteBatch`.
+     - `LevelRenderer` calls `TileRenderer.renderObstacles()` instead of the current ShapeRenderer rect pass.
+     - Remove the ShapeRenderer obstacle-rect draw loop after verifying tile coverage is complete (keep ShapeRenderer for debug/fallback if needed).
+- **Done when:**
+  - `TilesetPack` + `TilesetRegistry` + `Settings.tilesetPackId` all in place — proven by writing a unit test that registers a second mock pack and shows `TilesetRegistry.current` swaps cleanly.
+  - All three campaign levels show tiled terrain instead of solid grey/red rectangles when run locally.
+  - No visual gaps in tile coverage.
+  - AI smoke test passes.
+  - Compile clean.
 
 ### T-033 — Hub world: Sky Sanctuary (Level 0-0)  [P2]
 - **Status:** Done
@@ -196,6 +210,7 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Files:** `atlas/CloudAtlasLibrary.kt`, `levels/TmxLevelDefinition.kt` (level1/2/3 snapshot lists)
 - **Goal:** Expand `CloudAtlasLibrary.ALL` from 5 to 12 entries, each with a real educational fact about the water cycle or climate systems. Distribute new snapshots across levels (2–3 per level, including the boss-room `storm_system` from T-034). Update LevelRegistry snapshot lists. Entries should cover: water_cycle, silver_iodide, temperature_inversion, albedo_effect, transpiration, groundwater_recharge, carbon_sequestration, storm_system, biodiversity_index, soil_microbiome, ocean_acidification, cloud_seeding.
 - **Done when:** 12 entries in registry, all reachable in gameplay, atlas screen displays all 12 cards with correct text. Compile clean.
+- **Updated dependency (2026-05-12):** T-045 now depends on **T-049** (climate-source compilation). The climate.gov URLs in the original prompt are dead (site archived to noaa.gov). T-049 produces a `research/climate-sources/` folder with verified-live URLs + downloaded PDFs, ready to feed NotebookLM in one step.
 
 ### T-046b — Character sprite-sheet research  [P3]
 - **Status:** Todo
@@ -238,6 +253,33 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Research 8–12 highly-rated indie 2D pixel-art platformers on itch.io (Celeste-likes, Hollow Knight-likes, eco-themed platformers). For each: capture title, listing URL, ratings, screenshot composition (4-up grid? hero shot?), headline-copy pattern, trailer length + structure, key conversion elements (price anchoring, demo offering, dev-update cadence). Synthesize into a style guide for Cloudy Ninja's eventual itch.io listing — what should our headline say, screenshot composition, trailer length, what differentiates the page.
 - **Done when:** `marketing/itch-listing-style-guide.md` exists with: (a) comparison table of 8–12 reference listings, (b) recommended headline-copy patterns, (c) screenshot composition rules with examples, (d) trailer structure recommendation (length, beats, music), (e) 3 recommended differentiators specific to Cloudy Ninja's pitch (climate/eco angle, multi-character switching, accessibility-first design). PR opens against `main`.
 - **Constraints:** Antigravity must NOT touch any file outside `marketing/`. Markdown research only. Do NOT scrape itch.io aggressively — limit to ~12 listings.
+
+### T-049 — Climate-source compilation for NotebookLM  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** S  *(research only — no code)*
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-049-climate-sources`
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN §educational-goals; supports T-045 Cloud Atlas content
+- **Files:** `research/climate-sources/INDEX.md` (new), `research/climate-sources/*.pdf` (downloaded), `research/climate-sources/urls.txt` (new)
+- **Goal:** Compile a curated, verified-live set of climate science sources ready to feed into NotebookLM for the T-045 Cloud Atlas content generation. The previous T-045 prompt cited `climate.gov` URLs that have been **archived** — the new live host is `noaa.gov`. Antigravity should:
+  1. Find authoritative climate science sources covering the 12 Cloud Atlas topics: water_cycle, silver_iodide, temperature_inversion, albedo_effect, transpiration, groundwater_recharge, carbon_sequestration, storm_system, biodiversity_index, soil_microbiome, ocean_acidification, cloud_seeding.
+  2. Verify each URL is live (HTTP 200) and current (not redirected to "archive" pages).
+  3. Cast wider than the original prompt — search for university extension publications, NOAA fact sheets, NASA Earth Observatory, IPCC, EPA, USGS, university (.edu) climate centers, peer-reviewed open-access papers. Find supplementary sources NotebookLM might find useful even if they're tangentially related (e.g. "weather modification ethics", "groundwater recharge case studies"). Aim for **breadth**.
+  4. For PDF resources: download to `research/climate-sources/*.pdf` (don't link to wherever they live online; bake them in).
+  5. For URL-only resources (NotebookLM can fetch live): list in `research/climate-sources/urls.txt` (one URL per line, with a short comment about which topic it covers).
+  6. Write `research/climate-sources/INDEX.md` — table of all sources with: filename or URL, topic coverage (one or more of the 12), source type (PDF/URL), authority (gov/edu/nonprofit/peer-review), publication date.
+- **Done when:**
+  - `research/climate-sources/INDEX.md` exists with ≥3 sources per Cloud Atlas topic (36+ total).
+  - All PDF downloads succeed; no broken URLs in `urls.txt`.
+  - PR opens against `main` with the new folder; passes AI smoke test (trivial — no code).
+- **Constraints:**
+  - Antigravity must NOT touch any file outside `research/climate-sources/`.
+  - Total PDF download size kept under 100 MB — pick the most authoritative source per topic, don't grab everything.
+  - Skip CC-incompatible sources (no proprietary textbooks or paywalled journal articles).
+  - Verify each URL with a live fetch before listing.
 
 ---
 
