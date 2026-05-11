@@ -27,6 +27,7 @@ import com.sohai.platformer.levels.Level0_0
 import com.sohai.platformer.persist.Checkpoint
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.persist.SettingsManager
+import com.sohai.platformer.progression.AchievementRegistry
 import com.sohai.platformer.physics.CleanseEventQueue
 import com.sohai.platformer.rendering.CharacterAnimator
 import com.sohai.platformer.rendering.ParticleSystem
@@ -64,7 +65,10 @@ class LevelRunState(
     val enemies: MutableList<Enemy>,
     private val checkpointAutosaveFile: String,
     /** When true: timer counts up from 0, checkpoint autosaves are suppressed. */
-    val isTimeTrial: Boolean = false
+    val isTimeTrial: Boolean = false,
+    private val achievementToast: AchievementToast? = null,
+    /** Save slot filename used for achievement persistence (must match the slot used in GameScreen). */
+    private val saveSlotFile: String = "save_slot_1.json"
 ) {
 
     // ── Game-session state ────────────────────────────────────────────────────
@@ -91,6 +95,14 @@ class LevelRunState(
      * also wired by GameScreen so they can reference runState.levelCompleted.
      */
     var sentinel: StormSentinel? = null
+
+    // ── Achievement tracking (fire-once flags per run) ────────────────────────
+
+    private var achievFirstJumpFired    = false
+    private var achievFirstCleanseFired = false
+    private var achievEcoSweepFired     = false
+    private var achievNoDeathFired      = false
+    private var achievFirstEnemyFired   = false
 
     // ── Projectiles ──────────────────────────────────────────────────────────
 
@@ -217,6 +229,22 @@ class LevelRunState(
         projectiles.add(Projectile(world, x, y, vx, vy))
     }
 
+    /**
+     * Attempt to unlock an achievement by ID.  No-ops if already unlocked.
+     * Persists to [saveSlotFile] and shows the toast if [achievementToast] is set.
+     */
+    fun tryUnlock(achievementId: String) {
+        val state = SaveManager.loadGame(saveSlotFile)
+        if (achievementId in state.unlockedAchievements) return
+        val newState = state.copy(
+            unlockedAchievements = state.unlockedAchievements + achievementId
+        )
+        SaveManager.saveGame(newState, saveSlotFile)
+        val achievement = AchievementRegistry.get(achievementId) ?: return
+        achievementToast?.show(achievement)
+        Gdx.app.log("Achievement", "Unlocked: $achievementId — ${achievement.title}")
+    }
+
     // ── Main update loop ──────────────────────────────────────────────────────
 
     fun update(delta: Float) {
@@ -295,6 +323,12 @@ class LevelRunState(
 
         player.update(delta)
 
+        // Achievement: first_jump — fires once when any jump is performed
+        if (!achievFirstJumpFired && player.jumpFiredThisFrame) {
+            achievFirstJumpFired = true
+            tryUnlock("first_jump")
+        }
+
         val vel    = player.body.linearVelocity
         val onWall = player.isTouchingWallLeft || player.isTouchingWallRight
         eboAnimator.update(delta, player.isGrounded, vel.x, vel.y, onWall)
@@ -333,7 +367,20 @@ class LevelRunState(
                 val pos = dead.body.position
                 renderer.spawnStompSmokeBurst(pos.x, pos.y)
                 SoundManager.play("land")
+
+                // Achievement: stomp_10 — track cumulative stomps across runs
+                val stompState = SaveManager.loadGame(saveSlotFile)
+                val newTotalStomps = stompState.totalStomps + 1
+                SaveManager.saveGame(stompState.copy(totalStomps = newTotalStomps), saveSlotFile)
+                if (newTotalStomps >= 10) tryUnlock("stomp_10")
             }
+
+            // Achievement: first_enemy — first enemy defeated by any means
+            if (!achievFirstEnemyFired) {
+                achievFirstEnemyFired = true
+                tryUnlock("first_enemy")
+            }
+
             pendingBodyDestroy.add(dead.body)
             enemies.remove(dead)
         }
@@ -449,6 +496,12 @@ class LevelRunState(
                 pendingBodyDestroy.add(it.body)
             }
             ecoTokens.removeAll(collected.toSet())
+
+            // Achievement: eco_sweep — all tokens collected in this level for the first time this run
+            if (!achievEcoSweepFired && ecoTokens.isEmpty() && level.getEcoTokenPositions().isNotEmpty()) {
+                achievEcoSweepFired = true
+                tryUnlock("eco_sweep")
+            }
         }
         for (token in ecoTokens) { if (!token.isCollected) token.update(delta) }
 
@@ -461,10 +514,13 @@ class LevelRunState(
             renderer.spawnSnapshotSparkle(collectedSnap.body.position.x, collectedSnap.body.position.y)
             snapshotPickups.remove(collectedSnap)
             pendingBodyDestroy.add(collectedSnap.body)
-            val existing = SaveManager.loadGame()
+            val existing = SaveManager.loadGame(saveSlotFile)
             if (collectedSnap.entry.id !in existing.collectedAtlasIds) {
-                SaveManager.saveGame(existing.copy(
-                    collectedAtlasIds = existing.collectedAtlasIds + collectedSnap.entry.id))
+                val updatedAtlas = existing.collectedAtlasIds + collectedSnap.entry.id
+                SaveManager.saveGame(existing.copy(collectedAtlasIds = updatedAtlas), saveSlotFile)
+                // Achievements: atlas milestones
+                if (updatedAtlas.size >= 6)  tryUnlock("atlas_half")
+                if (updatedAtlas.size >= 12) tryUnlock("atlas_full")
             }
             onAtlasCollected?.invoke(collectedSnap)
         }
@@ -475,6 +531,12 @@ class LevelRunState(
         for (pos in cleanseEvents) {
             renderer.spawnCleanseBurst(pos.x, pos.y)
             SoundManager.play("hazard_cleansed", pitch = MathUtils.random(0.9f, 1.1f))
+
+            // Achievement: first_cleanse — first hazard cleansed with Seed Slam
+            if (!achievFirstCleanseFired) {
+                achievFirstCleanseFired = true
+                tryUnlock("first_cleanse")
+            }
         }
 
         if (totalHazards > 0) {
@@ -520,6 +582,12 @@ class LevelRunState(
             Gdx.app.log("LevelRunState", "Exit reached — level=${level.id}")
             levelCompleted         = true
             levelCompletionTimer   = 4f
+
+            // Achievement: no_death_run — completed level with full spirit health (never took damage)
+            if (!achievNoDeathFired && spiritHealth == 3) {
+                achievNoDeathFired = true
+                tryUnlock("no_death_run")
+            }
         }
 
         // Portal activation (hub world only)

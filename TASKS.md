@@ -151,18 +151,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add `keybinds: Map<String, Int> = defaultKeybinds()` to `Settings` where keys are action names (`"left"`, `"right"`, `"jump"`, `"action"`, `"swap"`) and values are `Input.Keys.*` ints. Add a "Controls" section in `SettingsScreen` — for each action, show a VisTextButton displaying the current key name; clicking it enters "press a key" mode and records the next key press. `InputManager` reads keybinds from `SettingsManager.load().keybinds` on each poll instead of hardcoded constants.
 - **Done when:** Player can rebind all 5 actions in Settings, new bindings work in gameplay, persist across sessions. Compile clean.
 
-### T-037 — Achievement system + toast notifications  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`  *(multi-file but spec is concrete; spawn sub-agents for parallel work on the 12 achievement conditions)*
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** §22 ("Achievement System Spec")
-- **Files:** `progression/Achievement.kt` (new), `progression/AchievementRegistry.kt` (new), `screens/AchievementToast.kt` (new), `persist/GameState.kt`, `screens/LevelRunState.kt`, `screens/GameScreen.kt`, `screens/StatsScreen.kt` (see T-041)
-- **Goal:** Implement the 12 achievements from GDD §22.1. Add `unlockedAchievements: Set<String>` to `GameState`. Add `AchievementToast` — slides in from top-right, holds 2.4 s, fades out, never overlaps. `LevelRunState.update()` checks unlock conditions for in-game achievements (first_jump, first_cleanse, eco_sweep, no_death_run). `LevelTransitionController` checks speed_demon and world clear achievements. `GameScreen` renders toast above Layer 4 (HUD).
-- **Done when:** At least 6 achievements can be unlocked during normal play; toast appears and dismisses cleanly; unlocked set persists. Compile clean.
 
 ### T-038 — Ghost replay in time trials  [P3]
 - **Status:** Todo
@@ -190,19 +178,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add a "Stats" button to `MainMenuScreen` that opens `StatsScreen`. Stats screen shows per-slot: total deaths, levels completed (count + list), eco-tokens collected (running total from completed runs), best times per level, achievements unlocked (count/12 + list). All data read from `SaveManager.loadGame()` + `AchievementRegistry`. Back button returns to main menu.
 - **Done when:** Stats screen opens from main menu, displays accurate data for the active slot, back button works. Compile clean.
 
-### T-046a — Tileset research: find pixel-art tilesets for 3 themes  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
-- **Tier:** S  *(research only — no code)*
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-046a-tileset-research`  *(create on claim — only adds files in `art-research/`)*
-- **Depends on:** _none_
-- **GDD ref:** _to be written in GDD_ADDENDUM_ (T-046 follow-up)
-- **Files:** `art-research/tileset-candidates.md` (new), `art-research/license-notes.md` (new, optional)
-- **Goal:** Research pixel-art tileset options for the three campaign worlds (ARID / WIND / ECO). Search **Kenney.nl** and **OpenGameArt.org** for tilesets at **32×32 base resolution**. For each promising candidate, capture: tileset name, source URL, license (CC0 / CC-BY / etc.), file count, theme fit (arid/wind/eco), art quality (subjective 1–5), notes on whether it includes character sprites or just terrain. Output a single markdown comparison file `art-research/tileset-candidates.md` with one table per theme. **Do not download any files. Do not modify any code.** This is pure decision-support research feeding the T-046 art commission decision.
-- **Done when:** `art-research/tileset-candidates.md` exists with at least 3 candidates per theme (9+ total). Each candidate has all fields filled. PR opens against `main` containing only the new file(s) under `art-research/`. AI smoke test (T-A1) passes trivially since no code changed.
-- **Constraints:** Antigravity must NOT touch any file outside `art-research/`. Must NOT add new dependencies. Must NOT download asset files (you're producing research notes, not assets). If a candidate looks ideal but requires downloading to evaluate, list it as "would-need-download" instead.
 
 ### T-046 — Full graphics overhaul: pixel-art sprites + tilesets  [P3]
 - **Status:** Todo
@@ -273,19 +248,19 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
-### T-A1 — AI smoke test: per-level autopilot run via CI
-- **Status:** In Progress  *(local validation passed; awaiting first CI green on PR)*
-- **Tool:** `claude-code-opus`
+### T-037 — Achievement system + toast notifications  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`  *(multi-file but spec is concrete; spawn sub-agents for parallel work on the 12 achievement conditions)*
 - **Tier:** M
-- **Autonomous-eligible:** no  *(was a foundational change requiring planning)*
-- **Agent:** claude-code-opus
-- **Branch:** claude/T-034-storm-sentinel
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sonnet
+- **Branch:** claude/T-037-achievements
 - **Started:** 2026-05-11
 - **Depends on:** _none_
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt`, `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `lwjgl3/build.gradle`, `.github/workflows/ai-smoke.yml` (new)
-- **Goal:** Reuse the existing `BasicAutopilot` block in `LevelRunState` to smoke-test every registered level on every PR. Add a `cloudy.smokeMode=true` flag that (a) tracks `maxXReached` and `frame_p99` during the autopilot run and (b) emits a single structured log line `[smoke] level=... maxX=... startX=... frameP99=... duration=...` at auto-quit. Add `cloudy.smokeLevel=level1` flag in `Main.kt` to bypass MainMenuScreen → SlotSelect and go directly to `GameScreen(LevelManager.getLevel(name))`. CI workflow runs the game once per registered level via `xvfb-run`, parses the smoke log line, fails the run if `maxX - startX < 1.0` (spawn-death like the T-043 flipY bug) or `frameP99 > 30ms` (perf regression like the T-043 SaveManager spam) or process crashed (like the T-043 portal crash).
-- **Done when:** Open a PR with a synthetic spawn-death (set `flipY=false` on any level) and CI catches it within 30s per level. All current levels pass smoke on main. Total CI runtime <10 min for 7 levels.
-- **Progress notes:** MVP of v2 AI testing plan — see "Backlog (planned)" below for full design.
+- **GDD ref:** §22 ("Achievement System Spec")
+- **Files:** `progression/Achievement.kt` (new), `progression/AchievementRegistry.kt` (new), `screens/AchievementToast.kt` (new), `persist/GameState.kt`, `screens/LevelRunState.kt`, `screens/GameScreen.kt`, `screens/StatsScreen.kt` (see T-041)
+- **Goal:** Implement the 12 achievements from GDD §22.1. Add `unlockedAchievements: Set<String>` to `GameState`. Add `AchievementToast` — slides in from top-right, holds 2.4 s, fades out, never overlaps. `LevelRunState.update()` checks unlock conditions for in-game achievements (first_jump, first_cleanse, eco_sweep, no_death_run). `LevelTransitionController` checks speed_demon and world clear achievements. `GameScreen` renders toast above Layer 4 (HUD).
+- **Done when:** At least 6 achievements can be unlocked during normal play; toast appears and dismisses cleanly; unlocked set persists. Compile clean.
 
 
 <!--
@@ -309,6 +284,13 @@ Template for moving a task here:
 ---
 
 ## Done
+
+### T-A1 — AI smoke test: per-level autopilot run via CI
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** Headless smoke test running on every PR. `LevelRunState` emits a structured `[smoke]` log line on auto-quit when `cloudy.smokeMode=true`; `Constants.SMOKE_MODE` flag suppresses screen transitions + atlas-overlay gate so the autoquit always fires; `Main.kt` `cloudy.smokeLevel` bypasses menu→GameScreen. `.github/workflows/ai-smoke.yml` runs an 8-level matrix via `xvfb-run`, parses the log line, fails the build on `deltaX<0.3` (spawn-death) or `frameP99>80ms` (perf regression) or crashed process. All 9 required CI checks (1 lint + 8 smoke) gate `main` branch merge. **PR #1 validated the system end-to-end: 8 bug layers peeled (desktop.ini, gradlew chmod, threshold tuning, queue saturation, level-hopping, overlay-blocked-update, cold-runner timeout) before green run merged.** Each layer documented in `LEARNINGS.md`.
+- **Commit/PR:** PR #1 (squashed merge `3468df1`)
+- **Tool:** `claude-code-opus`
 
 ### T-A2 — Determinism audit (`DETERMINISM.md`)
 - **Status:** Done
@@ -506,6 +488,12 @@ Template for moving a task here:
 - **Completed:** 2026-05-09
 - **Outcome:** `.github/workflows/ci.yml` created; runs `:core:compileKotlin`, `:core:test`, and `android:lint` on push/PR to main; uploads lint and test reports as artifacts.
 - **Commit/PR:** this branch
+
+### T-046a — Tileset research: find pixel-art tilesets for 3 themes
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** Researched 12 tilesets (4 per theme) from OpenGameArt and Kenney.nl and compiled them into `art-research/tileset-candidates.md`.
+- **Commit/PR:** branch `antigravity/T-046a-tileset-research` (PR creation failed due to lack of `gh` CLI)
 
 <!--
 Template for moving a task here:
