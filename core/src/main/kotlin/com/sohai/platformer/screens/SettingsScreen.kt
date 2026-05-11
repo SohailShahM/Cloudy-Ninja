@@ -12,8 +12,10 @@ import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox
 import com.badlogic.gdx.scenes.scene2d.ui.Label
+import com.badlogic.gdx.scenes.scene2d.ui.SelectBox
 import com.badlogic.gdx.scenes.scene2d.ui.Slider
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
+import com.badlogic.gdx.utils.Array as GdxArray
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.kotcrab.vis.ui.VisUI
 import com.kotcrab.vis.ui.widget.VisLabel
@@ -28,6 +30,7 @@ import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.persist.SettingsManager
 import com.sohai.platformer.persist.defaultKeybinds
+import com.sohai.platformer.rendering.DisplayScale
 
 class SettingsScreen(
     private val game: Game,
@@ -65,6 +68,52 @@ class SettingsScreen(
 
         val inner = VisTable()
         inner.top().left().pad(10f)
+
+        // ── Display ───────────────────────────────────────────────────────
+        inner.add(Label("Display", sectionStyle)).left().padBottom(8f).row()
+
+        // Resolution presets  (width × height — physical pixels)
+        data class ResPreset(val label: String, val w: Int, val h: Int) {
+            override fun toString() = label
+        }
+        val resPresets = listOf(
+            ResPreset("1280 × 720  (HD)",          1280,  720),
+            ResPreset("1920 × 1080  (Full HD)",     1920, 1080),
+            ResPreset("2560 × 1440  (2K / QHD)",   2560, 1440),
+            ResPreset("3840 × 2160  (4K / UHD)",   3840, 2160)
+        )
+
+        inner.add(VisLabel("Resolution")).left().padRight(16f)
+        val resBox = SelectBox<ResPreset>(skin)
+        val resItems = GdxArray<ResPreset>()
+        resPresets.forEach { resItems.add(it) }
+        resBox.items = resItems
+        // Pre-select the item matching the saved resolution
+        val savedPreset = resPresets.firstOrNull {
+            it.w == settings.displayWidth && it.h == settings.displayHeight
+        } ?: resPresets[0]
+        resBox.selected = savedPreset
+        resBox.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                val p = resBox.selected ?: return
+                settings = SettingsManager.update { it.copy(displayWidth = p.w, displayHeight = p.h) }
+                if (!settings.fullscreen) applyDisplaySettings()
+            }
+        })
+        inner.add(resBox).width(300f).row()
+
+        val chkFullscreen = CheckBox(" Fullscreen", skin)
+        chkFullscreen.isChecked = settings.fullscreen
+        chkFullscreen.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(fullscreen = chkFullscreen.isChecked) }
+                applyDisplaySettings()
+            }
+        })
+        inner.add(chkFullscreen).left().padBottom(4f).row()
+
+        inner.add(VisLabel("Sprites sharpen fully at next launch.")).left()
+            .padBottom(16f).row()
 
         // ── Audio ──────────────────────────────────────────────────────────
         inner.add(Label("Audio", sectionStyle)).left().padBottom(8f).row()
@@ -267,6 +316,28 @@ class SettingsScreen(
         root.add(btnBack).size(200f, 55f).padBottom(30f).row()
 
         stage.addActor(root)
+    }
+
+    /**
+     * Applies the current [settings] display configuration at runtime.
+     * libGDX calls [resize] on all active screens after the mode change so
+     * viewports adapt automatically.  Fonts are regenerated on next use
+     * (shared cache is cleared).  Sprites use the new scale on the NEXT
+     * GameScreen construction.
+     */
+    private fun applyDisplaySettings() {
+        if (settings.fullscreen) {
+            val mode = Gdx.graphics.displayMode
+            Gdx.graphics.setFullscreenMode(mode)
+        } else {
+            val w = settings.displayWidth.coerceAtLeast(1280)
+            val h = settings.displayHeight.coerceAtLeast(720)
+            Gdx.graphics.setWindowedMode(w, h)
+        }
+        // Fonts must be regenerated at the new physical scale
+        DisplayScale.init()
+        FontManager.clearSharedCache()
+        showToast("Display updated — sprites sharpen at next launch")
     }
 
     private fun showToast(message: String) {

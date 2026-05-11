@@ -27,6 +27,13 @@ data class Settings(
     val volAmbient: Float = 0.6f,
     val volUi: Float = 0.8f,
 
+    // Display
+    val fullscreen: Boolean = false,
+    /** Windowed-mode width in physical pixels. Ignored when [fullscreen] is true. */
+    val displayWidth: Int = 1280,
+    /** Windowed-mode height in physical pixels. Ignored when [fullscreen] is true. */
+    val displayHeight: Int = 720,
+
     // Visual / accessibility
     val screenShake: Boolean = true,
     val deathFlash: Boolean = true,
