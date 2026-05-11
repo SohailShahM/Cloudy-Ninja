@@ -20,6 +20,8 @@ abstract class Enemy(
     var hp: Int
 ) {
     var isDead: Boolean = false
+    /** Set by WorldContactListener when this enemy is defeated via a player stomp. */
+    var wasStomped: Boolean = false
 
     /**
      * Per-frame movement AI update. Called from [LevelRunState.update].

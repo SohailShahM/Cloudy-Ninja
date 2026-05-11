@@ -74,6 +74,7 @@ class LevelRenderer(
         val TOKEN               = Color(0.2f,  0.9f,  0.3f,  1f)
         val SPARKLE_TOKEN       = Color(0.3f,  1f,    0.9f,  1f)
         val SPARKLE_SNAPSHOT    = Color(1f,    0.9f,  0.2f,  1f)
+        val SMOKE_STOMP         = Color(0.45f, 0.42f, 0.40f, 0.85f)
         val PROJECTILE          = Color(1f,    0.6f,  0f,    1f)
         val tmpWindCol          = Color(1f,    1f,    1f,    1f)
     }
@@ -362,6 +363,25 @@ class LevelRenderer(
                 life    = 0.5f,
                 color   = SPARKLE_SNAPSHOT,
                 gravity = -2f
+            )
+        }
+    }
+
+    /** Spawn a grey smoke burst at the enemy position when stomped to defeat. */
+    fun spawnStompSmokeBurst(x: Float, y: Float) {
+        val count = 5 + (Math.random() * 4).toInt()  // 5–8 particles
+        for (i in 0 until count) {
+            val ang   = MathUtils.random() * MathUtils.PI2
+            val speed = MathUtils.random(0.8f, 1.8f)
+            particles.spawn(
+                x + MathUtils.random(-0.05f, 0.05f),
+                y + MathUtils.random(-0.03f, 0.03f),
+                vx      = MathUtils.cos(ang) * speed,
+                vy      = MathUtils.sin(ang) * speed + 0.3f,
+                radius  = MathUtils.random(0.06f, 0.11f),
+                life    = MathUtils.random(0.30f, 0.50f),
+                color   = SMOKE_STOMP,
+                gravity = 1.5f
             )
         }
     }
