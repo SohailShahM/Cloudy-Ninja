@@ -27,6 +27,8 @@ abstract class Level {
     abstract val spawnY: Float
     /** Approximate level width in virtual pixels, used to clamp the camera. */
     open val levelWidthPx: Float = 1280f
+    /** Music track base name (loaded from `audio/music/{musicTrack}.wav`). */
+    open val musicTrack: String = "ambient_arid"
 
     abstract fun setup(world: World, obstacleManager: ObstacleManager, movingPlatforms: MutableList<MovingPlatform>)
     abstract fun getCheckpoints(): List<LevelCheckpoint>
