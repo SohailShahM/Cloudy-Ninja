@@ -88,6 +88,12 @@ object SoundManager : Disposable {
             ?: Gdx.app.log("SoundManager", "play() called for unknown sound: $name")
     }
 
+    fun playUi(name: String, pitch: Float = 1f) {
+        if (!enabled) return
+        sounds[name]?.play(uiVolume, pitch, 0f)
+            ?: Gdx.app.log("SoundManager", "playUi() called for unknown sound: $name")
+    }
+
     /** Convenience overload — no extra parameters needed for one-shot SFX. */
     fun play(name: String) = play(name, 1f)
 
