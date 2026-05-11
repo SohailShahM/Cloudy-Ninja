@@ -20,6 +20,8 @@ import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
 
 private val STATS_SLOT_FILES = arrayOf("save_0.json", "save_1.json", "save_2.json")
+private const val TOTAL_ACHIEVEMENTS = 12
+private const val STATS_CARD_CONTENT_WIDTH = 1120f
 
 class StatsScreen(private val game: Game) : Screen {
 
@@ -97,7 +99,7 @@ class StatsScreen(private val game: Game) : Screen {
         card.add(Label("Levels completed: ${state.completedLevels.size}", bodyStyle)).left().padBottom(2f).row()
         val completedLabel = Label(completedDisplay, bodyStyle)
         completedLabel.wrap = true
-        card.add(completedLabel).left().width(1120f).padBottom(6f).row()
+        card.add(completedLabel).left().width(STATS_CARD_CONTENT_WIDTH).padBottom(6f).row()
 
         val ecoCollected = completedOrdered.sumOf { id ->
             LevelManager.getLevel(id)?.getEcoTokenPositions()?.size ?: 0
@@ -115,7 +117,7 @@ class StatsScreen(private val game: Game) : Screen {
         }
         val bestTimesLabel = Label("Best times: $bestTimesDisplay", bodyStyle)
         bestTimesLabel.wrap = true
-        card.add(bestTimesLabel).left().width(1120f).padBottom(6f).row()
+        card.add(bestTimesLabel).left().width(STATS_CARD_CONTENT_WIDTH).padBottom(6f).row()
 
         val unlockedAchievements = readUnlockedAchievements(state)
         if (unlockedAchievements == null) {
@@ -123,10 +125,10 @@ class StatsScreen(private val game: Game) : Screen {
             card.add(Label("—", mutedStyle)).left().row()
         } else {
             val list = if (unlockedAchievements.isEmpty()) "—" else unlockedAchievements.sorted().joinToString(", ")
-            card.add(Label("Achievements unlocked: ${unlockedAchievements.size}/12", bodyStyle)).left().padBottom(2f).row()
+            card.add(Label("Achievements unlocked: ${unlockedAchievements.size}/$TOTAL_ACHIEVEMENTS", bodyStyle)).left().padBottom(2f).row()
             val achievementsLabel = Label(list, bodyStyle)
             achievementsLabel.wrap = true
-            card.add(achievementsLabel).left().width(1120f).row()
+            card.add(achievementsLabel).left().width(STATS_CARD_CONTENT_WIDTH).row()
         }
 
         return card
