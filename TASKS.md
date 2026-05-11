@@ -91,15 +91,19 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 
 ### T-031 — Tile-based terrain rendering  [P2]
 - **Status:** Todo
-- **Tool:** `human-then-claude-code-sonnet`  *(user supplies/finds the 3 tileset PNGs from Kenney/itch.io; then Claude wires `TileRenderer`)*
+- **Tool:** `human-then-claude-code-sonnet`  *(user downloads Kenney `pixel-platformer` zip from https://kenney.nl/assets/pixel-platformer and extracts to `assets/tilesets/kenney_pixel_platformer/`; then Claude wires `TileRenderer`)*
 - **Tier:** M
-- **Autonomous-eligible:** no  *(blocks on art asset selection)*
+- **Autonomous-eligible:** no  *(blocks on user asset download; Kenney's site has an optional donation gate that automation shouldn't bypass)*
 - **Agent:** _unclaimed_
 - **Branch:** _none_
 - **Depends on:** _none_
 - **GDD ref:** §21 ("Tile Rendering Spec")
-- **Files:** `rendering/TileRenderer.kt` (new), `screens/LevelRenderer.kt`, `assets/tilesets/` (3 new PNG atlases)
-- **Goal:** Create three 128×64 px tileset PNGs (`tiles_arid.png`, `tiles_wind.png`, `tiles_eco.png`) — each with at least 2 tiles: solid-interior and grass/rock-top. Add `TileRenderer` that tile-fills each `ObstacleRect` using `SpriteBatch` instead of the current `ShapeRenderer` solid-rect pass. `LevelRenderer` selects the tileset by `ParallaxTheme`. Remove the ShapeRenderer obstacle-rect draw loop after verifying tile coverage is complete.
+- **Art decision (resolved 2026-05-12 via T-046a):**
+  - **Base pack:** Kenney `pixel-platformer` (CC0, ~350 files, side-scroller perspective) — provides terrain, characters, enemies, pickups, hazards
+  - **ECO accent:** [OpenGameArt Pixel Art Forest](https://opengameart.org/content/pixel-art-forest-tilesets) (CC0) for vines, foliage
+  - **ARID/WIND:** use Kenney's sandy/sky tiles within the base pack (no separate tilesets needed)
+- **Files:** `rendering/TileRenderer.kt` (new), `screens/LevelRenderer.kt`, `assets/tilesets/kenney_pixel_platformer/` (user-supplied), `assets/tilesets/eco_accents/` (optional)
+- **Goal:** Wire Kenney's `pixel-platformer` tileset (and ECO accent) into a new `TileRenderer` that tile-fills each `ObstacleRect` using `SpriteBatch` instead of the current `ShapeRenderer` solid-rect pass. `LevelRenderer` selects tiles by `ParallaxTheme` (ARID/WIND uses Kenney base, ECO mixes in forest accents). Remove the ShapeRenderer obstacle-rect draw loop after verifying tile coverage is complete.
 - **Done when:** All three levels show tiled terrain instead of solid grey/red rectangles; no visual gaps; compile clean.
 
 ### T-033 — Hub world: Sky Sanctuary (Level 0-0)  [P2]
@@ -481,9 +485,10 @@ Template for moving a task here:
 
 ### T-046a — Tileset research: find pixel-art tilesets for 3 themes
 - **Status:** Done
-- **Completed:** 2026-05-11
-- **Outcome:** Researched 12 tilesets (4 per theme) from OpenGameArt and Kenney.nl and compiled them into `art-research/tileset-candidates.md`.
-- **Commit/PR:** branch `antigravity/T-046a-tileset-research` (PR creation failed due to lack of `gh` CLI)
+- **Completed:** 2026-05-12
+- **Outcome:** Antigravity (Gemini 3.1 Pro) researched 12 candidate tilesets (4 per theme: ARID/WIND/ECO) from OpenGameArt and Kenney.nl, compiled into `art-research/tileset-candidates.md` with name, source URL, license, file count, theme fit, art quality (1-5), and character-sprite notes. **Decision (post-visual-review):** Kenney `pixel-platformer` (CC0, ~350 files, side-scroller perspective) as base + OpenGameArt Pixel Art Forest (CC0) for ECO accents; ARID/WIND use Kenney's sandy/sky tiles within base pack. One Antigravity recommendation rejected post-review (Whispers of Avalon Desert — top-down RPG perspective; flagged in LEARNINGS.md as research-tool blindspot). **Antigravity time-to-output: ~5 min** for research; ~5 min of human visual review.
+- **Commit/PR:** PR #10 (merged) + decision recorded in `GAME_PLAN.md` and T-031 unblocked.
+- **Tool:** `antigravity`
 
 <!--
 Template for moving a task here:
