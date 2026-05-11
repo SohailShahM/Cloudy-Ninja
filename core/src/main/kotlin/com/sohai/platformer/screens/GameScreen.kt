@@ -387,18 +387,22 @@ class GameScreen(
         // Layer 9: game-over card
         gameOverOverlay?.render()
 
-        // Transitions (end of render so dispose is never called mid-frame)
-        if (runState.isGameOver && runState.gameOverTimer <= 0f && game != null) {
+        // Transitions (end of render so dispose is never called mid-frame).
+        // In smoke-test mode (cloudy.smokeMode=true) we suppress level-change
+        // transitions so the autopilot can't hop into a new GameScreen and
+        // reset its auto-quit timer. The smoke run stays in the level it was
+        // launched into and exits cleanly when debugAutoQuitTimer fires.
+        if (runState.isGameOver && runState.gameOverTimer <= 0f && game != null && !Constants.SMOKE_MODE) {
             game.screen = MainMenuScreen(game)
             dispose()
             return
         }
-        if (runState.levelCompleted) {
+        if (runState.levelCompleted && !Constants.SMOKE_MODE) {
             runState.levelCompletionTimer -= clampedDelta
             if (runState.levelCompletionTimer <= 0f) transitionCtrl.goToNextLevel(runState.score)
         }
         val portalTarget = runState.pendingPortalTarget
-        if (portalTarget != null && game != null) {
+        if (portalTarget != null && game != null && !Constants.SMOKE_MODE) {
             runState.pendingPortalTarget = null
             val targetLevel = LevelManager.getLevel(portalTarget)
             if (targetLevel != null) {

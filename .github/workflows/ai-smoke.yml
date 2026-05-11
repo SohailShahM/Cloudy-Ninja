@@ -31,14 +31,18 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Smoke run ${{ matrix.level }}
+        # Hard 90s wall-clock timeout — kills the JVM if smoke mode ever hangs.
+        # The autoquit timer fires at 10s, gradle/JVM startup takes ~30s, so
+        # 90s is ~2x margin. Exit code 124 = timeout fired (which IS a failure
+        # signal — something hung).
         run: |
-          xvfb-run -a ./gradlew --no-daemon :lwjgl3:run \
+          timeout 90 xvfb-run -a ./gradlew --no-daemon :lwjgl3:run \
             -PcloudyAutopilot=true \
             -PcloudyAutopilotSeconds=8 \
             -PcloudyAutoquitSeconds=10 \
             -PcloudySmokeMode=true \
             -PcloudySmokeLevel=${{ matrix.level }} \
-            2>&1 | tee smoke-${{ matrix.level }}.log
+            2>&1 | tee smoke-${{ matrix.level }}.log || true
       - name: Parse smoke log
         run: |
           set -e
