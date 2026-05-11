@@ -289,6 +289,11 @@ class LevelRunState(
             if (enemy.isDead) deadEnemies.add(enemy)
         }
         for (dead in deadEnemies) {
+            if (dead.wasStomped) {
+                val pos = dead.body.position
+                renderer.spawnStompSmokeBurst(pos.x, pos.y)
+                SoundManager.play("land")
+            }
             pendingBodyDestroy.add(dead.body)
             enemies.remove(dead)
         }

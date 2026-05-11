@@ -17,17 +17,17 @@ class WorldContactListener : ContactListener {
         val fixA = contact.fixtureA
         val fixB = contact.fixtureB
 
-        handleContact(fixA, fixB, true)
+        handleContact(fixA, fixB, true, contact)
     }
 
     override fun endContact(contact: Contact) {
         val fixA = contact.fixtureA
         val fixB = contact.fixtureB
 
-        handleContact(fixA, fixB, false)
+        handleContact(fixA, fixB, false, contact)
     }
 
-    private fun handleContact(fixA: Fixture, fixB: Fixture, begin: Boolean) {
+    private fun handleContact(fixA: Fixture, fixB: Fixture, begin: Boolean, contact: Contact) {
         val udA = fixA.userData
         val udB = fixB.userData
 
@@ -65,12 +65,32 @@ class WorldContactListener : ContactListener {
             }
         }
 
-        // Player touching enemy -> kill player (same as hazard)
+        // Player touching enemy -> stomp (from above) or kill player (lateral)
         if (begin && (udA == "enemy" || udB == "enemy")) {
+            val enemyFixture  = if (udA == "enemy") fixA else fixB
             val playerFixture = if (udA == "enemy") fixB else fixA
             val player = playerFixture.body.userData as? PlayerController
-            if (player != null && !player.isFlashing) {
-                player.isDead = true
+            val enemy  = enemyFixture.body.userData as? Enemy
+
+            if (player != null && enemy != null && !enemy.isDead) {
+                val playerVy = player.body.linearVelocity.y
+                // Check contact normal to determine if player is above the enemy.
+                // worldManifold.normal points from A to B; we need "up" relative
+                // to the enemy, so normalise direction based on fixture order.
+                val normal = contact.worldManifold.normal
+                val normalYTowardPlayer = if (udA == "enemy") normal.y else -normal.y
+
+                val isStomp = playerVy < -3f && normalYTowardPlayer > 0.5f
+
+                if (isStomp) {
+                    // Stomp: defeat enemy instantly + bounce the player
+                    enemy.takeDamage(enemy.hp)
+                    enemy.wasStomped = true
+                    player.body.setLinearVelocity(player.body.linearVelocity.x, 5f)
+                } else if (!player.isFlashing) {
+                    // Lateral contact: kill the player
+                    player.isDead = true
+                }
             }
         }
 
