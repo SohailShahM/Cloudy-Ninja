@@ -39,17 +39,19 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}-
       - name: Smoke run ${{ matrix.level }}
-        # Hard 240s wall-clock timeout — kills the JVM if smoke mode ever hangs.
-        # First-run budget breakdown on a cold Ubuntu runner with xvfb:
-        #   - gradle init + dep download: ~60s (cached on subsequent runs)
-        #   - JVM cold start + asset generation: ~30s
-        #   - autoquit timer: 10s
+        # Hard 360s wall-clock timeout — kills the JVM if smoke mode ever hangs.
+        # Cold-runner budget breakdown (observed on the actual SohailShahM CI):
+        #   - gradle-9.5.0-bin.zip download (no cache yet): ~210s
+        #   - compileKotlin + compileJava for core + lwjgl3: ~30s
+        #   - JVM cold start + xvfb + asset init: ~15s
+        #   - game runs to autoquit: 10s
         #   - cleanup: ~5s
-        # 240s gives ~135s margin over the cold-start budget. With cache hits
-        # on subsequent runs, the same job will finish in ~45s. Exit code 124
-        # from timeout = failure signal (something hung).
+        # First run total: ~270s. With actions/cache, subsequent runs hit the
+        # gradle cache and finish in ~60s. 360s gives a 90s margin over the
+        # observed cold-start cost. Exit code 124 from timeout = failure
+        # signal (something hung past the budget).
         run: |
-          timeout 240 xvfb-run -a ./gradlew --no-daemon :lwjgl3:run \
+          timeout 360 xvfb-run -a ./gradlew --no-daemon :lwjgl3:run \
             -PcloudyAutopilot=true \
             -PcloudyAutopilotSeconds=8 \
             -PcloudyAutoquitSeconds=10 \
