@@ -185,6 +185,15 @@ class MainMenuScreen(private val game: Game) : Screen {
         })
         nav.add(atlasButton)
 
+        val statsButton = VisTextButton("Stats")
+        statsButton.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                game.screen = StatsScreen(game)
+                dispose()
+            }
+        })
+        nav.add(statsButton)
+
         val settingsButton = VisTextButton("Settings")
         settingsButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
