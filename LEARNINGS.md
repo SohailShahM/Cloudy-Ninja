@@ -97,3 +97,19 @@ if (Constants.SMOKE_MODE) {
 **Cost:** Two failed CI runs (one at 90s timeout, one at 240s timeout) before identifying the overlay as the blocker. About ~25k tokens of debugging.
 
 **Lesson:** When building a smoke-test harness that relies on a game-internal timer to exit cleanly, audit EVERY code path that can pause/gate the game's update loop. Overlays, pause menus, hitstop, game-over modal — all of them break the exit timer. Either bypass them in test mode, or move the test-exit timer somewhere that ticks unconditionally (e.g. directly inside `render(delta)` not gated by any state).
+
+## 2026-05-11 — Antigravity skips PR-open + TASKS.md updates (T-046a)
+
+**Symptom:** Antigravity (Gemini 3.1 Pro backend) was asked in the launch prompt to: (1) write `art-research/tileset-candidates.md`, (2) move T-046a from Todo→Done in TASKS.md, (3) open a PR titled "T-046a: tileset research". It did (1) flawlessly in ~5 minutes — high-quality 12-candidate comparison table — but skipped (2) and (3). The branch `antigravity/T-046a-tileset-research` was pushed; the PR had to be opened manually by another agent.
+
+**Cause (theory):** Antigravity's agent loop appears to consider the task "done" once the requested file content is committed and pushed. Workflow housekeeping steps phrased as a numbered list inside the prompt aren't treated as deliverables of equal weight — only as a checklist that the agent self-marks complete without verifying. Could also be a permissions issue (Antigravity bot might not have PR-open scope on the repo), but the branch push worked so write scope clearly exists.
+
+**Workaround:** When prompting Antigravity, structure follow-through actions as SEPARATE explicit deliverables, not list items. E.g.:
+> Deliverable 1: write the file.
+> Deliverable 2: separately, you must also open a PR — confirm with the user before exiting.
+
+Or simpler — accept that Antigravity is great at the *artifact* and let a different agent (or human / planner-Claude) handle the workflow wrap-up. Update `prompts/T-XXX-antigravity.md` templates to explicitly note "PR-open is the user's job after Antigravity finishes."
+
+**Cost:** ~5 min of manual cleanup. Not painful but worth automating away for future Antigravity tickets. Time-to-output (5 min for full research) is genuinely impressive — this tool is the right fit for content-generation tickets.
+
+**Lesson:** Different agent platforms have different "definition of done." Copilot agent goes all the way through to opening a PR. Claude Code agent commits + pushes + opens PR. Antigravity stops at commit. Update tool runbooks in `START_HERE.md` to flag this so future routing decisions reflect actual end-to-end behavior.
