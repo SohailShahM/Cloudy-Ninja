@@ -37,9 +37,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 ═══════════════════════════════════════════════════════════════ -->
 
 ### T-029 — Enemy framework + Smog Sprite patroller  [P1]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `Enemy.kt` abstract base + `SmogSprite.kt` patroller (2-hit Seed Slam defeat, patrol AI). 3 Smog Sprites placed in Level 1 via `EnemyDef`. LevelRunState updates+destroys dead enemies. LevelRenderer draws dark-grey ovals.
+- **Commit/PR:** 303f07b
 - **Depends on:** _none_
 - **GDD ref:** §17 ("Enemy Design Spec")
 - **Files:** `entities/Enemy.kt` (new), `entities/SmogSprite.kt` (new), `levels/TmxLevelDefinition.kt`, `levels/LevelRegistry.kt`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`
@@ -47,9 +48,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** Smog Sprites patrol Level 1, kill the player on contact, die to 2 Seed Slam hits, compile clean, no crash.
 
 ### T-030 — Background music system + 3 ambient tracks  [P1]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `MusicManager` with 1.5 s crossfade; `ProceduralMusicGenerator` writes 3 ambient WAVs. `musicTrack` field on TmxLevelDefinition. GameScreen wires play+update.
+- **Commit/PR:** 1008c5e
 - **Depends on:** _none_
 - **GDD ref:** §18 ("Music System Spec")
 - **Files:** `audio/MusicManager.kt` (new), `audio/ProceduralMusicGenerator.kt` (new), `screens/GameScreen.kt`, `levels/TmxLevelDefinition.kt`
@@ -57,9 +59,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** Music plays and crossfades between levels, volume knob works, compile clean.
 
 ### T-040 — Projectile / lightning hazard entity  [P1]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `Projectile.kt` kinematic body (HAZARD category), auto-expires on lifetime or wall-hit. LevelRunState holds `projectiles` list and drains expired. LevelRenderer draws orange circles.
+- **Commit/PR:** ff0f000
 - **Depends on:** _none_
 - **GDD ref:** §17.3 ("Projectile entity")
 - **Files:** `entities/Projectile.kt` (new), `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`
@@ -67,9 +70,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** Projectiles move, kill the player on contact, auto-expire, compile clean.
 
 ### T-032 — Stomp-defeat mechanic  [P1]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** WorldContactListener detects player landing on enemy from above (vy < -3 m/s). Enemy marked stomped, player bounced +5 m/s upward. Smoke burst + land SFX on defeat.
+- **Commit/PR:** d688fd5
 - **Depends on:** T-029
 - **GDD ref:** §17.2 ("Stomp mechanic")
 - **Files:** `physics/WorldContactListener.kt`, `entities/Enemy.kt`, `screens/LevelRunState.kt`
@@ -87,9 +91,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** All three levels show tiled terrain instead of solid grey/red rectangles; no visual gaps; compile clean.
 
 ### T-033 — Hub world: Sky Sanctuary (Level 0-0)  [P2]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `Level0_0.kt` hub room with 4 portal doors. Portal contact triggers world navigation. Locked worlds show greyed portal. Main menu "Play" → Hub. LevelRunState handles portal activation callback.
+- **Commit/PR:** 20bdb0c
 - **Depends on:** _none_
 - **GDD ref:** §19 ("Hub World Spec")
 - **Files:** `levels/Level0_0.kt` (new), `levels/LevelManager.kt`, `screens/MainMenuScreen.kt`, `screens/LevelRunState.kt`
@@ -97,9 +102,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** Hub loads, player can walk through portals into each world's first level, locked worlds show visually distinct portals. Compile clean.
 
 ### T-034 — Boss encounter: Storm Sentinel  [P2]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** In Progress
+- **Agent:** claude
+- **Branch:** claude/T-034-storm-sentinel
+- **Started:** 2026-05-11
 - **Depends on:** T-029, T-040
 - **GDD ref:** §20 ("Boss Design Spec")
 - **Files:** `entities/StormSentinel.kt` (new), `assets/maps/level3.tmx`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `levels/TmxLevelDefinition.kt`
@@ -117,9 +123,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** Three sliders visible in Settings, all three volumes respond in real-time, persist across sessions. Compile clean.
 
 ### T-036 — Key rebinding UI in Settings  [P2]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `keybinds: Map<String,Int>` added to Settings. SettingsScreen "Controls" panel with 5 rebindable actions. InputManager reads from keybinds. Persists across sessions.
+- **Commit/PR:** 4c9e74e
 - **Depends on:** _none_
 - **GDD ref:** GDD_ADDENDUM §16 gap analysis
 - **Files:** `persist/Settings.kt`, `screens/SettingsScreen.kt`, `input/InputManager.kt`
