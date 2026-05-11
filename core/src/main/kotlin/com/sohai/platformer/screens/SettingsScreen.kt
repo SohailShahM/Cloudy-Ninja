@@ -148,6 +148,7 @@ class SettingsScreen(
         sliderUi.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
                 settings = SettingsManager.update { it.copy(volUi = sliderUi.value) }
+                SoundManager.setUiVolume(sliderUi.value)
             }
         })
         inner.add(sliderUi).width(260f).padBottom(16f).row()
