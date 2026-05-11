@@ -23,8 +23,11 @@ import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.rendering.CharacterAnimator
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.rendering.ParallaxBackground
+import com.sohai.platformer.rendering.ParallaxTheme
 import com.sohai.platformer.rendering.ParticleSystem
 import com.sohai.platformer.rendering.SpriteFactory
+import com.sohai.platformer.rendering.TileRenderer
+import com.sohai.platformer.rendering.TilesetRegistry
 import com.sohai.platformer.world.ObstacleKind
 import com.sohai.platformer.world.ObstacleManager
 
@@ -51,7 +54,9 @@ class LevelRenderer(
     private val eboAnimator: CharacterAnimator,
     private val layaAnimator: CharacterAnimator,
     private val footstepColor: Color,
-    private val sentinel: StormSentinel? = null
+    private val sentinel: StormSentinel? = null,
+    private val tileRenderer: TileRenderer? = null,
+    private val parallaxTheme: ParallaxTheme = ParallaxTheme.ARID
 ) {
 
     // ── Hot-path colour constants (hoisted to avoid per-frame allocation) ─────
@@ -123,13 +128,43 @@ class LevelRenderer(
             shapeRenderer.circle(pos.x / Constants.PPM, pos.y / Constants.PPM, trail.getRadius())
         }
 
-        // ── Obstacles ─────────────────────────────────────────────────────────
-        for (rect in obstacleManager.rects()) {
+        // ── Tile-rendered obstacles (batched before ShapeRenderer obstacles) ──
+        // Render tiled obstacles in a single SpriteBatch pass.  We end the
+        // ShapeRenderer, draw tiles, then resume.  This avoids per-tile begin/end
+        // churn while keeping z-order consistent (tiles draw over the parallax
+        // background, under abilities and particles).
+        val rects = obstacleManager.rects()
+        if (tileRenderer != null) {
+            // Collect rects that will be tile-rendered so the SR loop can skip them.
+            shapeRenderer.end()
+            Gdx.gl.glEnable(GL20.GL_BLEND)
+            Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+            for (rect in rects) {
+                tileRenderer.renderObstacle(rect, parallaxTheme)
+                // renderObstacle returns true/false but we still fall through to the
+                // ShapeRenderer loop below for unmapped kinds (CHECKPOINT, EXIT, etc.)
+            }
+            Gdx.gl.glDisable(GL20.GL_BLEND)
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        }
+
+        // ── Obstacles (ShapeRenderer fallback / CHECKPOINT / EXIT / hazard_cleaned)
+        // When tileRenderer is active it has already drawn GROUND, WALL, and
+        // uncleaned HAZARD tiles — skip those in the ShapeRenderer pass.
+        for (rect in rects) {
             val ud = rect.fixture.userData as? String ?: ""
             val cx = rect.body.position.x
             val cy = rect.body.position.y
             val w  = rect.halfWidthPx  / Constants.PPM
             val he = rect.halfHeightPx / Constants.PPM
+
+            // Skip tiled kinds (already drawn above) except cleaned hazards which
+            // have a special green ShapeRenderer overlay that tiles don't cover.
+            if (tileRenderer != null) {
+                val hasTileMapping = TilesetRegistry.current.tileMap.containsKey(rect.kind to parallaxTheme)
+                val isTiledHazard  = rect.kind == ObstacleKind.HAZARD && ud != "hazard_cleaned"
+                if (hasTileMapping && (rect.kind != ObstacleKind.HAZARD || isTiledHazard)) continue
+            }
 
             when {
                 rect.kind == ObstacleKind.HAZARD && ud == "hazard_cleaned" -> {

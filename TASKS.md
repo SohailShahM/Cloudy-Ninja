@@ -90,12 +90,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Jumping on a Smog Sprite defeats it and bounces player; lateral contact still kills player. Compile clean.
 
 ### T-031 — Tile-based terrain rendering  [P2]
-- **Status:** Todo  *(unblocked — Kenney pack now in `assets/tilesets/kenney_pixel_platformer/`)*
+- **Status:** In Progress
 - **Tool:** `claude-code-sonnet`
 - **Tier:** M
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sonnet
+- **Branch:** claude/T-031-tile-renderer
+- **Started:** 2026-05-12
 - **Depends on:** _none_
 - **GDD ref:** §21 ("Tile Rendering Spec")
 - **Art decision (resolved 2026-05-12 via T-046a):**
@@ -323,7 +324,7 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
-_(none — all claimed tasks completed)_
+### T-031 (moved from Todo — see Todo section above)
 
 
 <!--
