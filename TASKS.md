@@ -205,6 +205,47 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Expand `CloudAtlasLibrary.ALL` from 5 to 12 entries, each with a real educational fact about the water cycle or climate systems. Distribute new snapshots across levels (2–3 per level, including the boss-room `storm_system` from T-034). Update LevelRegistry snapshot lists. Entries should cover: water_cycle, silver_iodide, temperature_inversion, albedo_effect, transpiration, groundwater_recharge, carbon_sequestration, storm_system, biodiversity_index, soil_microbiome, ocean_acidification, cloud_seeding.
 - **Done when:** 12 entries in registry, all reachable in gameplay, atlas screen displays all 12 cards with correct text. Compile clean.
 
+### T-046b — Character sprite-sheet research  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** S  *(research only — no code)*
+- **Autonomous-eligible:** yes-with-review  *(visual-perspective verification required per LEARNINGS.md T-046a; review preview images before acting)*
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-046b-character-sprites`  *(create on claim — only adds files in `art-research/`)*
+- **Depends on:** T-046a
+- **GDD ref:** _to be written in GDD_ADDENDUM_ (T-046 follow-up)
+- **Files:** `art-research/character-sprite-candidates.md` (new)
+- **Goal:** Find CC0 / CC-BY-licensed 32×32 character sprite sheets that visually match Kenney `pixel-platformer` (the chosen base from T-046a). Cloudy Ninja has 3 distinct characters: **Ebo** (earth / seed theme — brown/green palette), **Laya** (wind / storm theme — blue/grey palette), **Zephyr** (sky / air theme — purple/white palette). Each character needs idle, run (4 frames), jump, fall, wall-slide animations. Search Kenney.nl + OpenGameArt.org. For each candidate capture: name, source URL, license, frame count per state, palette match, **camera perspective (must be side-scrolling)**, art style 1-5 match vs Kenney pixel-platformer.
+- **Done when:** `art-research/character-sprite-candidates.md` exists with ≥2 candidates per character (6+ total). Each candidate has perspective verified as side-scrolling. PR opens against `main`. AI smoke test passes (trivial — no code).
+- **Constraints:** Same as T-046a — Antigravity must NOT touch any file outside `art-research/`. Must NOT download binary assets. Markdown research only. Verify side-scrolling perspective for each candidate (this is the LEARNINGS.md T-046a lesson).
+
+### T-047 — Audio asset research: CC0 music + SFX supplements  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-047-audio-research`
+- **Depends on:** _none_
+- **GDD ref:** GDD_ADDENDUM §5 ("Audio Architecture")
+- **Files:** `art-research/audio-candidates.md` (new)
+- **Goal:** Find CC0 / CC-BY ambient music tracks + supplementary SFX suitable for a 2D pixel-art platformer. Currently the game uses 3 procedurally-generated ambient tracks (`ambient_arid`, `ambient_wind`, `ambient_eco`) — these are functional but not shipping quality. Find replacement candidates from **OpenGameArt.org**, **Free Music Archive**, and **Freesound.org**. For each candidate capture: name, source URL, license, length (s), file format, theme fit (arid/wind/eco/menu/boss/ambient), mood tags (calm/tense/triumphant), looping suitability.
+- **Done when:** `art-research/audio-candidates.md` exists with ≥3 candidates per theme (arid/wind/eco/menu/boss = 15+ total) plus ≥10 supplementary SFX candidates (footsteps, UI clicks, ambient loops). All with license + URL verified. PR opens against `main`.
+- **Constraints:** Markdown research only — do NOT download audio files. Antigravity must NOT touch any file outside `art-research/`.
+
+### T-048 — Marketing research: itch.io listing style guide  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-048-marketing-research`
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (monetization + platforms decision)
+- **Files:** `marketing/itch-listing-style-guide.md` (new)
+- **Goal:** Research 8–12 highly-rated indie 2D pixel-art platformers on itch.io (Celeste-likes, Hollow Knight-likes, eco-themed platformers). For each: capture title, listing URL, ratings, screenshot composition (4-up grid? hero shot?), headline-copy pattern, trailer length + structure, key conversion elements (price anchoring, demo offering, dev-update cadence). Synthesize into a style guide for Cloudy Ninja's eventual itch.io listing — what should our headline say, screenshot composition, trailer length, what differentiates the page.
+- **Done when:** `marketing/itch-listing-style-guide.md` exists with: (a) comparison table of 8–12 reference listings, (b) recommended headline-copy patterns, (c) screenshot composition rules with examples, (d) trailer structure recommendation (length, beats, music), (e) 3 recommended differentiators specific to Cloudy Ninja's pitch (climate/eco angle, multi-character switching, accessibility-first design). PR opens against `main`.
+- **Constraints:** Antigravity must NOT touch any file outside `marketing/`. Markdown research only. Do NOT scrape itch.io aggressively — limit to ~12 listings.
 
 ---
 
