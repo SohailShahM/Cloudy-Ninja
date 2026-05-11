@@ -17,6 +17,7 @@ import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
+import com.sohai.platformer.entities.StormSentinel
 import com.sohai.platformer.levels.Level0_0
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.rendering.CharacterAnimator
@@ -49,7 +50,8 @@ class LevelRenderer(
     private val player: PlayerController,
     private val eboAnimator: CharacterAnimator,
     private val layaAnimator: CharacterAnimator,
-    private val footstepColor: Color
+    private val footstepColor: Color,
+    private val sentinel: StormSentinel? = null
 ) {
 
     // ── Hot-path colour constants (hoisted to avoid per-frame allocation) ─────
@@ -84,6 +86,10 @@ class LevelRenderer(
         val PORTAL_UNLOCKED_EDGE = Color(0.4f, 0.65f, 1f,    1f)
         val PORTAL_LOCKED_EDGE  = Color(0.50f, 0.50f, 0.52f, 0.8f)
         val tmpWindCol          = Color(1f,    1f,    1f,    1f)
+        val GROUND_SHADOW       = Color(0.28f, 0.29f, 0.32f, 1f)
+        val GRASS_TUFT          = Color(0.22f, 0.72f, 0.16f, 1f)
+        val HAZARD_SPIKE        = Color(0.95f, 0.10f, 0.10f, 1f)
+        val MP_SHADOW           = Color(0.30f, 0.18f, 0.06f, 1f)
     }
 
     /**
@@ -141,6 +147,13 @@ class LevelRenderer(
                         shapeRenderer.rect(sx, cy - he, 0.05f, he * 2f)
                         sx += 0.2f
                     }
+                    // Triangular spike shapes along the top edge
+                    shapeRenderer.color = HAZARD_SPIKE
+                    var spx = cx - w + 0.04f
+                    while (spx < cx + w - 0.04f) {
+                        shapeRenderer.triangle(spx - 0.04f, cy + he, spx + 0.04f, cy + he, spx, cy + he + 0.12f)
+                        spx += 0.13f
+                    }
                 }
                 rect.kind == ObstacleKind.WALL -> {
                     shapeRenderer.color = WALL_BASE
@@ -174,6 +187,17 @@ class LevelRenderer(
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
                     shapeRenderer.color = GROUND_TOP
                     shapeRenderer.rect(cx - w, cy + he - 0.05f, w * 2f, 0.05f)
+                    // Grass tufts along the top surface — height varies with position
+                    shapeRenderer.color = GRASS_TUFT
+                    var gx = cx - w + 0.04f
+                    while (gx < cx + w - 0.04f) {
+                        val bh = 0.062f + MathUtils.sin(gx * 19.1f + cx * 4.3f) * 0.024f
+                        shapeRenderer.triangle(gx - 0.022f, cy + he, gx + 0.022f, cy + he, gx, cy + he + bh)
+                        gx += 0.10f
+                    }
+                    // Bottom shadow strip for a subtle 3-D depth impression
+                    shapeRenderer.color = GROUND_SHADOW
+                    shapeRenderer.rect(cx - w, cy - he, w * 2f, 0.04f)
                 }
             }
         }
@@ -187,6 +211,9 @@ class LevelRenderer(
             shapeRenderer.rect(pos.x - hw, pos.y - hh, hw * 2f, hh * 2f)
             shapeRenderer.color = MP_TOP
             shapeRenderer.rect(pos.x - hw, pos.y + hh - 0.04f, hw * 2f, 0.04f)
+            // Underside shadow for depth
+            shapeRenderer.color = MP_SHADOW
+            shapeRenderer.rect(pos.x - hw, pos.y - hh, hw * 2f, 0.025f)
         }
 
         // Checkpoints
@@ -237,6 +264,9 @@ class LevelRenderer(
         for (enemy in enemies) {
             enemy.draw(shapeRenderer)
         }
+
+        // Boss sentinel (drawn after enemies so telegraph rings appear on top)
+        sentinel?.draw(shapeRenderer)
 
         // Particles (alpha blend enabled; works inside the Filled block via GL blend state)
         Gdx.gl.glEnable(GL20.GL_BLEND)

@@ -12,11 +12,12 @@ import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox
 import com.badlogic.gdx.scenes.scene2d.ui.Label
+import com.badlogic.gdx.scenes.scene2d.ui.SelectBox
 import com.badlogic.gdx.scenes.scene2d.ui.Slider
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
+import com.badlogic.gdx.utils.Array as GdxArray
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.kotcrab.vis.ui.VisUI
-import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisScrollPane
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
@@ -28,6 +29,7 @@ import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.persist.SettingsManager
 import com.sohai.platformer.persist.defaultKeybinds
+import com.sohai.platformer.rendering.DisplayScale
 
 class SettingsScreen(
     private val game: Game,
@@ -40,9 +42,10 @@ class SettingsScreen(
 
     private val titleFont   = FontManager.getShared(32)
     private val sectionFont = FontManager.getShared(20)
+    private val bodyFont    = FontManager.getShared(16)
 
     /** Toast feedback label shown after save/load/delete actions */
-    private val toastLabel = VisLabel("")
+    private val toastLabel = Label("", Label.LabelStyle(bodyFont, Color(0.3f, 1f, 0.55f, 1f)))
     private var toastTimer = 0f
 
     companion object {
@@ -56,6 +59,7 @@ class SettingsScreen(
         val skin = VisUI.getSkin()
         val titleStyle   = Label.LabelStyle(titleFont,   Color(0.3f, 1f, 0.55f, 1f))
         val sectionStyle = Label.LabelStyle(sectionFont, Color(0.7f, 0.85f, 0.75f, 1f))
+        val bodyStyle    = Label.LabelStyle(bodyFont,    Color(0.82f, 0.88f, 0.82f, 1f))
 
         val root = VisTable()
         root.setFillParent(true)
@@ -66,10 +70,56 @@ class SettingsScreen(
         val inner = VisTable()
         inner.top().left().pad(10f)
 
+        // ── Display ───────────────────────────────────────────────────────
+        inner.add(Label("Display", sectionStyle)).left().padBottom(8f).row()
+
+        // Resolution presets  (width × height — physical pixels)
+        data class ResPreset(val label: String, val w: Int, val h: Int) {
+            override fun toString() = label
+        }
+        val resPresets = listOf(
+            ResPreset("1280 × 720  (HD)",          1280,  720),
+            ResPreset("1920 × 1080  (Full HD)",     1920, 1080),
+            ResPreset("2560 × 1440  (2K / QHD)",   2560, 1440),
+            ResPreset("3840 × 2160  (4K / UHD)",   3840, 2160)
+        )
+
+        inner.add(Label("Resolution", bodyStyle)).left().padRight(16f)
+        val resBox = SelectBox<ResPreset>(skin)
+        val resItems = GdxArray<ResPreset>()
+        resPresets.forEach { resItems.add(it) }
+        resBox.items = resItems
+        // Pre-select the item matching the saved resolution
+        val savedPreset = resPresets.firstOrNull {
+            it.w == settings.displayWidth && it.h == settings.displayHeight
+        } ?: resPresets[0]
+        resBox.selected = savedPreset
+        resBox.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                val p = resBox.selected ?: return
+                settings = SettingsManager.update { it.copy(displayWidth = p.w, displayHeight = p.h) }
+                if (!settings.fullscreen) applyDisplaySettings()
+            }
+        })
+        inner.add(resBox).width(300f).row()
+
+        val chkFullscreen = CheckBox(" Fullscreen", skin)
+        chkFullscreen.isChecked = settings.fullscreen
+        chkFullscreen.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(fullscreen = chkFullscreen.isChecked) }
+                applyDisplaySettings()
+            }
+        })
+        inner.add(chkFullscreen).left().padBottom(4f).row()
+
+        inner.add(Label("Sprites sharpen fully at next launch.", bodyStyle)).left()
+            .padBottom(16f).row()
+
         // ── Audio ──────────────────────────────────────────────────────────
         inner.add(Label("Audio", sectionStyle)).left().padBottom(8f).row()
 
-        inner.add(VisLabel("Music Volume")).left().padRight(16f)
+        inner.add(Label("Music Volume", bodyStyle)).left().padRight(16f)
         val sliderMusic = Slider(0f, 1f, 0.05f, false, skin)
         sliderMusic.value = settings.volMusic
         sliderMusic.addListener(object : ChangeListener() {
@@ -79,7 +129,7 @@ class SettingsScreen(
         })
         inner.add(sliderMusic).width(260f).row()
 
-        inner.add(VisLabel("SFX Volume")).left().padRight(16f)
+        inner.add(Label("SFX Volume", bodyStyle)).left().padRight(16f)
         val sliderSfx = Slider(0f, 1f, 0.05f, false, skin)
         sliderSfx.value = settings.volSfx
         sliderSfx.addListener(object : ChangeListener() {
@@ -122,7 +172,7 @@ class SettingsScreen(
 
         // ── Assist Mode ───────────────────────────────────────────────────
         inner.add(Label("Assist Mode", sectionStyle)).left().padBottom(8f).row()
-        inner.add(VisLabel("Accessibility options — relax the challenge as needed.")).left().padBottom(6f).row()
+        inner.add(Label("Accessibility options — relax the challenge as needed.", bodyStyle)).left().padBottom(6f).row()
 
         val chkInfiniteSpirits = CheckBox(" Infinite Spirits (no game over)", skin)
         chkInfiniteSpirits.isChecked = settings.assistInfiniteSpirits
@@ -142,7 +192,7 @@ class SettingsScreen(
         })
         inner.add(chkInvincible).left().padBottom(16f).row()
 
-        inner.add(VisLabel("Slow Speed")).left().padRight(16f)
+        inner.add(Label("Slow Speed", bodyStyle)).left().padRight(16f)
         val sliderSpeed = Slider(0.25f, 1f, 0.05f, false, skin)
         sliderSpeed.value = settings.assistSlowSpeed
         sliderSpeed.addListener(object : ChangeListener() {
@@ -169,7 +219,7 @@ class SettingsScreen(
 
         for (action in actionNames) {
             val row = VisTable()
-            row.add(VisLabel(displayNames[action] ?: action)).left().width(180f).padRight(16f)
+            row.add(Label(displayNames[action] ?: action, bodyStyle)).left().width(180f).padRight(16f)
 
             val currentKey = settings.keybinds[action] ?: defaultKeybinds()[action] ?: -1
             val btn = VisTextButton(Input.Keys.toString(currentKey))
@@ -267,6 +317,28 @@ class SettingsScreen(
         root.add(btnBack).size(200f, 55f).padBottom(30f).row()
 
         stage.addActor(root)
+    }
+
+    /**
+     * Applies the current [settings] display configuration at runtime.
+     * libGDX calls [resize] on all active screens after the mode change so
+     * viewports adapt automatically.  Fonts are regenerated on next use
+     * (shared cache is cleared).  Sprites use the new scale on the NEXT
+     * GameScreen construction.
+     */
+    private fun applyDisplaySettings() {
+        if (settings.fullscreen) {
+            val mode = Gdx.graphics.displayMode
+            Gdx.graphics.setFullscreenMode(mode)
+        } else {
+            val w = settings.displayWidth.coerceAtLeast(1280)
+            val h = settings.displayHeight.coerceAtLeast(720)
+            Gdx.graphics.setWindowedMode(w, h)
+        }
+        // Fonts must be regenerated at the new physical scale
+        DisplayScale.init()
+        FontManager.clearSharedCache()
+        showToast("Display updated — sprites sharpen at next launch")
     }
 
     private fun showToast(message: String) {

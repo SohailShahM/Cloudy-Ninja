@@ -1,28 +1,37 @@
 # TASKS.md — Multi-Agent Task Board
 
-Coordination file for parallel agents working on Cloudy Ninja.
+Coordination file for parallel AI agents working on Cloudy Ninja.
 
-**Required reading before claiming any task:**
-1. [AGENTS.md](AGENTS.md) — architecture, conventions, module layout
-2. [GDD_ADDENDUM.md](GDD_ADDENDUM.md) — technical spec, calibration numbers, sprint plan, P0 bug history
-3. [GAME_PLAN.md](GAME_PLAN.md) — high-level roadmap, content themes, educational goals
+**REQUIRED READING — every agent, every session:**
+1. **[START_HERE.md](START_HERE.md)** — entry point: identity, capability gates, claim protocol, routing
+2. [AGENTS.md](AGENTS.md) — architecture, conventions, module layout
+3. [LEARNINGS.md](LEARNINGS.md) — gotchas from previous sessions (read before claiming)
+4. [GDD_ADDENDUM.md](GDD_ADDENDUM.md) — technical reference (read sections relevant to your ticket)
+5. [GAME_PLAN.md](GAME_PLAN.md) — vision and roadmap
 
-Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when applicable — read that section before starting.
+## Strict routing model
+
+Every ticket has a `Tool:` field tagged by the planner (Claude Code Opus). **AIs do NOT self-route.** If your identity (from `START_HERE.md` §1) does not match the ticket's `Tool:` field, **do not claim that ticket** — even if it's unclaimed and looks easy. Wrong-tool execution is the primary failure mode of multi-AI systems.
+
+If you need a task and nothing is tagged for your identity, append to `QUESTIONS.md` and stop. The planner will route something to you.
 
 ## Workflow
 
-1. **Pick** a task from `## Todo` whose `Depends on` tasks are all `Done`.
-2. **Claim** it: move the task block to `## In Progress`, fill in `Agent` and `Branch`, then commit + push to `main`:
+1. **Pick** a task from `## Todo` whose `Tool:` matches your identity AND whose `Depends on` tasks are all `Done`.
+2. **Claim** it: move the task block to `## In Progress`, fill in `Agent`, `Branch`, `Started`, then commit + push to `main`:
    ```
    git add TASKS.md && git commit -m "claim T-XXX" && git push
    ```
-3. **Work** on your branch in a worktree: `git worktree add ../cn-T-XXX -b claude/T-XXX-short-desc`
-4. **Finish**: merge branch to `main`, then move the task to `## Done` with a one-line outcome and PR/commit hash.
-5. **Conflicts**: if `git push` rejects your claim because someone else claimed it first, pull, pick a different task.
+3. **Work** on your branch in a worktree: `git worktree add ../cn-T-XXX -b <identity-prefix>/T-XXX-short-desc`
+   - Branch prefix per identity: `claude/...`, `copilot/...`, `antigravity/...`, etc.
+4. **Finish**: open a PR; CI smoke test (T-A1) must pass; merge to `main`; move the task to `## Done` with a one-line outcome and PR/commit hash.
+5. **If you hit a non-obvious gotcha:** append to `LEARNINGS.md` so the next agent doesn't repeat it.
+6. **If you hit ambiguity you can't resolve:** append to `QUESTIONS.md` and release the claim.
 
 **Rules:**
 - One task = one branch = one worktree. Don't bundle.
 - Don't claim a task whose dependencies aren't `Done`.
+- Don't claim a task whose `Tool:` doesn't match your identity.
 - Keep claim-commits tiny (only `TASKS.md`) so conflicts are rare.
 - If you abandon a task, move it back to `Todo` and clear the `Agent`/`Branch` fields.
 
@@ -37,9 +46,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 ═══════════════════════════════════════════════════════════════ -->
 
 ### T-029 — Enemy framework + Smog Sprite patroller  [P1]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `Enemy.kt` abstract base + `SmogSprite.kt` patroller (2-hit Seed Slam defeat, patrol AI). 3 Smog Sprites placed in Level 1 via `EnemyDef`. LevelRunState updates+destroys dead enemies. LevelRenderer draws dark-grey ovals.
+- **Commit/PR:** 303f07b
 - **Depends on:** _none_
 - **GDD ref:** §17 ("Enemy Design Spec")
 - **Files:** `entities/Enemy.kt` (new), `entities/SmogSprite.kt` (new), `levels/TmxLevelDefinition.kt`, `levels/LevelRegistry.kt`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`
@@ -47,9 +57,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** Smog Sprites patrol Level 1, kill the player on contact, die to 2 Seed Slam hits, compile clean, no crash.
 
 ### T-030 — Background music system + 3 ambient tracks  [P1]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `MusicManager` with 1.5 s crossfade; `ProceduralMusicGenerator` writes 3 ambient WAVs. `musicTrack` field on TmxLevelDefinition. GameScreen wires play+update.
+- **Commit/PR:** 1008c5e
 - **Depends on:** _none_
 - **GDD ref:** §18 ("Music System Spec")
 - **Files:** `audio/MusicManager.kt` (new), `audio/ProceduralMusicGenerator.kt` (new), `screens/GameScreen.kt`, `levels/TmxLevelDefinition.kt`
@@ -57,9 +68,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** Music plays and crossfades between levels, volume knob works, compile clean.
 
 ### T-040 — Projectile / lightning hazard entity  [P1]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `Projectile.kt` kinematic body (HAZARD category), auto-expires on lifetime or wall-hit. LevelRunState holds `projectiles` list and drains expired. LevelRenderer draws orange circles.
+- **Commit/PR:** ff0f000
 - **Depends on:** _none_
 - **GDD ref:** §17.3 ("Projectile entity")
 - **Files:** `entities/Projectile.kt` (new), `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`
@@ -67,9 +79,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** Projectiles move, kill the player on contact, auto-expire, compile clean.
 
 ### T-032 — Stomp-defeat mechanic  [P1]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** WorldContactListener detects player landing on enemy from above (vy < -3 m/s). Enemy marked stomped, player bounced +5 m/s upward. Smoke burst + land SFX on defeat.
+- **Commit/PR:** d688fd5
 - **Depends on:** T-029
 - **GDD ref:** §17.2 ("Stomp mechanic")
 - **Files:** `physics/WorldContactListener.kt`, `entities/Enemy.kt`, `screens/LevelRunState.kt`
@@ -78,6 +91,9 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 
 ### T-031 — Tile-based terrain rendering  [P2]
 - **Status:** Todo
+- **Tool:** `human-then-claude-code-sonnet`  *(user supplies/finds the 3 tileset PNGs from Kenney/itch.io; then Claude wires `TileRenderer`)*
+- **Tier:** M
+- **Autonomous-eligible:** no  *(blocks on art asset selection)*
 - **Agent:** _unclaimed_
 - **Branch:** _none_
 - **Depends on:** _none_
@@ -87,9 +103,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** All three levels show tiled terrain instead of solid grey/red rectangles; no visual gaps; compile clean.
 
 ### T-033 — Hub world: Sky Sanctuary (Level 0-0)  [P2]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `Level0_0.kt` hub room with 4 portal doors. Portal contact triggers world navigation. Locked worlds show greyed portal. Main menu "Play" → Hub. LevelRunState handles portal activation callback.
+- **Commit/PR:** 20bdb0c
 - **Depends on:** _none_
 - **GDD ref:** §19 ("Hub World Spec")
 - **Files:** `levels/Level0_0.kt` (new), `levels/LevelManager.kt`, `screens/MainMenuScreen.kt`, `screens/LevelRunState.kt`
@@ -97,17 +114,24 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** Hub loads, player can walk through portals into each world's first level, locked worlds show visually distinct portals. Compile clean.
 
 ### T-034 — Boss encounter: Storm Sentinel  [P2]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `StormSentinel` entity with 3 HP and REST/LIGHTNING_TELEGRAPH/LIGHTNING/SWEEP_TELEGRAPH/SWEEP state machine. Level 3 extended to 2840 px with boss arena (boss_floor + 3 combat platforms). BossDef data class + getBossDef() in TmxLevel. Storm_system Atlas entry (6th card). Contact listener handles droplet-on-boss_sentinel. GameScreen instantiates + wires sentinel; defeat sets levelCompleted=true.
+- **Commit/PR:** 1f1157c
+- **Agent:** claude
+- **Branch:** claude/T-034-storm-sentinel
+- **Started:** 2026-05-11
 - **Depends on:** T-029, T-040
 - **GDD ref:** §20 ("Boss Design Spec")
-- **Files:** `entities/StormSentinel.kt` (new), `assets/maps/level3.tmx`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `levels/TmxLevelDefinition.kt`
+- **Files:** `entities/StormSentinel.kt` (new), `assets/maps/level3.tmx`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `screens/GameScreen.kt`, `levels/TmxLevelDefinition.kt`, `physics/WorldContactListener.kt`, `atlas/CloudAtlasEntry.kt`
 - **Goal:** Extend `level3.tmx` with a 640 px boss arena past the current exit. Add `StormSentinel` — a static sensor entity with 3-phase attack cycle (lightning columns → wind sweep → rest/Seed-Slam window). 3 Seed Slam hits defeat the boss; defeat triggers level exit + unlocks `storm_system` Cloud Atlas entry. Move the Level 3 exit sensor inside the boss room. `LevelRunState` holds an optional `sentinel: StormSentinel?` and updates it if non-null.
 - **Done when:** Player reaches boss arena in Level 3, boss cycles attacks, can be defeated in 3 hits, defeat triggers level complete. Compile clean.
 
 ### T-035 — Audio bus sliders: music / sfx / ui  [P2]
 - **Status:** Todo
+- **Tool:** `copilot-agent`  *(autonomous from GitHub Issue)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
 - **Agent:** _unclaimed_
 - **Branch:** _none_
 - **Depends on:** T-030
@@ -117,9 +141,10 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** Three sliders visible in Settings, all three volumes respond in real-time, persist across sessions. Compile clean.
 
 ### T-036 — Key rebinding UI in Settings  [P2]
-- **Status:** Todo
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `keybinds: Map<String,Int>` added to Settings. SettingsScreen "Controls" panel with 5 rebindable actions. InputManager reads from keybinds. Persists across sessions.
+- **Commit/PR:** 4c9e74e
 - **Depends on:** _none_
 - **GDD ref:** GDD_ADDENDUM §16 gap analysis
 - **Files:** `persist/Settings.kt`, `screens/SettingsScreen.kt`, `input/InputManager.kt`
@@ -128,6 +153,9 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 
 ### T-037 — Achievement system + toast notifications  [P3]
 - **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(multi-file but spec is concrete; spawn sub-agents for parallel work on the 12 achievement conditions)*
+- **Tier:** M
+- **Autonomous-eligible:** yes
 - **Agent:** _unclaimed_
 - **Branch:** _none_
 - **Depends on:** _none_
@@ -138,6 +166,9 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 
 ### T-038 — Ghost replay in time trials  [P3]
 - **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(determinism-sensitive — read DETERMINISM.md first; not autonomous)*
+- **Tier:** M
+- **Autonomous-eligible:** no  *(per START_HERE.md §7: determinism-sensitive work needs human review)*
 - **Agent:** _unclaimed_
 - **Branch:** _none_
 - **Depends on:** _none_
@@ -148,6 +179,9 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 
 ### T-041 — Stats screen on main menu  [P3]
 - **Status:** Todo
+- **Tool:** `copilot-agent`  *(single new screen, reads existing data — ideal Tier S for autonomous PR)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
 - **Agent:** _unclaimed_
 - **Branch:** _none_
 - **Depends on:** _none_
@@ -156,8 +190,38 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Goal:** Add a "Stats" button to `MainMenuScreen` that opens `StatsScreen`. Stats screen shows per-slot: total deaths, levels completed (count + list), eco-tokens collected (running total from completed runs), best times per level, achievements unlocked (count/12 + list). All data read from `SaveManager.loadGame()` + `AchievementRegistry`. Back button returns to main menu.
 - **Done when:** Stats screen opens from main menu, displays accurate data for the active slot, back button works. Compile clean.
 
+### T-046a — Tileset research: find pixel-art tilesets for 3 themes  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** S  *(research only — no code)*
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-046a-tileset-research`  *(create on claim — only adds files in `art-research/`)*
+- **Depends on:** _none_
+- **GDD ref:** _to be written in GDD_ADDENDUM_ (T-046 follow-up)
+- **Files:** `art-research/tileset-candidates.md` (new), `art-research/license-notes.md` (new, optional)
+- **Goal:** Research pixel-art tileset options for the three campaign worlds (ARID / WIND / ECO). Search **Kenney.nl** and **OpenGameArt.org** for tilesets at **32×32 base resolution**. For each promising candidate, capture: tileset name, source URL, license (CC0 / CC-BY / etc.), file count, theme fit (arid/wind/eco), art quality (subjective 1–5), notes on whether it includes character sprites or just terrain. Output a single markdown comparison file `art-research/tileset-candidates.md` with one table per theme. **Do not download any files. Do not modify any code.** This is pure decision-support research feeding the T-046 art commission decision.
+- **Done when:** `art-research/tileset-candidates.md` exists with at least 3 candidates per theme (9+ total). Each candidate has all fields filled. PR opens against `main` containing only the new file(s) under `art-research/`. AI smoke test (T-A1) passes trivially since no code changed.
+- **Constraints:** Antigravity must NOT touch any file outside `art-research/`. Must NOT add new dependencies. Must NOT download asset files (you're producing research notes, not assets). If a candidate looks ideal but requires downloading to evaluate, list it as "would-need-download" instead.
+
+### T-046 — Full graphics overhaul: pixel-art sprites + tilesets  [P3]
+- **Status:** Todo
+- **Tool:** `human-then-antigravity-then-claude-code-sonnet`  *(human picks style/source; Antigravity automates asset pipeline; Claude wires sprites into renderer)*
+- **Tier:** L
+- **Autonomous-eligible:** no  *(art style + commissioning decisions require user input)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-031
+- **GDD ref:** _to be written in GDD_ADDENDUM_
+- **Files:** `assets/tilesets/` (PNG atlases), `assets/sprites/` (character sprite sheets), `rendering/SpriteFactory.kt`, `rendering/CharacterAtlas.kt`, `rendering/TileRenderer.kt` (from T-031)
+- **Goal:** Replace all procedurally-generated geometry with hand-drawn (or tool-generated) pixel-art assets. Minimum deliverable: (a) 3 character sprite sheets (Ebo/Laya/Zephyr) at 64×64 per frame — idle, run (4f), jump, fall, wall-slide; (b) 3 tileset PNGs (tiles_arid/tiles_wind/tiles_eco) replacing ShapeRenderer ground/wall rectangles — solid interior + grass/rock top tile variants (completes T-031); (c) enemy sprite (Smog Sprite oval → proper sprite); (d) boss sprite (Storm Sentinel box → animated sprite). All assets at 32×32 base scaled by `DisplayScale.spriteScale` at load time. Remove ShapeRenderer primitive draw paths after verifying visual coverage.
+- **Done when:** Game renders no ShapeRenderer primitives for terrain or characters. All visual elements use TextureRegion. T-031 is a blocker (tile-fill infrastructure). Compile and run clean.
+
 ### T-045 — Cloud Atlas expansion to 12 entries  [P3]
 - **Status:** Todo
+- **Tool:** `notebooklm-then-copilot-agent`  *(see START_HERE.md §8 for NotebookLM workflow — user uploads climate sources, NotebookLM drafts 12 grounded entries, Copilot wires them into `CloudAtlasLibrary.kt`)*
+- **Tier:** S
+- **Autonomous-eligible:** yes-with-review  *(NotebookLM output should be skim-reviewed for accuracy before wiring)*
 - **Agent:** _unclaimed_
 - **Branch:** _none_
 - **Depends on:** T-034
@@ -169,17 +233,71 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 
 ---
 
+## Backlog — AI testing v2 (planned, after MVP T-A1/T-A2 lands)
+
+MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf regressions). The tickets below add coverage for failure modes the MVP cannot catch. Build them only when a specific bug demands the work — do not pre-spend.
+
+### T-A3 — Input record & replay
+- Determinism prerequisite: every site flagged as "needs work" in T-A2's DETERMINISM.md must be fixed (seeded RNG wrapper, sorted Map iteration, fixed timestep)
+- `InputRecorder` writes JSON: `{levelId, seed, gameVersion, frames[], endStateChecksum}`
+- `ReplayAgent` deterministically replays a recording; CI asserts checksum match within tolerance
+- Use case: pinning a known-good run of a tricky level as a regression; reproducing flaky bug reports
+- Estimated tokens: ~80k (Sonnet sub-agent), $0.55
+
+### T-A4 — Reactive `SensorAgent` (replaces hand-tuned waypoints)
+- Box2D raycast-based local sensing: wall ahead → jump; gap ahead → pre-jump; hazard ahead → ability; stuck → swap character
+- Zero per-level config; generalizes to new levels automatically
+- Use case: when `BasicAutopilot` gets stuck on a future level we add. Defer until that happens.
+- Estimated tokens: ~60k (Sonnet sub-agent), $0.40
+
+### T-A7 — Menu/UI smoke agent + UI invariants
+- `MenuSmokeAgent` taps through every Scene2D screen reachable from MainMenu
+- `UiInvariantChecker` runs per screen: no UI overflow, every button has a click handler, every Label uses `FontManager` font (catches T-044 Settings-font-style bugs), no overlapping interactive elements, contrast ΔE > 20
+- Use case: catching menu/settings regressions that the gameplay-level smoke (T-A1) cannot see. Build when we ship the first UI regression.
+- Estimated tokens: ~70k (Sonnet sub-agent), $0.45
+
+### T-A8 — Windowed CI lane (visual regression)
+- Separate nightly workflow that runs windowed (real GL via `xvfb-run`)
+- Screenshots framebuffer at fixed replay frames, diffs against golden PNGs in `tests/golden/`
+- Defer until T-046 (full art overhaul) is done — visual diffs against procedural geometry are too noisy to maintain
+- Estimated tokens: ~60k
+
+### T-A9 — Boss combat sub-agent
+- Recognize Storm Sentinel lightning telegraph, dodge, attack on REST phase
+- Already decided **not worth doing** (6h+ of tuning, flaky CI risk). Documented here only so a future contributor doesn't redo the analysis.
+- Replacement coverage (in T-A1): "boss entered IDLE_COMBAT within 5s of player entering arena" invariant.
+
+**v2 total if all built:** ~$2.85 in Sonnet sub-agent tokens.
+
+---
+
 ## In Progress
 
-_(none — all claimed tasks completed)_
+### T-A1 — AI smoke test: per-level autopilot run via CI
+- **Status:** In Progress  *(local validation passed; awaiting first CI green on PR)*
+- **Tool:** `claude-code-opus`
+- **Tier:** M
+- **Autonomous-eligible:** no  *(was a foundational change requiring planning)*
+- **Agent:** claude-code-opus
+- **Branch:** claude/T-034-storm-sentinel
+- **Started:** 2026-05-11
+- **Depends on:** _none_
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt`, `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `lwjgl3/build.gradle`, `.github/workflows/ai-smoke.yml` (new)
+- **Goal:** Reuse the existing `BasicAutopilot` block in `LevelRunState` to smoke-test every registered level on every PR. Add a `cloudy.smokeMode=true` flag that (a) tracks `maxXReached` and `frame_p99` during the autopilot run and (b) emits a single structured log line `[smoke] level=... maxX=... startX=... frameP99=... duration=...` at auto-quit. Add `cloudy.smokeLevel=level1` flag in `Main.kt` to bypass MainMenuScreen → SlotSelect and go directly to `GameScreen(LevelManager.getLevel(name))`. CI workflow runs the game once per registered level via `xvfb-run`, parses the smoke log line, fails the run if `maxX - startX < 1.0` (spawn-death like the T-043 flipY bug) or `frameP99 > 30ms` (perf regression like the T-043 SaveManager spam) or process crashed (like the T-043 portal crash).
+- **Done when:** Open a PR with a synthetic spawn-death (set `flipY=false` on any level) and CI catches it within 30s per level. All current levels pass smoke on main. Total CI runtime <10 min for 7 levels.
+- **Progress notes:** MVP of v2 AI testing plan — see "Backlog (planned)" below for full design.
+
 
 <!--
 Template for moving a task here:
 
 ### T-XXX — <title>
 - **Status:** In Progress
-- **Agent:** <your-handle>
-- **Branch:** claude/T-XXX-short-desc
+- **Agent:** <your-identity-from-START_HERE.md-section-1>
+- **Tool:** <pre-tagged by planner — do not change>
+- **Tier:** S | M | L
+- **Autonomous-eligible:** yes | no
+- **Branch:** <identity-prefix>/T-XXX-short-desc
 - **Started:** YYYY-MM-DD
 - **Depends on:** ...
 - **Files:** ...
@@ -191,6 +309,35 @@ Template for moving a task here:
 ---
 
 ## Done
+
+### T-A2 — Determinism audit (`DETERMINISM.md`)
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `DETERMINISM.md` written at repo root. Catalogs every non-deterministic site in `core/src/main/kotlin/com/sohai/platformer/`. **Findings:** 4 gameplay-breaking sites flagged for future T-A3 (StormSentinel:183,190 — random lightning + sweep params; EboAbility:108,112 — raindrop spawn jitter + speed). 18 cosmetic sites safe to leave (particle randomization, audio pitch variation). 0 surprises: `world.step` uses fixed 1/60 s accumulator. No code changes — audit was the deliverable.
+- **Commit/PR:** 0f3aff0
+- **Tool:** `claude-code-sonnet` (sub-agent dispatched from `claude-code-opus`)
+
+### T-044 — Polish: HUD transparency + Settings font scaling + visual geometry
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** (1) All 5 HUD buttons set to `color.a = BTN_ALPHA = 0.55f` so the player character is visible through them. (2) `SettingsScreen` body labels migrated from `VisLabel` (baked VisUI skin font, non-scaling) to `Label` with `FontManager.getShared(16)` (DisplayScale-aware, sharp at 4K). (3) `ParallaxBackground` upgraded: 3-band sky gradient, new midground hill layer (scrollFactor=0.28), stars in corrupted sky (fade by cleanseRatio=0.5), mountain peak highlight caps, pine-crown triangles above tree trunks. (4) `LevelRenderer` upgraded: grass tufts along ground top surface (deterministic sin-based height variation), triangular spike shapes on hazard tiles, bottom shadow strip on ground blocks, underside shadow on moving platforms.
+- **Commit/PR:** (this session — claude/T-034-storm-sentinel branch)
+- **Depends on:** T-042
+
+### T-043 — Bug fixes: SaveManager per-frame spam + Box2D portal crash + spawn-death flipY
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** (1) `SaveManager` in-memory cache (`private val cache`) prevents per-frame disk reads — `LevelRenderer.renderWorld()` was calling `loadGame()` on every frame for portal color checks. (2) Portal transition deferred to end-of-frame via `pendingPortalTarget: String?` field in `LevelRunState`; `GameScreen.render()` handles the actual `game.screen = GameScreen(...)` + `dispose()` after all rendering is done, eliminating Box2D native crash (`EXCEPTION_ACCESS_VIOLATION` in `gdx-box2d64.dll`). (3) `TmxLevel.setup()` changed from `flipY=false` to `flipY=true` — libGDX's TmxMapLoader already flips rectangle Y internally so the second flip corrects it; without this fix ground was placed at the top of the screen and all campaign-level players spawn-died immediately.
+- **Commit/PR:** (this session — claude/T-034-storm-sentinel branch)
+- **Depends on:** _none_
+
+### T-042 — 4K / HiDPI display scaling
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `DisplayScale` singleton computes `fontScale = min(physW/1280, physH/720)` and `spriteScale = max(1, floor(fontScale))` at startup and after mode changes. `FontManager.create(size)` multiplies by `fontScale` so text renders at exactly `size` virtual pixels regardless of physical resolution. Resolution presets (HD/FHD/2K/4K) and fullscreen toggle added to `SettingsScreen`; `applyDisplaySettings()` calls `DisplayScale.init() + FontManager.clearSharedCache()` after mode switch. Game tested at 2560×1440 (fontScale=2.0).
+- **Commit/PR:** (this session — claude/T-034-storm-sentinel branch)
+- **Depends on:** _none_
+- **Files:** `rendering/DisplayScale.kt` (new), `FontManager.kt`, `screens/SettingsScreen.kt`
 
 ### T-001 — Migrate Hud.kt buttons to VisUI
 - **Status:** Done
@@ -351,7 +498,7 @@ Template for moving a task here:
 ### T-025 — Level 3 pacing rebalance per Kishōtenketsu
 - **Status:** Done
 - **Completed:** 2026-05-09
-- **Outcome:** `assets/maps/level3.tmx` rewritten with Ki/Shō/Ten/Ketsu zones; wall-jump shaft moved to ~55%; moving-platform gauntlet in final 15%. `TmxLevelDefinition.setup()` fixed: `flipY=false` (all TMX files are y-up). LevelRegistry level3 checkpoints and eco-tokens updated to match new layout.
+- **Outcome:** `assets/maps/level3.tmx` rewritten with Ki/Shō/Ten/Ketsu zones; wall-jump shaft moved to ~55%; moving-platform gauntlet in final 15%. LevelRegistry level3 checkpoints and eco-tokens updated to match new layout. *(Note: the flipY fix shipped later in T-043 — `flipY=true` is now correct.)*
 - **Commit/PR:** this branch
 
 ### T-028 — Android lint + build verification

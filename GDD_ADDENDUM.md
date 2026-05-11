@@ -1,6 +1,6 @@
 # Cloudy Ninja — Technical GDD Addendum (v3)
 
-**Last updated:** 2026-05-09 (Sprint A complete + Sprint B complete + Sprint C plan)
+**Last updated:** 2026-05-11 (Sprint A complete + Sprint B complete + Sprint C complete + Sprint D planned)
 **Audience:** Future AI agents and human contributors continuing development.
 **Companion to:** the original Cloudy Ninja GDD (theme, characters, worlds 0–5, Sky Sanctuary, Cloud Atlas).
 **Purpose:** Translate the design vision into concrete engineering targets, calibration numbers from successful 2D platformers, and a prioritized work plan.
@@ -9,64 +9,12 @@
 
 ---
 
-## 0. Project Snapshot (May 2026, after Sprint A)
+## 0. Project state
 
-| Metric | Value |
-|---|---|
-| Engine | libGDX 1.14.0 + Box2D, Kotlin |
-| Lines of Kotlin | ~4 200 across 38 files |
-| Resolution | 1280×720 virtual, PPM = 100 |
-| Levels shipped | 3 (level1 / level2 / level3) |
-| Characters | 2 of 6 (Ebo + Laya playable) |
-| Cloud Atlas entries | 5 (all defined; 4 placed in levels) |
-| Test coverage | persist + entities (5 test files) |
-| Audio assets | 0 (SoundManager is silent-stubbed) |
-| Font assets | 0 (default BitmapFont fallback) |
+See **[GAME_PLAN.md](GAME_PLAN.md)** for the pitch, resolved decisions, roadmap, and shipped systems.
+See **[TASKS.md](TASKS.md)** for ticket-level history (every completed T-### lists outcome + commit hash).
 
-### Sprint A status (completed 2026-05-09)
-
-✅ **All 6 P0 bugs resolved**
-- Moving platforms now carry the player (manual platform-rider via `platformContacts` map)
-- Save/load restores checkpoint position via `resumeCheckpoint` constructor param
-- `Checkpoint`/`LevelCheckpoint` data classes disambiguated
-- Touch input no longer double-fires Jump+Action (raw screen-quadrant heuristics removed; HUD buttons own touch)
-- Cloud Atlas progress persisted to `GameState.collectedAtlasIds`
-- Body-destroy queue (`pendingBodyDestroy`) drained at end of update — never inside `world.step`
-
-✅ **Movement calibrated to Celeste reference**
-- New constants block in `Constants.kt` with apex-hang gravity, asymmetric fall, terminal velocity
-- `PlayerController.update()` sets `body.gravityScale` per frame for hang/fall asymmetry
-- Coyote time tightened to 0.10s, wall-jump impulse increased
-
-✅ **Game-feel additions**
-- `ParticleSystem` (200-particle pool) — landing dust, jump puffs, collect sparkles, death burst
-- Screen shake — 4–8px on hard landings/death (respects `Settings.screenShake`)
-- Hitstop — 5-frame freeze on death
-
-✅ **Camera upgrade (Itay Keren / Celeste)**
-- Dead-zone follow (`camDeadZoneHalfW = 1m`)
-- Forward focus (`camForwardOffset = 1.5m`, flips on facing change)
-- Smooth lerp toward target
-
-### Sprint B status (in progress)
-
-✅ Hot-path `Color(...)` allocations hoisted to `GameScreen.Palette` companion object — ~30 alloc/frame eliminated
-✅ `FontManager.getShared(size)` cache — single atlas per size for the app lifetime
-✅ Atomic save writes — `tmp` + copy + delete (defends against mid-write crashes)
-✅ Fixed-timestep accumulator (max 5 steps/frame) — frame-rate-independent physics
-✅ `Settings` + `SettingsManager` — separate file for volumes/keybinds/accessibility, including assist-mode flags
-✅ `CloudAtlasScreen` — collected snapshots browseable from main menu
-✅ Existing tests pass; new round-trip tests cover `completedLevels` / `collectedAtlasIds` / `bestScores` and old-save backward compatibility
-
-⚠️ **KNOWN ISSUE: Intermittent native Box2D crash**
-- `EXCEPTION_ACCESS_VIOLATION` in `gdx-box2d64.dll+0x22a40` from `Body.jniGetPosition`
-- Stack trace: GameScreen.update → Body.getPosition → JNI
-- Reproduces after 30s–4min of play, address always varies
-- Defensive fixes already applied: deferred body-destroy queue, `platformContacts.clear()` on respawn, `gravityScale` reset on respawn, fixed-timestep
-- **Hypothesis:** stale body reference in `platformContacts` after a contact-end event was missed during teleport; OR a Box2D contact-pair internal pointer aliasing bug
-- **Investigation path:** disable platform-carry feature in `PlayerController.update()` to isolate; add logging in contact begin/end to verify map invariants
-
-**Status:** core loop runs at locked 120 FPS, world-state-persistence (cleanseRatio) is wired, eco-spirit health is in HUD, level-select / pause / victory / atlas overlays exist. The game is *playable end-to-end* but the **feel needs calibration** and several P0 bugs block clean experience on level 3.
+This document is **technical reference material only**: physics calibration numbers, per-feature engineering specs, bug post-mortems. Sections 1+ below.
 
 ---
 

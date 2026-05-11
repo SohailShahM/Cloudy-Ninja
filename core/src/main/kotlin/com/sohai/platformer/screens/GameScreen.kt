@@ -28,6 +28,7 @@ import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.SmogSprite
 import com.sohai.platformer.entities.SnapshotPickup
+import com.sohai.platformer.entities.StormSentinel
 import com.sohai.platformer.levels.Level
 import com.sohai.platformer.levels.LevelManager
 import com.sohai.platformer.levels.TmxLevel
@@ -107,6 +108,9 @@ class GameScreen(
     private var atlasOverlay: CloudAtlasOverlay? = null
     private var levelCompleteOverlay: LevelCompleteOverlay? = null
     private var gameOverOverlay: GameOverOverlay? = null
+
+    // ── Boss ─────────────────────────────────────────────────────────────────
+    private var sentinel: StormSentinel? = null
 
     // ── Body destruction queue ────────────────────────────────────────────────
     private val pendingBodyDestroy = mutableSetOf<Body>()
@@ -198,11 +202,32 @@ class GameScreen(
             }
         }
 
+        // Instantiate boss from level definition, if present
+        if (level is TmxLevel) {
+            val bdef = level.getBossDef()
+            if (bdef != null) {
+                when (bdef.type) {
+                    "storm_sentinel" -> {
+                        sentinel = StormSentinel(
+                            world,
+                            x          = bdef.xPx          / Constants.PPM,
+                            y          = bdef.yPx          / Constants.PPM,
+                            arenaLeft  = bdef.arenaLeftPx  / Constants.PPM,
+                            arenaRight = bdef.arenaRightPx / Constants.PPM
+                        )
+                        Gdx.app.log("GameScreen", "Storm Sentinel spawned at (${bdef.xPx}, ${bdef.yPx}) px")
+                    }
+                    else -> Gdx.app.error("GameScreen", "Unknown boss type: ${bdef.type}")
+                }
+            }
+        }
+
         renderer = LevelRenderer(
             shapeRenderer, spriteBatch, camera, parallaxBg, particles,
             eboAbility, layaAbility, zephyrAbility,
             obstacleManager, movingPlatforms, ecoTokens, snapshotPickups,
-            enemies, player, eboAnimator, layaAnimator, footstepColor
+            enemies, player, eboAnimator, layaAnimator, footstepColor,
+            sentinel = sentinel
         )
 
         player.onJump = {
@@ -221,6 +246,19 @@ class GameScreen(
             isTimeTrial = isTimeTrial
         )
 
+        // Wire boss sentinel into runState (callbacks set after runState exists)
+        if (sentinel != null) {
+            runState.sentinel = sentinel
+            sentinel!!.onSpawnProjectile = { x, y, vx, vy ->
+                runState.spawnProjectile(x, y, vx, vy)
+            }
+            sentinel!!.onDefeated = {
+                Gdx.app.log("GameScreen", "Storm Sentinel defeated — level complete")
+                runState.levelCompleted = true
+                hud.showTransientMessage("Storm Sentinel defeated!", 2.5f)
+            }
+        }
+
         runState.onAtlasCollected = { snap ->
             atlasOverlay = CloudAtlasOverlay(snap.entry) {
                 atlasOverlay?.dispose()
@@ -236,14 +274,6 @@ class GameScreen(
             )
             Gdx.input.inputProcessor = gameOverOverlay!!.stage
         }
-        runState.onPortalActivated = { targetLevelId ->
-            val targetLevel = LevelManager.getLevel(targetLevelId)
-            if (targetLevel != null && game != null) {
-                game.screen = GameScreen(targetLevel, game)
-                dispose()
-            }
-        }
-
         transitionCtrl = LevelTransitionController(
             level, game, screenFade, ecoTokens,
             CHECKPOINT_AUTOSAVE_FILE,
@@ -301,7 +331,14 @@ class GameScreen(
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) setPaused(!isPaused)
 
-        if (!isPaused && atlasOverlay == null) {
+        if (Constants.SMOKE_MODE) {
+            // Smoke mode: always tick update() so the auto-quit timer fires
+            // regardless of overlays (Cloud Atlas snapshots), pause state, or
+            // hitstop. Without this, the smoke autopilot collects a snapshot,
+            // the atlas overlay opens, update halts, and the JVM hangs until
+            // CI's 240s wall-clock timeout fires — losing the [smoke] log line.
+            runState.update(clampedDelta)
+        } else if (!isPaused && atlasOverlay == null) {
             if (runState.hitstopFrames > 0) runState.hitstopFrames--
             else runState.update(clampedDelta)
         }
@@ -357,15 +394,29 @@ class GameScreen(
         // Layer 9: game-over card
         gameOverOverlay?.render()
 
-        // Transitions (end of render so dispose is never called mid-frame)
-        if (runState.isGameOver && runState.gameOverTimer <= 0f && game != null) {
+        // Transitions (end of render so dispose is never called mid-frame).
+        // In smoke-test mode (cloudy.smokeMode=true) we suppress level-change
+        // transitions so the autopilot can't hop into a new GameScreen and
+        // reset its auto-quit timer. The smoke run stays in the level it was
+        // launched into and exits cleanly when debugAutoQuitTimer fires.
+        if (runState.isGameOver && runState.gameOverTimer <= 0f && game != null && !Constants.SMOKE_MODE) {
             game.screen = MainMenuScreen(game)
             dispose()
             return
         }
-        if (runState.levelCompleted) {
+        if (runState.levelCompleted && !Constants.SMOKE_MODE) {
             runState.levelCompletionTimer -= clampedDelta
             if (runState.levelCompletionTimer <= 0f) transitionCtrl.goToNextLevel(runState.score)
+        }
+        val portalTarget = runState.pendingPortalTarget
+        if (portalTarget != null && game != null && !Constants.SMOKE_MODE) {
+            runState.pendingPortalTarget = null
+            val targetLevel = LevelManager.getLevel(portalTarget)
+            if (targetLevel != null) {
+                game.screen = GameScreen(targetLevel, game)
+                dispose()
+                return
+            }
         }
     }
 
@@ -385,6 +436,10 @@ class GameScreen(
     override fun dispose() {
         if (isDisposed) return
         isDisposed = true
+        // Destroy boss body before world.dispose() to avoid stale-reference risk
+        sentinel?.let { world.destroyBody(it.body) }
+        sentinel = null
+
         snapshotPickups.forEach { world.destroyBody(it.body) }
         snapshotPickups.clear()
         atlasOverlay?.dispose();       atlasOverlay        = null

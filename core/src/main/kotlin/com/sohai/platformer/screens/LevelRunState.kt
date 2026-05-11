@@ -20,6 +20,7 @@ import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
+import com.sohai.platformer.entities.StormSentinel
 import com.sohai.platformer.input.InputManager
 import com.sohai.platformer.levels.Level
 import com.sohai.platformer.levels.Level0_0
@@ -82,6 +83,15 @@ class LevelRunState(
     var levelCompletionTimer = 0f
     val activatedCheckpoints = mutableSetOf<String>()
 
+    // ── Boss ─────────────────────────────────────────────────────────────────
+
+    /**
+     * The level boss, if any. Set by [GameScreen] after construction.
+     * Callbacks ([StormSentinel.onSpawnProjectile], [StormSentinel.onDefeated]) are
+     * also wired by GameScreen so they can reference runState.levelCompleted.
+     */
+    var sentinel: StormSentinel? = null
+
     // ── Projectiles ──────────────────────────────────────────────────────────
 
     val projectiles = mutableListOf<Projectile>()
@@ -139,6 +149,11 @@ class LevelRunState(
     private var apJumpCooldown         = 0f
     private var apPeriodicJumpTimer    = 0f
     private var apAbilityTimer         = 0f
+    private val debugSmokeMode         = java.lang.Boolean.getBoolean("cloudy.smokeMode")
+    private var smokeStartX            = Float.NaN
+    private var smokeMaxX              = Float.NEGATIVE_INFINITY
+    private var smokeFrameTimes        = FloatArray(7200)   // ~120s at 60Hz; we never need more
+    private var smokeFrameIdx          = 0
 
     // ── Side-effect callbacks (set by GameScreen before first update) ─────────
 
@@ -146,6 +161,12 @@ class LevelRunState(
     var onAtlasCollected: ((SnapshotPickup) -> Unit)? = null
     /** Called when spirit health hits 0; GameScreen creates the game-over overlay. */
     var onGameOverStart: (() -> Unit)? = null
+    /**
+     * Set when a portal is activated; [GameScreen] reads this at end-of-frame and
+     * performs the actual screen transition + dispose there (never mid-update).
+     */
+    var pendingPortalTarget: String? = null
+
     /** Called when a portal is activated in the hub world; GameScreen navigates to the target level. */
     var onPortalActivated: ((targetLevelId: String) -> Unit)? = null
 
@@ -222,6 +243,13 @@ class LevelRunState(
             val apActive = debugAutopilotTimer < debugAutopilotSeconds && !isGameOver
             if (apActive) {
                 val playerX  = player.body.position.x
+                if (debugSmokeMode) {
+                    if (smokeStartX.isNaN()) smokeStartX = playerX
+                    if (playerX > smokeMaxX) smokeMaxX = playerX
+                    if (smokeFrameIdx < smokeFrameTimes.size) {
+                        smokeFrameTimes[smokeFrameIdx++] = delta * 1000f  // ms
+                    }
+                }
                 val onGround = player.isGrounded
                 val touchWall = player.isTouchingWallLeft || player.isTouchingWallRight
                 val justLeftGround = !onGround && prevGrounded && player.body.linearVelocity.y >= -1.5f
@@ -252,7 +280,16 @@ class LevelRunState(
             }
             if (debugAutoQuitTimer != null) {
                 debugAutoQuitTimer = (debugAutoQuitTimer ?: 0f) - delta
-                if ((debugAutoQuitTimer ?: 0f) <= 0f) { Gdx.app.log("LevelRunState", "Auto-quit."); Gdx.app.exit() }
+                if ((debugAutoQuitTimer ?: 0f) <= 0f) {
+                    if (debugSmokeMode) {
+                        val p99 = computeP99(smokeFrameTimes, smokeFrameIdx)
+                        Gdx.app.log("smoke",
+                            "level=${level.id} startX=%.3f maxX=%.3f deltaX=%.3f frameP99Ms=%.2f frames=%d"
+                                .format(smokeStartX, smokeMaxX, smokeMaxX - smokeStartX, p99, smokeFrameIdx))
+                    }
+                    Gdx.app.log("LevelRunState", "Auto-quit.")
+                    Gdx.app.exit()
+                }
             }
         }
 
@@ -300,6 +337,9 @@ class LevelRunState(
             pendingBodyDestroy.add(dead.body)
             enemies.remove(dead)
         }
+
+        // Boss update (before physics step so attack spawns queue up correctly)
+        sentinel?.update(delta)
 
         // Fixed-timestep physics
         physicsAccum += delta
@@ -490,9 +530,11 @@ class LevelRunState(
             val state       = SaveManager.loadGame()
             val unlocked    = required.all { it in state.completedLevels }
             if (unlocked && targetLevel != null) {
-                Gdx.app.log("LevelRunState", "Portal activated — $portalId -> $targetLevel")
+                Gdx.app.log("LevelRunState", "Portal activated 🌀 $portalId -> $targetLevel")
                 player.portalContact = null
-                onPortalActivated?.invoke(targetLevel)
+                // Defer the actual screen swap to end-of-frame so we never call dispose()
+                // from inside the physics/update step (causes a Box2D native crash).
+                pendingPortalTarget = targetLevel
             } else {
                 // Locked portal — just ignore the contact
                 player.portalContact = null
@@ -545,5 +587,12 @@ class LevelRunState(
             for (b in pendingBodyDestroy) world.destroyBody(b)
             pendingBodyDestroy.clear()
         }
+    }
+
+    private fun computeP99(times: FloatArray, count: Int): Float {
+        if (count == 0) return 0f
+        val sorted = times.copyOfRange(0, count).also { it.sort() }
+        val idx = ((count - 1) * 0.99f).toInt()
+        return sorted[idx]
     }
 }

@@ -1,24 +1,31 @@
 # AGENTS.md
 
 ## Multi-agent coordination
-Open tasks live in [TASKS.md](TASKS.md). Before starting work, claim a task there (move it to `In Progress`, fill in your agent name + branch, push to `main`). Work in a git worktree on the branch you claimed. When done, merge to `main` and move the task to `Done`.
+
+**Every AI agent must read `START_HERE.md` first.** It is the single entry point — identifies tools, capability gates, claim protocol, and the routing table.
+
+For human contributors and the planning AI (Claude Code Opus): work tickets live in [TASKS.md](TASKS.md). For non-obvious gotchas other agents have hit, see [LEARNINGS.md](LEARNINGS.md) — read before claiming. For open questions awaiting user input, see [QUESTIONS.md](QUESTIONS.md).
+
+**Strict routing model:** every ticket in TASKS.md has a `Tool:` field tagged by the planner. Each AI is hard-restricted to tickets matching its identity tag. AIs do NOT self-route. The routing table is in `START_HERE.md` §9.
 
 Required reading before claiming a task:
-1. This file (architecture, conventions, module layout)
-2. [GDD_ADDENDUM.md](GDD_ADDENDUM.md) (technical spec, calibration numbers, sprint plans, P0 bug history, feature specs)
-3. [GAME_PLAN.md](GAME_PLAN.md) (high-level roadmap, content themes, educational goals)
+1. `START_HERE.md` — the entry point (this file describes architecture; START_HERE describes process)
+2. This file (architecture, conventions, module layout)
+3. `LEARNINGS.md` — gotchas log
+4. [GDD_ADDENDUM.md](GDD_ADDENDUM.md) — technical reference, read sections relevant to your ticket
+5. [GAME_PLAN.md](GAME_PLAN.md) — vision and roadmap
 
 ---
 
-## Project snapshot (May 2026, post Sprint B)
+## Project snapshot (May 2026, post Sprint C)
 - **Engine:** libGDX 1.14.0 + Box2D, Kotlin, multi-module Gradle
 - **Modules:** `core` (shared gameplay), `lwjgl3` (desktop launcher), `android` (Android launcher) — see `settings.gradle`
-- **Resolution:** 1280×720 virtual, PPM = 100, y-up world coords
-- **Levels shipped:** 7 (4 tutorial rooms in World 0, 3 campaign in Worlds 1–3)
+- **Resolution:** 1280×720 virtual, PPM = 100, y-up world coords; 4K/HiDPI supported via `DisplayScale`
+- **Levels shipped:** 7 (4 tutorial rooms in World 0, 3 campaign in Worlds 1–3); Level 3 has boss arena
 - **Characters:** 3 (Ebo / Laya / Zephyr) — switch with Swap button or `S` keyboard
 - **Tests:** 9 specs covering player movement, persistence, contacts, particles, atlas, TMX coords
-- **Audio:** 8 procedurally-generated SFX, no music system yet
-- **Controls:** two-thumb mobile UI (HUD buttons), keyboard alt (WASD/arrows + space + E + S)
+- **Audio:** 8 SFX + 3 looping ambient music tracks (procedurally generated); crossfade between levels
+- **Controls:** two-thumb mobile UI (HUD buttons, semi-transparent), keyboard alt (WASD/arrows + space + E + S); fully rebindable in Settings
 
 ---
 
@@ -68,7 +75,7 @@ core/src/main/kotlin/com/sohai/platformer/
 │   ├── CharacterAnimator.kt    # Sprite state machine (idle/run/jump/fall/wall)
 │   ├── CharacterAtlas.kt       # Texture region holder per character
 │   ├── SpriteFactory.kt        # createEbo / createLaya / createZephyr atlas builders
-│   ├── ParallaxBackground.kt   # 2-layer parallax + sky lerp; ParallaxTheme = ARID/WIND/ECO
+│   ├── ParallaxBackground.kt   # 3-layer parallax (mountains/midground hills/trees), 3-band sky gradient, stars in corrupted sky; ParallaxTheme = ARID/WIND/ECO
 │   ├── ParticleSystem.kt       # 200-particle pool, additive blend, gravity per particle
 │   └── ScreenFade.kt           # Async fade-in/out with completion callback
 ├── screens/
@@ -85,7 +92,7 @@ core/src/main/kotlin/com/sohai/platformer/
 └── world/
     ├── ObstacleManager.kt      # Owns all static-obstacle Box2D bodies (rect / checkpoint / exit)
     ├── ObstacleKind.kt         # Enum: GROUND, WALL, HAZARD, CHECKPOINT, EXIT
-    └── MapLevelLoader.kt       # Loads .tmx into ObstacleManager + MovingPlatforms (flipY = false)
+    └── MapLevelLoader.kt       # Loads .tmx into ObstacleManager + MovingPlatforms (flipY = true for TmxLevels — see Levels section)
 ```
 
 ---
@@ -124,7 +131,7 @@ All abilities implement `CharacterAbility`. Swap by character (Ebo / Laya / Zeph
 
 ### Levels
 - **Tutorial rooms (World 0):** hand-built — `Level0_1.kt` through `Level0_4.kt` extend `Level` directly and override `setup()` to build geometry programmatically.
-- **Campaign (Worlds 1–3):** data-driven — `LevelRegistry.ALL` is a list of `TmxLevelDefinition(id, name, mapPath, spawnX, spawnY, levelWidthPx, exitXPx, ecoTokens, snapshots, checkpoints)`. Adding a campaign level = appending one entry. The shared `TmxLevel` class loads the `.tmx` via `MapLevelLoader` (always `flipY = false` — Cloudy Ninja uses y-up TMX).
+- **Campaign (Worlds 1–3):** data-driven — `LevelRegistry.ALL` is a list of `TmxLevelDefinition(id, name, mapPath, spawnX, spawnY, levelWidthPx, exitXPx, ecoTokens, snapshots, checkpoints)`. Adding a campaign level = appending one entry. The shared `TmxLevel` class loads the `.tmx` via `MapLevelLoader` with `flipY = true`. **Why `flipY=true`:** libGDX's `TmxMapLoader` already flips rectangle Y coords internally (`r.y = mapHeight - tiledY - height`), producing y-up values. `MapLevelLoader`'s own flip with `flipY=true` undoes that, correctly placing objects so that Tiled Y=0 (ground) maps to Box2D Y≈0 (bottom of world). Without the second flip, ground ends up at the top of the screen and players spawn-die immediately.
 
 ### Persistence
 - `GameState` (per-slot) — completedLevels, collectedAtlasIds, bestScores, bestTimes, totalDeaths, lastPlayed
@@ -136,13 +143,33 @@ All abilities implement `CharacterAbility`. Swap by character (Ebo / Laya / Zeph
 ### Audio
 - `SoundManager` (singleton) plays the 8 canonical SFX: `jump`, `land`, `collect_token`, `collect_snapshot`, `death`, `checkpoint`, `level_complete`, `hazard_cleansed`
 - `ProceduralSoundGenerator` writes WAVs to `assets/audio/sfx/` if missing on first run
-- **No music system yet** — see GDD_ADDENDUM §16 (Sprint C plan)
+- `MusicManager` (singleton, T-030) plays looping background music with 1.5 s crossfade; `volMusic` knob in Settings. Three procedurally-generated 60-second WAVs: `ambient_arid`, `ambient_wind`, `ambient_eco`
 
 ### Visual systems
-- `ParallaxBackground` — 3 themes (ARID/WIND/ECO), 2-layer scrolling, sky lerps from corrupted → cleansed palette as `cleanseRatio` rises
+- `ParallaxBackground` — 3 themes (ARID/WIND/ECO); 3-layer scrolling (mountains 0.15×, midground hills 0.28×, trees 0.4×); 3-band sky gradient with star field in corrupted sky; mountain peak caps + pine-crown on trees. Sky lerps from corrupted → cleansed palette as `cleanseRatio` rises.
+- `LevelRenderer` — ground tiles get grass tufts (top) + shadow strip (bottom); hazard tiles get triangular spike shapes; moving platforms get an underside shadow. Palette constants live in the companion object — never scatter raw `Color(...)` into geometry code.
 - `ParticleSystem` — 200-particle pool, owned by GameScreen, mutated by Renderer helpers
 - Box2DLights `RayHandler` — ambient + a single PointLight attached to the player body
 - `ScreenFade` — owned by GameScreen, used at level start (fade-in) and on level-complete (fade-out)
+
+### Debug autopilot
+`LevelRunState` has a built-in autopilot for unattended smoke tests. Activate with Gradle project properties:
+
+```powershell
+# Windows — set JAVA_HOME first if needed
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+
+.\gradlew :lwjgl3:run -PcloudyAutopilot=true -PcloudyAutopilotSeconds=30 -PcloudyAutoquitSeconds=35
+```
+
+| Property | Default | Meaning |
+|---|---|---|
+| `-PcloudyAutopilot=true` | _(disabled)_ | Enable the autopilot |
+| `-PcloudyAutopilotSeconds=N` | 3 s | Seconds the bot drives before releasing input |
+| `-PcloudyAutoquitSeconds=N` | _(none)_ | Seconds until the process auto-exits (useful in CI) |
+
+**What it does:** Holds right, jumps periodically (~every 0.8 s), fires ability every 4 s, and adds extra jumps when stuck or wall-sliding. Designed for unattended runs — the player is **not** expected to touch the keyboard while autopilot is active. Normal human play ignores all autopilot code paths.
 
 ---
 

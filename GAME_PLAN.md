@@ -1,265 +1,104 @@
-# Cloudy Ninja — Game Plan & Roadmap
+# GAME_PLAN.md — Cloudy Ninja
 
-**Date:** May 8, 2026  
-**Status:** Active Development  
-**Platform:** libGDX (multi-platform: Android + Desktop)
+> Living roadmap. For task-level tracking see TASKS.md; for architecture see AGENTS.md;
+> for technical specs see GDD_ADDENDUM.md.
 
----
-
-## Vision
-
-**Cloudy Ninja** is a **momentum-based 2D physics platformer** focused on **climate-change education** through interactive gameplay. Players guide two characters—**Ebo** (nature/soil) and **Laya** (wind/air)—through levels themed on the **water cycle** and **eco-restoration**.
-
-### Core Pillars
-1. **Momentum-driven movement** → Skill-based platforming with inertia
-2. **Character-specific abilities** → Context-sensitive actions tie to environment themes
-3. **Educational narratives** → Water cycle, carbon cycles, biodiversity integrated into level design
-4. **Accessibility** → Two-thumb mobile UI as primary, keyboard alt-control
-5. **Replayability** → Time trials, checkpoint speedruns, collectibles
+Last updated: 2026-05-11
 
 ---
 
-## Current State (May 8, 2026)
+## The pitch
 
-### Completed
-✅ **Physics system**: Box2D integration, movement, coyote time, jump buffering, wall mechanics  
-✅ **Character roster**: Ebo (Seed Slam — spawn rain, push down) + Laya (Wind Dash — forward+upward mobility)  
-✅ **Input layer**: Touch zones (left/right/jump) + HUD buttons, keyboard support  
-✅ **HUD system**: Cooldown bar + character/ability name label  
-✅ **Foundation libraries**: kotlinx.serialization, VisUI, MockK, Kotest (test framework)  
-✅ **Save/load scaffolding**: `GameState.kt`, `SaveManager.kt` (not yet wired to UI)  
-✅ **Test level**: Gray-box momentum test with platforms, slopes, hazards, moving platform  
-
-### Known Gaps
-❌ **Level progression** — No level manager, single test environment only  
-❌ **Checkpoint system** — No respawn points; player must restart on death  
-❌ **Menus** — No main menu, pause menu, or level select  
-❌ **Visual polish** — Placeholder colored circles for characters, basic placeholders for effects  
-❌ **Audio** — No music or sound effects  
-❌ **Scope limiting** — Only 2 characters, 1 level, 1 test environment  
-❌ **Educational content** — No narrative, tutorials, or thematic integration  
+Cloudy Ninja is a momentum-based 2D pixel-art platformer about restoring corrupted ecosystems. Players switch between three characters — each with a distinct ability tied to the water cycle — across hand-crafted levels that double as light interactive science lessons. It targets casual-to-enthusiast platformer fans who want satisfying movement and a reason to care about what they're doing.
 
 ---
 
-## Feature Roadmap by Priority
+## Resolved decisions (v1.0 scope)
 
-### **Tier 1: Core Progression Loop** (Weeks 1–2)
-Establish the mechanical backbone: levels → checkpoints → respawn → meta-progression.
-
-#### 1.1 Level Manager System
-- `LevelManager.kt` — Orchestrates level loading, switching, state persistence
-- Level manifest (list of available levels with metadata)
-- Checkpoint creation & registration in each level
-- Save/load integration with `GameState & SaveManager`
-- Death/respawn flow tied to nearest checkpoint
-
-#### 1.2 Checkpoint Respawn System
-- Checkpoint body + visual marker (flag?)
-- `Checkpoint` data serializable (level name, position, ability state)
-- Auto-save on checkpoint touch
-- Respawn on death → restore to last checkpoint position + full impulse
-
-#### 1.3 Main Menu Screen
-- Scene hierarchy: `MainScreen` (title, buttons: Play, Load, Settings, Quit)
-- Character roster preview (Ebo vs. Laya select for first level?)
-- Use VisUI for polished buttons, labels
-- Wire to `SaveManager.listSaves()` for "Continue" / "New Game" flow
-
-#### 1.4 Pause Menu
-- Pause on key press (`Esc` / HUD button)
-- Overlay with Resume, Settings, Quit options
-- Pause timer (freeze `delta` logic during pause)
+| Topic | Decision |
+|---|---|
+| Art style | Pixel art, 32×32 base resolution, scaled at load time via `DisplayScale.spriteScale`. Free asset packs (Kenney, itch.io) for environment; commissioned/drawn art for character sprites + boss. |
+| Monetization | Premium one-time purchase. Price: **$2.99–4.99**. Launch on **itch.io** first, then **Google Play**. No ads. No IAP. Educational angle is marketing, not a paywall mechanic. |
+| v1.0 scope | **3 worlds × 3 characters = what we already have.** Ship v1.0 with the current 7 levels (4 tutorial + 3 campaign + Storm Sentinel boss + Cloud Atlas with 12 entries), polish it, then add World 4 / Char 4 in a free v1.1 update. |
+| Platforms | Desktop (Windows/Mac/Linux via lwjgl3) + Android. iOS deferred. |
 
 ---
 
-### **Tier 2: Level Design & Progression** (Weeks 3–4)
-Build out a compelling level campaign with thematic progression.
+## Current state (Sprint C complete)
 
-#### 2.1 Level 1 — "Water Cycle Begins"
-- Tutorial-light: introduce movement, jump, wall slide
-- **Ebo focus**: Seed Slam ability — spawn rain to water plants, push down onto platforms
-- **Checkpoint**: ~1 minute without pause
+Seven levels are playable end-to-end with a boss encounter, full audio, and persistence. The codebase is architecturally clean after the Sprint B/C refactors.
 
-#### 2.2 Level 2 — "Wind & Weather"
-- **Laya focus**: Wind Dash — leap forward through air gaps, breeze-assist ascent
-- Introduce wind platforms (moving with aerodynamics)
-- Collectible: butterfly/seed particles for thematic scoring
-
-#### 2.3 Level 3 — "Eco-Restoration Challenge"
-- Mixed roster: Player switches between Ebo & Laya at stations
-- **Puzzle element**: Use Seed Slam to activate soil → triggers plant growth → wind carries seeds
-- **Checkpoint**: Time challenge, lead to speedrun replay
-
-#### 2.4 Level Metadata & Tiled Integration
-- `.tmx` files (Tiled editor) for level layout
-- Load via `TiledMap`; convert static bodies from tile data
-- Store level name, theme, music track, checkpoints as metadata
-- Build simple level editor in Tiled; document asset layer conventions
+**Shipped systems:**
+- **Levels:** Sky Sanctuary hub (Level0_0), tutorials Level0_1–0_4, campaign Level1 "First Rain" (Ebo), Level2 "Winds of Change" (Laya), Level3 "Stormy Heights" with boss arena
+- **Characters:** Ebo (Seed Slam), Laya (Wind Dash), Zephyr (Float) — switchable mid-level
+- **Boss:** Storm Sentinel (Level3) — 3-phase attack cycle (lightning columns, wind sweep, rest); defeated in 3 Seed Slam hits
+- **Enemies:** Smog Sprite patrollers (patrol AI, stomp-defeat + Seed Slam defeat)
+- **Audio:** 8 procedural SFX + 3 ambient music tracks with 1.5s crossfade between levels
+- **Cloud Atlas:** 6 entries collectible in-game (target 12 via T-045)
+- **Persistence:** 3 save slots, atomic writes, checkpoint autosave, time-trial best times
+- **Display:** 4K/HiDPI via `DisplayScale` singleton; fullscreen + resolution presets in Settings
+- **Accessibility:** Assist Mode (invincibility, infinite spirits, slow-speed slider)
+- **Controls:** Mobile two-thumb HUD (semi-transparent buttons) + keyboard, fully rebindable in Settings
+- **Engine internals:** Celeste-calibrated movement, asymmetric gravity, coyote time, jump buffer, corner correction, wall-jump, particle pool, screen shake, hitstop, deferred body destruction, fixed-timestep physics
+- **Testing:** 9 Kotest unit specs + AI smoke test workflow (T-A1 in progress)
 
 ---
 
-### **Tier 3: Visual & Audio Polish** (Week 5)
-Make it pretty and immersive.
+## Three-horizon roadmap
 
-#### 3.1 Sprite & Animation System
-- Replace gray circles with proper character sprites (Ebo brown/soil, Laya white/blue)
-- Idle/walk/jump/wall-slide animation states
-- Ability VFX: rain droplet sprites, wind trail particles
+### Horizon 1 — Sprint D "Ship-ready" (next 2 weeks)
 
-#### 3.2 Audio Integration
-- **Music**: Looping ambient track per level (nature/water cycle theme)
-- **SFX**: Jump, land, ability use, checkpoint, level complete
-- Volume controls in Settings menu (wire via VisUI)
+No new tech. Finish what's in flight and get to a releasable alpha.
 
-#### 3.3 HUD Polish
-- Migrate remaining labels to VisUI for consistency
-- Level title display
-- Score / collectible counter (if time trial / item hunt enabled)
+- **T-031** — Tile-based terrain rendering (replace ShapeRenderer ground rects with tileset PNGs)
+- **T-035** — Audio bus sliders: Music / SFX / UI in Settings
+- **T-037** — Achievement system + toast notifications (12 achievements)
+- **T-038** — Ghost replay in time trials
+- **T-041** — Stats screen on main menu
+- **T-045** — Cloud Atlas expansion to 12 entries
+- **T-A1 / T-A2** — AI smoke testing in CI — validate green for 2 weeks straight
+- **T-034 doc surgery** — This ticket (brings GAME_PLAN, GDD_ADDENDUM, PATH1 in sync)
+- **T-046 starts** — Commission/buy/draw pixel-art for 3 characters + 3 tilesets + boss (art production, not code)
+- **Alpha launch** — First public build to itch.io (private link, ~5 testers)
 
----
+### Horizon 2 — Content (3–6 months)
 
-### **Tier 4: Replayability & Meta-Features** (Week 6+)
-Add systems that make players want to replay.
+- **T-046 ships in full** — Replace all procedural geometry on existing 7 levels with pixel-art assets
+- Replace all ShapeRenderer primitives for terrain and characters with TextureRegion draws
+- Polish and retune pacing of existing levels using playtest feedback
+- Localization scaffold: `Strings.kt` key-based lookup; English-only at launch
+- Store presence: itch.io page, screenshots, trailer, demo build
 
-#### 4.1 Time Trial / Speedrun Mode
-- Pre-saved start state (full health, no checkpoints used)
-- Timer display, lap time tracking
-- Leaderboard placeholder (local high-score table)
+### Horizon 3 — Post-v1.0 (aspirational)
 
-#### 4.2 Collectibles & Scoring
-- Seeds, water droplets, butterfly tokens scattered in levels
-- Scoring system: base time + bonus for collectibles + skill multiplier
-- Catalog collected items in save state
-
-#### 4.3 Third Character: "Zephyr" (Air Elemental)
-- Lightweight, float-based movement + air combat ability
-- Unlock after completing Levels 1–2 with both Ebo & Laya
+- World 4 + Character 4 free update (v1.1)
+- Speedrun community: online leaderboards, ghost sharing
+- Daily challenge mode (procedural level + modifier)
+- Optional: level editor / Steam Workshop, Switch port
 
 ---
 
-## Architecture Recommendations
+## Explicitly cut / deferred
 
-### Layer Strategy
-```
-game/
-├── screens/
-│   ├── GameScreen.kt (active level, physics, rendering)
-│   ├── MainMenuScreen.kt (menu state)
-│   ├── PauseMenuScreen.kt (overlay during gameplay)
-│   ├── LevelSelectScreen.kt (choose level to play)
-│   └── Hud.kt (in-game HUD, buttons)
-├── managers/
-│   ├── LevelManager.kt (load/switch levels)
-│   ├── GameStateManager.kt (wrapper; high-level game lifecycle)
-│   └── AudioManager.kt (music/SFX playback)
-├── levels/
-│   ├── Level.kt (interface; common level behavior)
-│   ├── TiledLevel.kt (Tiled-based level)
-│   └── ProceduralLevel.kt (hand-built / template-based)
-└── persist/
-    ├── GameState.kt (data model)
-    ├── SaveManager.kt (I/O)
-    └── LevelMetadata.kt (level info, checkpoints)
-```
-
-### Data Flow
-```
-Save/Load Loop:
-  GameScreen.update() → [player dies] → GameStateManager.respawn()
-  → SaveManager.loadGame("checkpoint_slot_3")
-  → GameStateManager.applyGameState(state)
-  → Player reappears at checkpoint position + velocity reset
-```
-
-### Serialization Points
-- **On checkpoint touch**: Auto-save `GameState` (level, pos, ability, collectibles)
-- **On pause menu**: Player can manually save to slot (for speedrun practice)
-- **On level complete**: Save completion flag + time/score to progression
+| Item | Decision |
+|---|---|
+| Multiplayer co-op | Cut — probably never worth it at this scope |
+| Characters 4–6 | Deferred to v1.1+ |
+| Worlds 4–6 | Deferred to v1.1+ |
+| iOS | Deferred (libGDX iOS toolchain complexity vs. audience size) |
+| Ads / IAP | Cut entirely |
+| Steam | Deferred until itch.io + Google Play prove traction |
 
 ---
 
-## Implementation Plan: Next Sprint (This Week)
+## Open questions (genuinely undecided)
 
-### Phase 1: Scaffold (1–2 days)
-1. Create `screens/MainMenuScreen.kt` — minimal VisUI button layout
-2. Create `managers/LevelManager.kt` — basic level registry + switching
-3. Create `managers/GameStateManager.kt` — high-level game lifecycle
-4. Wire `GameScreen.update()` → `LevelManager.swapLevel()` on level-complete event
-
-### Phase 2: Core Loop (2–3 days)
-1. Implement checkpoint system: `Checkpoint.kt` fixture, `checkpointTouched` sensor callback
-2. Wire `SaveManager` into death/respawn flow
-3. Add pause input handling + overlay pause screen (VisUI)
-4. Test: Play Level 1 → hit checkpoint → die → autorestore to checkpoint
-
-### Phase 3: Quick Level 2 (1–2 days)
-1. Duplicate & modify `createTestEnvironment()` → new `Level2` layout
-2. Focus on Laya Wind Dash challenges (air gaps, wind platforms)
-3. Add checkpoint placement
-
-### Phase 4: Polish & QA (1 day)
-1. Verify save/load round-trip integrity
-2. Test menu navigation and transitions
-3. Compile for Android + Desktop, verify both run without crashes
+- **Localization timing:** Launch English-only, add languages post-v1.0? Or scaffold `Strings.kt` from day 1 to avoid a painful retrofit?
+- **Demo build:** Standalone level-select with 3 sample levels, or first 3 levels free / rest paid?
+- **Educational partnerships:** Pursue school/nonprofit licensing? Defer decision until v1.0 ships and we see uptake.
 
 ---
 
-## Content Themes & Educational Goals
+## What this doc is not
 
-### Level 1: "The Journey Begins"
-**Theme**: Water Cycle — Evaporation & Precipitation  
-**Mechanic**: Ebo's Seed Slam spawns rain; water fills low areas, activates plant growth  
-**Message**: Water moves through environments; living things depend on it
-
-### Level 2: "Winds of Change"
-**Theme**: Climate Systems — Wind Patterns & Air Currents  
-**Mechanic**: Laya's Wind Dash leverages air, discovers wind-driven platforms  
-**Message**: Wind carries seeds, shapes ecosystems; climate patterns matter
-
-### Level 3: "Restoration"
-**Theme**: Ecosystem Recovery — Biodiversity & Collaboration  
-**Mechanic**: Character switching; Ebo plants, Laya spreads seeds via wind  
-**Message**: Nature thrives through interconnected systems; teamwork restores balance
-
----
-
-## Success Metrics
-
-By end of Month 1:
-- ✅ Can play 2–3 levels sequentially
-- ✅ Checkpoint + respawn system works reliably
-- ✅ Save/load persists player progress
-- ✅ Menu navigation smooth (no crashes)
-- ✅ Both Android (emulator) and Desktop run without errors
-- ✅ Builds pass CI (or local test pass: `./gradlew build`)
-
-By end of Month 2:
-- ✅ 5–6 levels with escalating challenge
-- ✅ Time trial / speedrun mode functional
-- ✅ Leaderboard (local high-score list)
-- ✅ Music + SFX fully integrated
-- ✅ Character sprites + basic animations
-- ✅ Educational narrative integrated (dialogue, tooltips)
-
----
-
-## Open Questions / Decisions Needed
-
-1. **Art Style**: Pixel art, low-poly 3D, or stylized illustration?
-2. **Narrative Format**: In-level dialogue (NPCs), cutscene intro, or tooltips only?
-3. **Difficulty Ramp**: Include tutorial level 0? Adjust physics constants per level?
-4. **Mobile UI**: Swipe-based actions, or stick with on-screen button zones?
-5. **Monetization**: Free-to-play with ads? Premium? Educational/nonprofit distribution?
-
----
-
-## Next Action Items
-
-**Choose 1 priority:**
-- 🏃 **Fast path**: Build Tier 1 (Level Manager + Checkpoint + Main Menu) — Play vertical slice by week 2
-- 🎨 **Art-first path**: Prototype character sprites + Level 1 visuals, then wire progression
-- 📚 **Educational path**: Write level narratives + design educational puzzles first, then build levels
-
-**Decision**: Should we proceed with Tier 1 (Full progression loop) or pivot to art/narrative first?
-
-
+This is a plan, not a contract. Update it when scope or decisions change. If something you're building isn't on this page, either it belongs in TASKS.md already or this doc needs an edit.
