@@ -113,3 +113,15 @@ Or simpler — accept that Antigravity is great at the *artifact* and let a diff
 **Cost:** ~5 min of manual cleanup. Not painful but worth automating away for future Antigravity tickets. Time-to-output (5 min for full research) is genuinely impressive — this tool is the right fit for content-generation tickets.
 
 **Lesson:** Different agent platforms have different "definition of done." Copilot agent goes all the way through to opening a PR. Claude Code agent commits + pushes + opens PR. Antigravity stops at commit. Update tool runbooks in `START_HERE.md` to flag this so future routing decisions reflect actual end-to-end behavior.
+
+## 2026-05-12 — Antigravity doesn't catch art-style/perspective mismatches (T-046a)
+
+**Symptom:** Antigravity (Gemini 3.1 Pro backend) ran T-046a and produced a 12-candidate comparison in ~5 min. One ARID-theme candidate — "Whispers of Avalon Desert" on OpenGameArt — was rated `4/5 theme fit`. Visual review revealed it's a **top-down RPG-perspective** tileset (skull dunes, palm oasis viewed from above). Cloudy Ninja is a **side-scrolling platformer**. Geometry incompatible.
+
+**Cause:** Antigravity's research loop reads asset metadata (title, license, file count, description text) but doesn't perform visual analysis on preview images. Camera-perspective and visual-style compatibility are invisible to text-only analysis. The agent confidently rates "theme fit" based on description ("desert tileset") without checking whether the geometry will slot into a side-scroller.
+
+**Workaround:** Future Antigravity art-research prompts must explicitly require: *"For each candidate, examine the preview image and verify the intended camera perspective (top-down vs side-scrolling). Reject any candidate whose perspective doesn't match Cloudy Ninja's side-scrolling 2-D platformer style."* Alternatively, accept that art research always needs a human visual-review pass before acting on it.
+
+**Cost:** ~5 min of user visual-review to catch (1 of 4 top recommendations needed re-research). The other three candidates — Kenney pixel-platformer, Pixel Art Forest, Bluegrass — were correct.
+
+**Lesson:** Research-bot tools excel at *breadth* but miss *style/perspective compatibility*. Always do a quick visual pass before acting on art-research output. Bake this into `prompts/T-046a-antigravity.md` and any future art-research prompts.
