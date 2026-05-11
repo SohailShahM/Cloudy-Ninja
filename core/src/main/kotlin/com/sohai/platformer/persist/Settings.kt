@@ -1,9 +1,19 @@
 package com.sohai.platformer.persist
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+
+/** Returns the default keyboard bindings: action-name → Input.Keys keycode. */
+fun defaultKeybinds(): Map<String, Int> = mapOf(
+    "left" to Input.Keys.A,
+    "right" to Input.Keys.D,
+    "jump" to Input.Keys.SPACE,
+    "action" to Input.Keys.E,
+    "swap" to Input.Keys.S
+)
 
 /**
  * Cross-slot, cross-save settings: volumes, keybinds, accessibility.
@@ -21,6 +31,9 @@ data class Settings(
     val screenShake: Boolean = true,
     val deathFlash: Boolean = true,
     val showFps: Boolean = false,
+
+    // Keyboard bindings: action name → Input.Keys keycode
+    val keybinds: Map<String, Int> = defaultKeybinds(),
 
     // Assist mode (Celeste-inspired) — flags relax difficulty for accessibility
     val assistInfiniteSpirits: Boolean = false,

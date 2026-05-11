@@ -2,10 +2,13 @@ package com.sohai.platformer.screens
 
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.scenes.scene2d.Actor
+import com.badlogic.gdx.scenes.scene2d.InputEvent
+import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox
 import com.badlogic.gdx.scenes.scene2d.ui.Label
@@ -20,9 +23,11 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.audio.SoundManager
+import com.sohai.platformer.input.InputManager
 import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.persist.SettingsManager
+import com.sohai.platformer.persist.defaultKeybinds
 
 class SettingsScreen(
     private val game: Game,
@@ -145,7 +150,75 @@ class SettingsScreen(
                 settings = SettingsManager.update { it.copy(assistSlowSpeed = sliderSpeed.value) }
             }
         })
-        inner.add(sliderSpeed).width(260f).row()
+        inner.add(sliderSpeed).width(260f).padBottom(16f).row()
+
+        // ── Controls (Key Rebinding) ──────────────────────────────────────
+        inner.add(Label("Controls", sectionStyle)).left().padTop(20f).padBottom(8f).row()
+
+        val actionNames = listOf("left", "right", "jump", "action", "swap")
+        val displayNames = mapOf(
+            "left" to "Move Left",
+            "right" to "Move Right",
+            "jump" to "Jump",
+            "action" to "Action",
+            "swap" to "Swap Character"
+        )
+
+        // Track buttons so we can update their text after rebind
+        val keybindButtons = mutableMapOf<String, VisTextButton>()
+
+        for (action in actionNames) {
+            val row = VisTable()
+            row.add(VisLabel(displayNames[action] ?: action)).left().width(180f).padRight(16f)
+
+            val currentKey = settings.keybinds[action] ?: defaultKeybinds()[action] ?: -1
+            val btn = VisTextButton(Input.Keys.toString(currentKey))
+            keybindButtons[action] = btn
+
+            btn.addListener(object : ChangeListener() {
+                override fun changed(event: ChangeEvent?, actor: Actor?) {
+                    // Enter capture mode: change button text and listen for next key
+                    btn.setText("Press a key...")
+
+                    // Add a stage listener that captures the next keyDown
+                    stage.addListener(object : InputListener() {
+                        override fun keyDown(event: InputEvent?, keycode: Int): Boolean {
+                            // Update settings with new keybind
+                            val newBinds = settings.keybinds.toMutableMap()
+                            newBinds[action] = keycode
+                            settings = SettingsManager.update { it.copy(keybinds = newBinds) }
+                            InputManager.reloadKeybinds()
+
+                            // Update button text to show the new key
+                            btn.setText(Input.Keys.toString(keycode))
+
+                            // Remove this listener (capture complete)
+                            stage.removeListener(this)
+                            return true
+                        }
+                    })
+                }
+            })
+
+            row.add(btn).width(160f).height(36f)
+            inner.add(row).left().padBottom(4f).row()
+        }
+
+        // "Reset to Defaults" button
+        val btnResetKeys = VisTextButton("Reset to Defaults")
+        btnResetKeys.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(keybinds = defaultKeybinds()) }
+                InputManager.reloadKeybinds()
+                // Refresh all button labels
+                for (action in actionNames) {
+                    val keycode = settings.keybinds[action] ?: -1
+                    keybindButtons[action]?.setText(Input.Keys.toString(keycode))
+                }
+                showToast("Controls reset!")
+            }
+        })
+        inner.add(btnResetKeys).left().padTop(8f).padBottom(16f).row()
 
         // ── Save / Load / Delete ──────────────────────────────────────────
         inner.add(Label("Save Data", sectionStyle)).left().padTop(20f).padBottom(8f).row()

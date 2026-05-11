@@ -334,8 +334,8 @@ class LevelRunState(
             if (switchCooldownTimer <= 0f) canSwitchCharacter = true
         }
 
-        // Keyboard shortcut: S to swap
-        if (Gdx.input.isKeyJustPressed(Input.Keys.S) && canSwitchCharacter) {
+        // Keyboard shortcut: swap key (default S, rebindable)
+        if (InputManager.isSwapJustPressed() && canSwitchCharacter) {
             switchCharacter()
         }
 

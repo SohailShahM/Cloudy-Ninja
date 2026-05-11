@@ -3,8 +3,19 @@ package com.sohai.platformer.input
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.controllers.Controllers
+import com.sohai.platformer.persist.SettingsManager
+import com.sohai.platformer.persist.defaultKeybinds
 
 object InputManager {
+    // --- Cached keybinds (loaded once, refreshed via reloadKeybinds()) ---
+    private var keybinds: Map<String, Int> = defaultKeybinds()
+
+    /** Reload keybinds from persisted settings. Call after the user changes a binding. */
+    fun reloadKeybinds() {
+        keybinds = SettingsManager.load().keybinds
+    }
+
+    private fun keyFor(action: String): Int = keybinds[action] ?: defaultKeybinds()[action] ?: -1
     // --- On-screen button state (set by HUD) ---
     var uiLeftPressed = false
     var uiRightPressed = false
@@ -89,21 +100,21 @@ object InputManager {
     fun isMovingLeft(): Boolean {
         if (debugOverrideEnabled && debugLeftHeld) return true
         if (uiLeftPressed || ctrlLeft) return true
-        if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT)) return true
+        if (Gdx.input.isKeyPressed(keyFor("left")) || Gdx.input.isKeyPressed(Input.Keys.LEFT)) return true
         return false
     }
 
     fun isMovingRight(): Boolean {
         if (debugOverrideEnabled && debugRightHeld) return true
         if (uiRightPressed || ctrlRight) return true
-        if (Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) return true
+        if (Gdx.input.isKeyPressed(keyFor("right")) || Gdx.input.isKeyPressed(Input.Keys.RIGHT)) return true
         return false
     }
 
     fun isJumpPressed(): Boolean {
         if (debugOverrideEnabled && debugJumpJustPressed) { debugJumpJustPressed = false; return true }
         if (uiJumpPressed || ctrlJumpJustPressed) return true
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) ||
+        if (Gdx.input.isKeyJustPressed(keyFor("jump")) ||
             Gdx.input.isKeyJustPressed(Input.Keys.W) ||
             Gdx.input.isKeyJustPressed(Input.Keys.UP)) return true
         return false
@@ -112,7 +123,7 @@ object InputManager {
     fun isJumpHeld(): Boolean {
         if (debugOverrideEnabled && debugJumpHeld) return true
         if (uiJumpPressed || ctrlJumpHeld) return true
-        if (Gdx.input.isKeyPressed(Input.Keys.SPACE) ||
+        if (Gdx.input.isKeyPressed(keyFor("jump")) ||
             Gdx.input.isKeyPressed(Input.Keys.W) ||
             Gdx.input.isKeyPressed(Input.Keys.UP)) return true
         return false
@@ -121,12 +132,12 @@ object InputManager {
     fun isActionPressed(): Boolean {
         if (debugOverrideEnabled && debugActionHeld) return true
         if (uiActionPressed || ctrlActionHeld) return true
-        if (Gdx.input.isKeyPressed(Input.Keys.E)) return true
+        if (Gdx.input.isKeyPressed(keyFor("action"))) return true
         return false
     }
 
     fun isDownPressed(): Boolean {
-        if (Gdx.input.isKeyPressed(Input.Keys.S) || Gdx.input.isKeyPressed(Input.Keys.DOWN)) return true
+        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) return true
         val ctrl = Controllers.getControllers().firstOrNull()
         if (ctrl != null) {
             val axisY = ctrl.getAxis(ctrl.mapping.axisLeftY)
@@ -136,11 +147,16 @@ object InputManager {
         return false
     }
 
+    fun isSwapJustPressed(): Boolean {
+        if (Gdx.input.isKeyJustPressed(keyFor("swap"))) return true
+        return false
+    }
+
     fun isActionJustPressed(): Boolean {
         if (debugOverrideEnabled && debugActionJustPressed) { debugActionJustPressed = false; return true }
         if (ctrlActionJustPressed) return true
         if (uiActionJustPressed) { uiActionJustPressed = false; return true }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) return true
+        if (Gdx.input.isKeyJustPressed(keyFor("action"))) return true
         return false
     }
 }
