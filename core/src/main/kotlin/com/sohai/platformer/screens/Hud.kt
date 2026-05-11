@@ -51,6 +51,11 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
     var showActionHint: Boolean = false
     private var actionHintTimer = 0f
 
+    companion object {
+        /** Button overlay alpha: see-through enough that the character is visible underneath. */
+        const val BTN_ALPHA = 0.55f
+    }
+
     // Reusable 1×1 white texture for the cooldown bar
     private val whiteTexture: Texture
 
@@ -135,6 +140,13 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
         val rightTable = VisTable()
         rightTable.add(btnJump).size(120f, 100f).padRight(16f)
         rightTable.add(actionColumn)
+
+        // Semi-transparent so the character is visible through the button strip
+        btnLeft.color.a    = BTN_ALPHA
+        btnRight.color.a   = BTN_ALPHA
+        btnJump.color.a    = BTN_ALPHA
+        btnAction.color.a  = BTN_ALPHA
+        btnSwap.color.a    = BTN_ALPHA
 
         table.add(leftTable).expandX().left().padLeft(40f)
         table.add(btnSwap).size(100f, 60f)
@@ -241,11 +253,11 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
         }
         if (showActionHint) {
             actionHintTimer += delta
-            // Pulse at 1.5 Hz between a muted white and a warm orange
+            // Pulse at 1.5 Hz between a muted white and a warm orange; keep button alpha
             val pulse = MathUtils.sin(actionHintTimer * MathUtils.PI2 * 1.5f) * 0.5f + 0.5f  // 0..1
-            btnAction.color.set(1f, 0.55f + 0.45f * pulse, 0.1f + 0.2f * pulse, 1f)
+            btnAction.color.set(1f, 0.55f + 0.45f * pulse, 0.1f + 0.2f * pulse, BTN_ALPHA)
         } else if (actionHintTimer != 0f) {
-            btnAction.color.set(Color.WHITE)
+            btnAction.color.set(1f, 1f, 1f, BTN_ALPHA)
             actionHintTimer = 0f
         }
     }

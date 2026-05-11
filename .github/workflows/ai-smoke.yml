@@ -1,0 +1,90 @@
+name: AI smoke test
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Auto-cancel in-flight runs when a newer commit lands on the same branch.
+# Prevents 3+ parallel runs saturating GitHub's free runner queue (which is
+# what happened on the very first PR — multiple pushes triggered runs that
+# never completed because they were all competing for runner slots).
+concurrency:
+  group: ai-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        level: [level0_0, level0_1, level0_2, level0_3, level0_4, level1, level2, level3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+      - name: Smoke run ${{ matrix.level }}
+        # Hard 360s wall-clock timeout — kills the JVM if smoke mode ever hangs.
+        # Cold-runner budget breakdown (observed on the actual SohailShahM CI):
+        #   - gradle-9.5.0-bin.zip download (no cache yet): ~210s
+        #   - compileKotlin + compileJava for core + lwjgl3: ~30s
+        #   - JVM cold start + xvfb + asset init: ~15s
+        #   - game runs to autoquit: 10s
+        #   - cleanup: ~5s
+        # First run total: ~270s. With actions/cache, subsequent runs hit the
+        # gradle cache and finish in ~60s. 360s gives a 90s margin over the
+        # observed cold-start cost. Exit code 124 from timeout = failure
+        # signal (something hung past the budget).
+        run: |
+          timeout 360 xvfb-run -a ./gradlew --no-daemon :lwjgl3:run \
+            -PcloudyAutopilot=true \
+            -PcloudyAutopilotSeconds=8 \
+            -PcloudyAutoquitSeconds=10 \
+            -PcloudySmokeMode=true \
+            -PcloudySmokeLevel=${{ matrix.level }} \
+            2>&1 | tee smoke-${{ matrix.level }}.log || true
+      - name: Parse smoke log
+        run: |
+          set -e
+          LOG="smoke-${{ matrix.level }}.log"
+          LINE=$(grep -o '\[smoke\].*$' "$LOG" || true)
+          if [ -z "$LINE" ]; then
+            echo "FAIL: no [smoke] line in log — process crashed or autopilot disabled"
+            tail -50 "$LOG"
+            exit 1
+          fi
+          echo "Smoke line: $LINE"
+          DELTA=$(echo "$LINE" | grep -oP 'deltaX=\K[\d.-]+')
+          P99=$(echo "$LINE"   | grep -oP 'frameP99Ms=\K[\d.-]+')
+          echo "deltaX=$DELTA frameP99Ms=$P99"
+          # Thresholds calibrated for GitHub Actions Ubuntu runners with xvfb:
+          # - deltaX 0.3m catches flipY-style spawn-death (player stuck at spawn).
+          #   Lower than the 1.0m used locally because BasicAutopilot can't wall-climb
+          #   level0_3 (vertical shaft), so progress is limited there.
+          # - frameP99 80ms allows xvfb baseline (~50ms on 2-core runners) plus
+          #   margin. Still catches the SaveManager-spam class of regression which
+          #   pushes p99 well above 100ms.
+          awk -v d="$DELTA" -v p="$P99" 'BEGIN { if (d+0 < 0.3)  { print "FAIL: deltaX="d" < 0.3 (spawn-death suspected)"; exit 1 } }'
+          awk -v p="$P99"                'BEGIN { if (p+0 > 80.0) { print "FAIL: frameP99="p"ms > 80ms (perf regression)"; exit 1 } }'
+          echo "PASS"
+      - name: Upload log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-log-${{ matrix.level }}
+          path: smoke-${{ matrix.level }}.log

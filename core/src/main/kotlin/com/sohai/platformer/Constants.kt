@@ -57,4 +57,11 @@ object Constants {
     // Debug / profiling
     const val PERF_LOG_INTERVAL_SECONDS = 1f
     const val AUTOPILOT_DEFAULT_SECONDS = 3f
+
+    // Smoke-test mode: when true, the game stays in whichever level it was
+    // launched into and refuses screen transitions (portal contact + level-
+    // complete). This prevents the smoke autopilot from hopping levels and
+    // resetting the auto-quit timer in a fresh GameScreen instance — which
+    // was hanging CI on every level reachable by horizontal walking.
+    @JvmField val SMOKE_MODE: Boolean = java.lang.Boolean.getBoolean("cloudy.smokeMode")
 }

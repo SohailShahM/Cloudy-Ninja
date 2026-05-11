@@ -154,6 +154,8 @@ nb-configuration.xml
 ## OS-Specific:
 .DS_Store
 Thumbs.db
+desktop.ini
+**/desktop.ini
 
 ## Miscellaneous:
 *~

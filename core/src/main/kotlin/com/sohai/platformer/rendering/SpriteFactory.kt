@@ -8,11 +8,19 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion
 /**
  * Generates pixel-art character sprites procedurally via Pixmap.
  *
- * Sprite canvas: 32 × 80 px (0.32 × 0.80 m at PPM=100).
+ * Sprite canvas: 32 × 80 px logical size (0.32 × 0.80 m at PPM=100).
  * Draw origin: (playerX – 0.16, playerY – 0.32) — bottom aligned to physics box bottom,
  * top extends 0.16 m above the physics box to accommodate the head.
  *
  * Pixmap y=0 is the TOP of the sprite; y=79 is the BOTTOM.
+ *
+ * ## 4 K / HiDPI support
+ * [makeTex] draws at the base 32 × 80 resolution and then nearest-neighbour-upscales
+ * to `32 * [DisplayScale.spriteScale] × 80 * [DisplayScale.spriteScale]`.
+ * At 4 K (spriteScale = 3) each logical pixel becomes a crisp 3 × 3 block — the
+ * classic pixel-art look — without any blurring from bilinear upsampling.
+ * The [LevelRenderer] still renders the sprite at its fixed 0.32 × 0.80 m world size;
+ * the larger texture simply maps 1:1 to the physical screen pixels.
  */
 object SpriteFactory {
 
@@ -229,9 +237,22 @@ object SpriteFactory {
             }
         }
 
-        val tex = Texture(pm)
-        tex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
-        pm.dispose()
+        val scale = DisplayScale.spriteScale
+        val tex: Texture
+        if (scale <= 1) {
+            tex = Texture(pm)
+            tex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+            pm.dispose()
+        } else {
+            // Nearest-neighbour upscale: each logical pixel → scale×scale physical pixels.
+            // This preserves the crisp pixel-art look at integer display scales (2×, 3×…).
+            val scaled = Pixmap(SPRITE_W * scale, SPRITE_H * scale, Pixmap.Format.RGBA8888)
+            scaled.drawPixmap(pm, 0, 0, SPRITE_W, SPRITE_H, 0, 0, SPRITE_W * scale, SPRITE_H * scale)
+            pm.dispose()
+            tex = Texture(scaled)
+            tex.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+            scaled.dispose()
+        }
         return tex
     }
 }

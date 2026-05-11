@@ -8,6 +8,10 @@ import kotlinx.serialization.json.Json
 /**
  * Manages saving and loading game state to/from JSON files.
  * Uses kotlinx.serialization for clean serialization API.
+ *
+ * Caches the last-loaded state per filename so callers in the hot render path
+ * (e.g. LevelRenderer portal colours) never hit the disk more than once per load.
+ * The cache for a file is invalidated on every [saveGame] or [deleteSave] call.
  */
 object SaveManager {
     private val json = Json {
@@ -16,6 +20,9 @@ object SaveManager {
     }
     private const val SAVE_DIR = "saves"
     private const val DEFAULT_SAVE_FILE = "save_slot_1.json"
+
+    /** In-memory cache: filename → last loaded GameState. */
+    private val cache = mutableMapOf<String, GameState>()
 
     /**
      * Save the current game state to a JSON file.
@@ -37,6 +44,7 @@ object SaveManager {
             if (final.exists()) final.delete()
             tmp.copyTo(final)
             tmp.delete()
+            cache[filename] = state   // keep cache coherent after save
             Gdx.app.log("SaveManager", "Saved to $filename")
         } catch (e: Exception) {
             Gdx.app.error("SaveManager", "Failed to save: ${e.message}")
@@ -48,15 +56,17 @@ object SaveManager {
      * Returns a default state if the file doesn't exist.
      */
     fun loadGame(filename: String = DEFAULT_SAVE_FILE): GameState {
+        cache[filename]?.let { return it }
         return try {
             val saveFile = Gdx.files.local("$SAVE_DIR/$filename")
             if (!saveFile.exists()) {
-                return GameState()
+                return GameState().also { cache[filename] = it }
             }
 
             val jsonString = saveFile.readString()
             val state = json.decodeFromString<GameState>(jsonString)
             Gdx.app.log("SaveManager", "Loaded from $filename")
+            cache[filename] = state
             state
         } catch (e: Exception) {
             Gdx.app.error("SaveManager", "Failed to load: ${e.message}")
@@ -91,9 +101,11 @@ object SaveManager {
             val saveFile = Gdx.files.local("$SAVE_DIR/$filename")
             if (saveFile.exists()) {
                 saveFile.delete()
+                cache.remove(filename)   // evict cache entry
                 Gdx.app.log("SaveManager", "Deleted $filename")
                 true
             } else {
+                cache.remove(filename)
                 false
             }
         } catch (e: Exception) {
