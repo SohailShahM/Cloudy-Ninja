@@ -15,6 +15,7 @@ import com.sohai.platformer.abilities.LayaAbility
 import com.sohai.platformer.abilities.ZephyrAbility
 import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.entities.EcoToken
+import com.sohai.platformer.entities.Enemy
 import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.SnapshotPickup
@@ -57,6 +58,7 @@ class LevelRunState(
     private val camera: OrthographicCamera,
     private val pendingBodyDestroy: MutableSet<Body>,
     private val renderer: LevelRenderer,
+    val enemies: MutableList<Enemy>,
     private val checkpointAutosaveFile: String,
     /** When true: timer counts up from 0, checkpoint autosaves are suppressed. */
     val isTimeTrial: Boolean = false
@@ -141,6 +143,7 @@ class LevelRunState(
 
     init {
         totalHazards = obstacleManager.rects().count { it.kind == ObstacleKind.HAZARD }
+
         if (debugAutopilotEnabled) {
             Gdx.app.log(
                 "LevelRunState",
@@ -268,6 +271,17 @@ class LevelRunState(
         )
 
         for (mp in movingPlatforms) mp.update(delta)
+
+        // Update enemies; queue body-destroy for dead ones
+        val deadEnemies = mutableListOf<Enemy>()
+        for (enemy in enemies) {
+            enemy.update(delta)
+            if (enemy.isDead) deadEnemies.add(enemy)
+        }
+        for (dead in deadEnemies) {
+            pendingBodyDestroy.add(dead.body)
+            enemies.remove(dead)
+        }
 
         // Fixed-timestep physics
         physicsAccum += delta

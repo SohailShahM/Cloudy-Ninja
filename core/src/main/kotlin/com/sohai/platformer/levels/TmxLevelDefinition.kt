@@ -29,6 +29,7 @@ import com.sohai.platformer.world.ObstacleManager
  * @param ecoTokens     Eco-token positions in virtual pixels (converted to meters internally).
  * @param snapshots     Pairs of (CloudAtlasLibrary id, x px, y px) for snapshot pickups.
  * @param checkpoints   Static checkpoint definitions for this level.
+ * @param enemies       Enemy placement definitions for this level.
  */
 data class TmxLevelDefinition(
     val id: String,
@@ -40,7 +41,28 @@ data class TmxLevelDefinition(
     val exitXPx: Float,
     val ecoTokens: List<Vector2> = emptyList(),
     val snapshots: List<SnapshotDef> = emptyList(),
-    val checkpoints: List<LevelCheckpoint> = emptyList()
+    val checkpoints: List<LevelCheckpoint> = emptyList(),
+    val enemies: List<EnemyDef> = emptyList()
+)
+
+/**
+ * Lightweight description of an enemy placement inside a level.
+ *
+ * Positions are in virtual pixels; [TmxLevel] / [LevelRunState] converts to
+ * world metres by dividing by [Constants.PPM].
+ *
+ * @param type         Enemy type identifier (e.g. "smog_sprite").
+ * @param xPx          Spawn X in virtual pixels.
+ * @param yPx          Spawn Y in virtual pixels.
+ * @param patrolLeftPx Left patrol waypoint X in virtual pixels.
+ * @param patrolRightPx Right patrol waypoint X in virtual pixels.
+ */
+data class EnemyDef(
+    val type: String,
+    val xPx: Float,
+    val yPx: Float,
+    val patrolLeftPx: Float,
+    val patrolRightPx: Float
 )
 
 /**
@@ -98,6 +120,8 @@ class TmxLevel(private val def: TmxLevelDefinition) : Level() {
     override fun getEcoTokenPositions(): List<Vector2> =
         def.ecoTokens.map { Vector2(it.x / Constants.PPM, it.y / Constants.PPM) }
 
+    fun getEnemyDefs(): List<EnemyDef> = def.enemies
+
     override fun getSnapshotPickups(world: World): List<SnapshotPickup> =
         def.snapshots.mapNotNull { snap ->
             CloudAtlasLibrary.get(snap.atlasId)?.let { entry ->
@@ -152,6 +176,12 @@ object LevelRegistry {
                 Vector2(1400f, 450f),
                 Vector2(1610f, 450f),
                 Vector2(1800f, 410f)
+            ),
+            enemies = listOf(
+                // Three Smog Sprites patrolling ground sections of Level 1
+                EnemyDef("smog_sprite", 400f, 60f,  300f,  550f),
+                EnemyDef("smog_sprite", 950f, 60f,  850f, 1100f),
+                EnemyDef("smog_sprite", 1500f, 60f, 1350f, 1650f)
             )
         ),
 

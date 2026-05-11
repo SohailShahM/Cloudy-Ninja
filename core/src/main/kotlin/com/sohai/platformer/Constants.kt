@@ -51,7 +51,8 @@ object Constants {
     const val BIT_CHECKPOINT: Short = 32
     const val BIT_DROPLET: Short = 64
     const val BIT_EXIT: Short = 128
-    const val BIT_ECOTOKEN: Short = 256.toShort()
+    const val BIT_ENEMY: Short = 256.toShort()
+    const val BIT_ECOTOKEN: Short = 512.toShort()
 
     // Debug / profiling
     const val PERF_LOG_INTERVAL_SECONDS = 1f

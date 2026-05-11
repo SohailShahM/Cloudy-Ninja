@@ -5,6 +5,7 @@ import com.badlogic.gdx.physics.box2d.*
 import com.sohai.platformer.effects.WaterDroplet
 import com.sohai.platformer.physics.CleanseEventQueue
 import com.sohai.platformer.entities.EcoToken
+import com.sohai.platformer.entities.Enemy
 import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.SnapshotPickup
@@ -43,6 +44,31 @@ class WorldContactListener : ContactListener {
                     CleanseEventQueue.push(pos.x, pos.y)
                     udB.destroy()
                 }
+            }
+        }
+
+        // Droplet hitting enemy -> damage enemy and destroy droplet
+        if (begin) {
+            when {
+                udA is WaterDroplet && udB == "enemy" -> {
+                    val enemy = fixB.body.userData as? Enemy
+                    enemy?.takeDamage(1)
+                    udA.destroy()
+                }
+                udB is WaterDroplet && udA == "enemy" -> {
+                    val enemy = fixA.body.userData as? Enemy
+                    enemy?.takeDamage(1)
+                    udB.destroy()
+                }
+            }
+        }
+
+        // Player touching enemy -> kill player (same as hazard)
+        if (begin && (udA == "enemy" || udB == "enemy")) {
+            val playerFixture = if (udA == "enemy") fixB else fixA
+            val player = playerFixture.body.userData as? PlayerController
+            if (player != null && !player.isFlashing) {
+                player.isDead = true
             }
         }
 

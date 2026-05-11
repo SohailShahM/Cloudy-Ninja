@@ -22,10 +22,13 @@ import com.sohai.platformer.abilities.LayaAbility
 import com.sohai.platformer.abilities.ZephyrAbility
 import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.entities.EcoToken
+import com.sohai.platformer.entities.Enemy
 import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
+import com.sohai.platformer.entities.SmogSprite
 import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.levels.Level
+import com.sohai.platformer.levels.TmxLevel
 import com.sohai.platformer.persist.SettingsManager
 import com.sohai.platformer.physics.WorldContactListener
 import com.sohai.platformer.rendering.CharacterAnimator
@@ -171,11 +174,33 @@ class GameScreen(
         // ── Wire particle callbacks from player ───────────────────────────────
         // renderer is created below; player callbacks reference renderer via lambda closure.
 
+        // Instantiate enemies from level definition (shared list: renderer draws, runState updates)
+        val enemies = mutableListOf<Enemy>()
+        if (level is TmxLevel) {
+            for (def in level.getEnemyDefs()) {
+                when (def.type) {
+                    "smog_sprite" -> enemies.add(
+                        SmogSprite.create(
+                            world,
+                            x = def.xPx / Constants.PPM,
+                            y = def.yPx / Constants.PPM,
+                            patrolLeftX = def.patrolLeftPx / Constants.PPM,
+                            patrolRightX = def.patrolRightPx / Constants.PPM
+                        )
+                    )
+                    else -> Gdx.app.error("GameScreen", "Unknown enemy type: ${def.type}")
+                }
+            }
+            if (enemies.isNotEmpty()) {
+                Gdx.app.log("GameScreen", "Spawned ${enemies.size} enemies for level ${level.id}")
+            }
+        }
+
         renderer = LevelRenderer(
             shapeRenderer, spriteBatch, camera, parallaxBg, particles,
             eboAbility, layaAbility, zephyrAbility,
             obstacleManager, movingPlatforms, ecoTokens, snapshotPickups,
-            player, eboAnimator, layaAnimator, footstepColor
+            enemies, player, eboAnimator, layaAnimator, footstepColor
         )
 
         player.onJump = {
@@ -190,7 +215,7 @@ class GameScreen(
             ecoTokens, snapshotPickups, obstacleManager, movingPlatforms,
             world, hud, game, particles, screenFade,
             eboAnimator, layaAnimator, camera, pendingBodyDestroy,
-            renderer, CHECKPOINT_AUTOSAVE_FILE,
+            renderer, enemies, CHECKPOINT_AUTOSAVE_FILE,
             isTimeTrial = isTimeTrial
         )
 
