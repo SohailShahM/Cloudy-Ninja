@@ -97,3 +97,31 @@ if (Constants.SMOKE_MODE) {
 **Cost:** Two failed CI runs (one at 90s timeout, one at 240s timeout) before identifying the overlay as the blocker. About ~25k tokens of debugging.
 
 **Lesson:** When building a smoke-test harness that relies on a game-internal timer to exit cleanly, audit EVERY code path that can pause/gate the game's update loop. Overlays, pause menus, hitstop, game-over modal — all of them break the exit timer. Either bypass them in test mode, or move the test-exit timer somewhere that ticks unconditionally (e.g. directly inside `render(delta)` not gated by any state).
+
+## 2026-05-11 — Antigravity skips PR-open + TASKS.md updates (T-046a)
+
+**Symptom:** Antigravity (Gemini 3.1 Pro backend) was asked in the launch prompt to: (1) write `art-research/tileset-candidates.md`, (2) move T-046a from Todo→Done in TASKS.md, (3) open a PR titled "T-046a: tileset research". It did (1) flawlessly in ~5 minutes — high-quality 12-candidate comparison table — but skipped (2) and (3). The branch `antigravity/T-046a-tileset-research` was pushed; the PR had to be opened manually by another agent.
+
+**Cause (theory):** Antigravity's agent loop appears to consider the task "done" once the requested file content is committed and pushed. Workflow housekeeping steps phrased as a numbered list inside the prompt aren't treated as deliverables of equal weight — only as a checklist that the agent self-marks complete without verifying. Could also be a permissions issue (Antigravity bot might not have PR-open scope on the repo), but the branch push worked so write scope clearly exists.
+
+**Workaround:** When prompting Antigravity, structure follow-through actions as SEPARATE explicit deliverables, not list items. E.g.:
+> Deliverable 1: write the file.
+> Deliverable 2: separately, you must also open a PR — confirm with the user before exiting.
+
+Or simpler — accept that Antigravity is great at the *artifact* and let a different agent (or human / planner-Claude) handle the workflow wrap-up. Update `prompts/T-XXX-antigravity.md` templates to explicitly note "PR-open is the user's job after Antigravity finishes."
+
+**Cost:** ~5 min of manual cleanup. Not painful but worth automating away for future Antigravity tickets. Time-to-output (5 min for full research) is genuinely impressive — this tool is the right fit for content-generation tickets.
+
+**Lesson:** Different agent platforms have different "definition of done." Copilot agent goes all the way through to opening a PR. Claude Code agent commits + pushes + opens PR. Antigravity stops at commit. Update tool runbooks in `START_HERE.md` to flag this so future routing decisions reflect actual end-to-end behavior.
+
+## 2026-05-12 — Antigravity doesn't catch art-style/perspective mismatches (T-046a)
+
+**Symptom:** Antigravity (Gemini 3.1 Pro backend) ran T-046a and produced a 12-candidate comparison in ~5 min. One ARID-theme candidate — "Whispers of Avalon Desert" on OpenGameArt — was rated `4/5 theme fit`. Visual review revealed it's a **top-down RPG-perspective** tileset (skull dunes, palm oasis viewed from above). Cloudy Ninja is a **side-scrolling platformer**. Geometry incompatible.
+
+**Cause:** Antigravity's research loop reads asset metadata (title, license, file count, description text) but doesn't perform visual analysis on preview images. Camera-perspective and visual-style compatibility are invisible to text-only analysis. The agent confidently rates "theme fit" based on description ("desert tileset") without checking whether the geometry will slot into a side-scroller.
+
+**Workaround:** Future Antigravity art-research prompts must explicitly require: *"For each candidate, examine the preview image and verify the intended camera perspective (top-down vs side-scrolling). Reject any candidate whose perspective doesn't match Cloudy Ninja's side-scrolling 2-D platformer style."* Alternatively, accept that art research always needs a human visual-review pass before acting on it.
+
+**Cost:** ~5 min of user visual-review to catch (1 of 4 top recommendations needed re-research). The other three candidates — Kenney pixel-platformer, Pixel Art Forest, Bluegrass — were correct.
+
+**Lesson:** Research-bot tools excel at *breadth* but miss *style/perspective compatibility*. Always do a quick visual pass before acting on art-research output. Bake this into `prompts/T-046a-antigravity.md` and any future art-research prompts.

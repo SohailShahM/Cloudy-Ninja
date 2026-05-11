@@ -91,15 +91,19 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 
 ### T-031 — Tile-based terrain rendering  [P2]
 - **Status:** Todo
-- **Tool:** `human-then-claude-code-sonnet`  *(user supplies/finds the 3 tileset PNGs from Kenney/itch.io; then Claude wires `TileRenderer`)*
+- **Tool:** `human-then-claude-code-sonnet`  *(user downloads Kenney `pixel-platformer` zip from https://kenney.nl/assets/pixel-platformer and extracts to `assets/tilesets/kenney_pixel_platformer/`; then Claude wires `TileRenderer`)*
 - **Tier:** M
-- **Autonomous-eligible:** no  *(blocks on art asset selection)*
+- **Autonomous-eligible:** no  *(blocks on user asset download; Kenney's site has an optional donation gate that automation shouldn't bypass)*
 - **Agent:** _unclaimed_
 - **Branch:** _none_
 - **Depends on:** _none_
 - **GDD ref:** §21 ("Tile Rendering Spec")
-- **Files:** `rendering/TileRenderer.kt` (new), `screens/LevelRenderer.kt`, `assets/tilesets/` (3 new PNG atlases)
-- **Goal:** Create three 128×64 px tileset PNGs (`tiles_arid.png`, `tiles_wind.png`, `tiles_eco.png`) — each with at least 2 tiles: solid-interior and grass/rock-top. Add `TileRenderer` that tile-fills each `ObstacleRect` using `SpriteBatch` instead of the current `ShapeRenderer` solid-rect pass. `LevelRenderer` selects the tileset by `ParallaxTheme`. Remove the ShapeRenderer obstacle-rect draw loop after verifying tile coverage is complete.
+- **Art decision (resolved 2026-05-12 via T-046a):**
+  - **Base pack:** Kenney `pixel-platformer` (CC0, ~350 files, side-scroller perspective) — provides terrain, characters, enemies, pickups, hazards
+  - **ECO accent:** [OpenGameArt Pixel Art Forest](https://opengameart.org/content/pixel-art-forest-tilesets) (CC0) for vines, foliage
+  - **ARID/WIND:** use Kenney's sandy/sky tiles within the base pack (no separate tilesets needed)
+- **Files:** `rendering/TileRenderer.kt` (new), `screens/LevelRenderer.kt`, `assets/tilesets/kenney_pixel_platformer/` (user-supplied), `assets/tilesets/eco_accents/` (optional)
+- **Goal:** Wire Kenney's `pixel-platformer` tileset (and ECO accent) into a new `TileRenderer` that tile-fills each `ObstacleRect` using `SpriteBatch` instead of the current `ShapeRenderer` solid-rect pass. `LevelRenderer` selects tiles by `ParallaxTheme` (ARID/WIND uses Kenney base, ECO mixes in forest accents). Remove the ShapeRenderer obstacle-rect draw loop after verifying tile coverage is complete.
 - **Done when:** All three levels show tiled terrain instead of solid grey/red rectangles; no visual gaps; compile clean.
 
 ### T-033 — Hub world: Sky Sanctuary (Level 0-0)  [P2]
@@ -165,18 +169,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** During a time-trial run, `LevelRunState` records one `GhostFrame(x, y, facingRight, character)` every 3 rendered frames. On new best time, serialize to `saves/ghost_{levelId}.json` via a new `SaveManager.saveGhost/loadGhost` pair. On subsequent time-trial runs for the same level, load the ghost and advance a `ghostFrameIndex` each frame. `LevelRenderer` draws the ghost as a 35%-alpha tinted circle/sprite at the ghost position.
 - **Done when:** Setting a new best saves a ghost; next run shows the ghost moving through the level; ghost does not interfere with gameplay. Compile clean.
 
-### T-041 — Stats screen on main menu  [P3]
-- **Status:** Todo
-- **Tool:** `copilot-agent`  *(single new screen, reads existing data — ideal Tier S for autonomous PR)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** GDD_ADDENDUM §16 gap analysis
-- **Files:** `screens/StatsScreen.kt` (new), `screens/MainMenuScreen.kt`
-- **Goal:** Add a "Stats" button to `MainMenuScreen` that opens `StatsScreen`. Stats screen shows per-slot: total deaths, levels completed (count + list), eco-tokens collected (running total from completed runs), best times per level, achievements unlocked (count/12 + list). All data read from `SaveManager.loadGame()` + `AchievementRegistry`. Back button returns to main menu.
-- **Done when:** Stats screen opens from main menu, displays accurate data for the active slot, back button works. Compile clean.
 
 
 ### T-046 — Full graphics overhaul: pixel-art sprites + tilesets  [P3]
@@ -289,19 +281,7 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
-### T-037 — Achievement system + toast notifications  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`  *(multi-file but spec is concrete; spawn sub-agents for parallel work on the 12 achievement conditions)*
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sonnet
-- **Branch:** claude/T-037-achievements
-- **Started:** 2026-05-11
-- **Depends on:** _none_
-- **GDD ref:** §22 ("Achievement System Spec")
-- **Files:** `progression/Achievement.kt` (new), `progression/AchievementRegistry.kt` (new), `screens/AchievementToast.kt` (new), `persist/GameState.kt`, `screens/LevelRunState.kt`, `screens/GameScreen.kt`, `screens/StatsScreen.kt` (see T-041)
-- **Goal:** Implement the 12 achievements from GDD §22.1. Add `unlockedAchievements: Set<String>` to `GameState`. Add `AchievementToast` — slides in from top-right, holds 2.4 s, fades out, never overlaps. `LevelRunState.update()` checks unlock conditions for in-game achievements (first_jump, first_cleanse, eco_sweep, no_death_run). `LevelTransitionController` checks speed_demon and world clear achievements. `GameScreen` renders toast above Layer 4 (HUD).
-- **Done when:** At least 6 achievements can be unlocked during normal play; toast appears and dismisses cleanly; unlocked set persists. Compile clean.
+_(none — all claimed tasks completed)_
 
 
 <!--
@@ -325,6 +305,20 @@ Template for moving a task here:
 ---
 
 ## Done
+
+### T-037 — Achievement system + toast notifications
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** 12 achievements from GDD §22 implemented. `progression/Achievement.kt` + `AchievementRegistry.kt` + `screens/AchievementToast.kt` (FitViewport+Stage toast with smoothstep slide-in, 2.4s hold, fade-out, internal queue prevents overlap). `GameState` gained `unlockedAchievements: Set<String>` + `totalStomps: Int` (defaults keep saves backward-compatible). 11 unlock hooks wired across `LevelRunState` + `LevelTransitionController` + `GameScreen.sentinel.onDefeated`. Toast renders at Layer 4.5 (above HUD, below pause). `FontManager.getShared()` used per T-044 lesson. **Implemented by Claude Sonnet sub-agent in ~7 min; auto-merged via PR #7.**
+- **Commit/PR:** PR #7 (squashed merge `9b27015`)
+- **Tool:** `claude-code-sonnet`
+
+### T-041 — Stats screen on main menu
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** New `screens/StatsScreen.kt` shows per-slot stats: total deaths, completed levels, achievements unlocked (count/12 + list). Reads `SaveManager.loadGame(slot)` for each of 3 slots. Scrollable card layout. Stats button added to `MainMenuScreen` between Atlas and Settings. **Implemented end-to-end by Copilot coding agent autonomously from GitHub Issue #2; auto-merged via PR #3.**
+- **Commit/PR:** PR #3 (squashed merge `4d592bc`)
+- **Tool:** `copilot-agent`
 
 ### T-A1 — AI smoke test: per-level autopilot run via CI
 - **Status:** Done
@@ -532,9 +526,10 @@ Template for moving a task here:
 
 ### T-046a — Tileset research: find pixel-art tilesets for 3 themes
 - **Status:** Done
-- **Completed:** 2026-05-11
-- **Outcome:** Researched 12 tilesets (4 per theme) from OpenGameArt and Kenney.nl and compiled them into `art-research/tileset-candidates.md`.
-- **Commit/PR:** branch `antigravity/T-046a-tileset-research` (PR creation failed due to lack of `gh` CLI)
+- **Completed:** 2026-05-12
+- **Outcome:** Antigravity (Gemini 3.1 Pro) researched 12 candidate tilesets (4 per theme: ARID/WIND/ECO) from OpenGameArt and Kenney.nl, compiled into `art-research/tileset-candidates.md` with name, source URL, license, file count, theme fit, art quality (1-5), and character-sprite notes. **Decision (post-visual-review):** Kenney `pixel-platformer` (CC0, ~350 files, side-scroller perspective) as base + OpenGameArt Pixel Art Forest (CC0) for ECO accents; ARID/WIND use Kenney's sandy/sky tiles within base pack. One Antigravity recommendation rejected post-review (Whispers of Avalon Desert — top-down RPG perspective; flagged in LEARNINGS.md as research-tool blindspot). **Antigravity time-to-output: ~5 min** for research; ~5 min of human visual review.
+- **Commit/PR:** PR #10 (merged) + decision recorded in `GAME_PLAN.md` and T-031 unblocked.
+- **Tool:** `antigravity`
 
 <!--
 Template for moving a task here:
