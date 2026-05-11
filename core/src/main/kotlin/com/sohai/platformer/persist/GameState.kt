@@ -24,7 +24,11 @@ data class GameState(
     /** Cumulative deaths across all sessions for this slot */
     val totalDeaths: Int = 0,
     /** ISO-8601 date string of the last save ("yyyy-MM-dd"), empty if never saved */
-    val lastPlayed: String = ""
+    val lastPlayed: String = "",
+    /** IDs of achievements unlocked across all runs */
+    val unlockedAchievements: Set<String> = emptySet(),
+    /** Total enemy stomps across all sessions for this slot (used for stomp_10 achievement) */
+    val totalStomps: Int = 0
 )
 
 @Serializable

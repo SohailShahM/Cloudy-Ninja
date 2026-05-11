@@ -20,6 +20,8 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
     /** Set by WorldContactListener when the player contacts a portal sensor (e.g. "portal_world0"). Null when not touching any portal. */
     var portalContact: String? = null
     var onJump: (() -> Unit)? = null
+    /** Set to true for one frame whenever a jump fires (any type). Read by LevelRunState for achievement checks. Reset at the start of each update(). */
+    var jumpFiredThisFrame: Boolean = false
     /**
      * Invoked when a footstep should spawn a particle.
      * Args: (x, y, isLeftFoot). Coordinates are world meters at the foot position,
@@ -239,6 +241,7 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
         // (No platformContacts to clear — friction-based carry has no Java state.)
     }
     fun update(deltaTime: Float) {
+        jumpFiredThisFrame = false   // reset each frame; set below when a jump actually fires
         val vel = body.linearVelocity
 
         // Asymmetric gravity & apex hang (GDD §2.2) — placed first, before any
@@ -311,21 +314,25 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
                 body.linearVelocity = Vector2(body.linearVelocity.x, Constants.PLAYER_JUMP_IMPULSE)
                 jumpBufferCounter = 0f
                 coyoteTimeCounter = 0f
+                jumpFiredThisFrame = true
                 onJump?.invoke()
             } else if (isTouchingWallRight) {
                 body.linearVelocity = Vector2(-Constants.PLAYER_WALL_JUMP_IMPULSE_X, Constants.PLAYER_WALL_JUMP_IMPULSE_Y)
                 jumpBufferCounter = 0f
                 wallJumpLockCounter = Constants.WALL_JUMP_LOCK_TIME
+                jumpFiredThisFrame = true
                 onJump?.invoke()
             } else if (isTouchingWallLeft) {
                 body.linearVelocity = Vector2(Constants.PLAYER_WALL_JUMP_IMPULSE_X, Constants.PLAYER_WALL_JUMP_IMPULSE_Y)
                 jumpBufferCounter = 0f
                 wallJumpLockCounter = Constants.WALL_JUMP_LOCK_TIME
+                jumpFiredThisFrame = true
                 onJump?.invoke()
             } else if (airJumpAvailable) {
                 body.linearVelocity = Vector2(body.linearVelocity.x, Constants.PLAYER_JUMP_IMPULSE)
                 jumpBufferCounter = 0f
                 airJumpAvailable = false
+                jumpFiredThisFrame = true
                 onJump?.invoke()
             }
         }
