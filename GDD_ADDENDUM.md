@@ -9,55 +9,12 @@
 
 ---
 
-## 0. Project Snapshot (May 2026, post Sprint C)
+## 0. Project state
 
-| Metric | Value |
-|---|---|
-| Engine | libGDX 1.14.0 + Box2D, Kotlin |
-| Resolution | 1280×720 virtual, PPM = 100; 4K/HiDPI via `DisplayScale` |
-| Levels shipped | 7 (4 tutorial rooms + 3 campaign; Level3 has boss arena) |
-| Characters | 3 of 3 v1.0 chars (Ebo, Laya, Zephyr — all playable) |
-| Cloud Atlas entries | 6 shipped (target 12 via T-045) |
-| Test coverage | 9 Kotest specs (player movement, persistence, contacts, particles, atlas, TMX coords) |
-| Audio assets | 8 SFX + 3 ambient music tracks (procedurally generated) |
-| Font assets | `FontManager` FreeType cache — DisplayScale-aware |
+See **[GAME_PLAN.md](GAME_PLAN.md)** for the pitch, resolved decisions, roadmap, and shipped systems.
+See **[TASKS.md](TASKS.md)** for ticket-level history (every completed T-### lists outcome + commit hash).
 
-### Sprint A — Done (2026-05-09)
-
-- All 6 P0 bugs resolved: platform carry, checkpoint respawn, data-class collision, touch double-fire, atlas persistence, body-destroy queue
-- Movement calibrated to Celeste reference (apex-hang, asymmetric gravity, coyote/buffer windows)
-- Game-feel: 200-particle pool, screen shake, hitstop, camera dead-zone + forward focus
-
-### Sprint B — Done (2026-05-09)
-
-- Hot-path Color allocations hoisted; `FontManager` shared cache; atomic save writes; fixed-timestep accumulator
-- `Settings` + `SettingsManager` — volumes, accessibility flags, keybind scaffold
-- `CloudAtlasScreen` browseable from main menu; round-trip persistence tests added
-- **BUG-001 (intermittent native Box2D crash):** resolved — root cause was stale body reference during portal transition. Fix: portal deferred to end-of-frame via `pendingPortalTarget`; `SaveManager` in-memory cache eliminates per-frame disk reads that masked the stale reference. Fix verified in T-043.
-
-### Sprint C — Done (2026-05-11)
-
-- Enemy framework: `Enemy` abstract base + `SmogSprite` patroller (T-029); stomp-defeat mechanic (T-032)
-- `Projectile` kinematic hazard entity (T-040)
-- Boss encounter: Storm Sentinel with 3-phase attack cycle, 3 HP, defeat unlocks atlas entry (T-034)
-- Hub world: Sky Sanctuary Level0_0 with 4 portal doors (T-033)
-- Background music system: `MusicManager` with 1.5s crossfade, 3 procedural ambient tracks (T-030)
-- Key rebinding UI in Settings (T-036)
-- 4K/HiDPI display scaling via `DisplayScale` singleton (T-042)
-- Polish: HUD transparency, Settings font scaling, parallax background upgrade, terrain visual detail (T-044)
-- Bug fixes: SaveManager cache, portal crash, spawn-death flipY (T-043)
-
-### Sprint D — Planned (next 2 weeks)
-
-- T-031 tile-based terrain rendering
-- T-035 audio bus sliders (Music / SFX / UI)
-- T-037 achievement system + toast notifications
-- T-038 ghost replay in time trials
-- T-041 stats screen on main menu
-- T-045 Cloud Atlas expansion to 12 entries
-- T-A1/T-A2 AI smoke testing — validate green for 2 weeks
-- T-046 graphics overhaul starts (art production)
-- First public alpha to itch.io (private link, ~5 testers)
+This document is **technical reference material only**: physics calibration numbers, per-feature engineering specs, bug post-mortems. Sections 1+ below.
 
 ---
 
