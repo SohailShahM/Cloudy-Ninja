@@ -190,19 +190,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add a "Stats" button to `MainMenuScreen` that opens `StatsScreen`. Stats screen shows per-slot: total deaths, levels completed (count + list), eco-tokens collected (running total from completed runs), best times per level, achievements unlocked (count/12 + list). All data read from `SaveManager.loadGame()` + `AchievementRegistry`. Back button returns to main menu.
 - **Done when:** Stats screen opens from main menu, displays accurate data for the active slot, back button works. Compile clean.
 
-### T-046a — Tileset research: find pixel-art tilesets for 3 themes  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
-- **Tier:** S  *(research only — no code)*
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-046a-tileset-research`  *(create on claim — only adds files in `art-research/`)*
-- **Depends on:** _none_
-- **GDD ref:** _to be written in GDD_ADDENDUM_ (T-046 follow-up)
-- **Files:** `art-research/tileset-candidates.md` (new), `art-research/license-notes.md` (new, optional)
-- **Goal:** Research pixel-art tileset options for the three campaign worlds (ARID / WIND / ECO). Search **Kenney.nl** and **OpenGameArt.org** for tilesets at **32×32 base resolution**. For each promising candidate, capture: tileset name, source URL, license (CC0 / CC-BY / etc.), file count, theme fit (arid/wind/eco), art quality (subjective 1–5), notes on whether it includes character sprites or just terrain. Output a single markdown comparison file `art-research/tileset-candidates.md` with one table per theme. **Do not download any files. Do not modify any code.** This is pure decision-support research feeding the T-046 art commission decision.
-- **Done when:** `art-research/tileset-candidates.md` exists with at least 3 candidates per theme (9+ total). Each candidate has all fields filled. PR opens against `main` containing only the new file(s) under `art-research/`. AI smoke test (T-A1) passes trivially since no code changed.
-- **Constraints:** Antigravity must NOT touch any file outside `art-research/`. Must NOT add new dependencies. Must NOT download asset files (you're producing research notes, not assets). If a candidate looks ideal but requires downloading to evaluate, list it as "would-need-download" instead.
 
 ### T-046 — Full graphics overhaul: pixel-art sprites + tilesets  [P3]
 - **Status:** Todo
@@ -501,6 +488,12 @@ Template for moving a task here:
 - **Completed:** 2026-05-09
 - **Outcome:** `.github/workflows/ci.yml` created; runs `:core:compileKotlin`, `:core:test`, and `android:lint` on push/PR to main; uploads lint and test reports as artifacts.
 - **Commit/PR:** this branch
+
+### T-046a — Tileset research: find pixel-art tilesets for 3 themes
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** Researched 12 tilesets (4 per theme) from OpenGameArt and Kenney.nl and compiled them into `art-research/tileset-candidates.md`.
+- **Commit/PR:** branch `antigravity/T-046a-tileset-research` (PR creation failed due to lack of `gh` CLI)
 
 <!--
 Template for moving a task here:
