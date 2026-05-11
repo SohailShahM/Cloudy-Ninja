@@ -156,6 +156,12 @@ class LevelRunState(
     var onAtlasCollected: ((SnapshotPickup) -> Unit)? = null
     /** Called when spirit health hits 0; GameScreen creates the game-over overlay. */
     var onGameOverStart: (() -> Unit)? = null
+    /**
+     * Set when a portal is activated; [GameScreen] reads this at end-of-frame and
+     * performs the actual screen transition + dispose there (never mid-update).
+     */
+    var pendingPortalTarget: String? = null
+
     /** Called when a portal is activated in the hub world; GameScreen navigates to the target level. */
     var onPortalActivated: ((targetLevelId: String) -> Unit)? = null
 
@@ -503,9 +509,11 @@ class LevelRunState(
             val state       = SaveManager.loadGame()
             val unlocked    = required.all { it in state.completedLevels }
             if (unlocked && targetLevel != null) {
-                Gdx.app.log("LevelRunState", "Portal activated — $portalId -> $targetLevel")
+                Gdx.app.log("LevelRunState", "Portal activated 🌀 $portalId -> $targetLevel")
                 player.portalContact = null
-                onPortalActivated?.invoke(targetLevel)
+                // Defer the actual screen swap to end-of-frame so we never call dispose()
+                // from inside the physics/update step (causes a Box2D native crash).
+                pendingPortalTarget = targetLevel
             } else {
                 // Locked portal — just ignore the contact
                 player.portalContact = null

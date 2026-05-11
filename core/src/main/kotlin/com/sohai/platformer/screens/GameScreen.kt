@@ -274,14 +274,6 @@ class GameScreen(
             )
             Gdx.input.inputProcessor = gameOverOverlay!!.stage
         }
-        runState.onPortalActivated = { targetLevelId ->
-            val targetLevel = LevelManager.getLevel(targetLevelId)
-            if (targetLevel != null && game != null) {
-                game.screen = GameScreen(targetLevel, game)
-                dispose()
-            }
-        }
-
         transitionCtrl = LevelTransitionController(
             level, game, screenFade, ecoTokens,
             CHECKPOINT_AUTOSAVE_FILE,
@@ -404,6 +396,16 @@ class GameScreen(
         if (runState.levelCompleted) {
             runState.levelCompletionTimer -= clampedDelta
             if (runState.levelCompletionTimer <= 0f) transitionCtrl.goToNextLevel(runState.score)
+        }
+        val portalTarget = runState.pendingPortalTarget
+        if (portalTarget != null && game != null) {
+            runState.pendingPortalTarget = null
+            val targetLevel = LevelManager.getLevel(portalTarget)
+            if (targetLevel != null) {
+                game.screen = GameScreen(targetLevel, game)
+                dispose()
+                return
+            }
         }
     }
 
