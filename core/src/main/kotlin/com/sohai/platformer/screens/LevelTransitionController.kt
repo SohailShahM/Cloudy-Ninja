@@ -9,6 +9,7 @@ import com.sohai.platformer.levels.Level
 import com.sohai.platformer.levels.LevelManager
 import com.sohai.platformer.persist.Checkpoint
 import com.sohai.platformer.persist.SaveManager
+import com.sohai.platformer.progression.AchievementRegistry
 import com.sohai.platformer.rendering.ScreenFade
 
 /**
@@ -25,11 +26,29 @@ class LevelTransitionController(
     private val onInputChange: (Stage) -> Unit,
     private val onDispose: () -> Unit,
     private val isTimeTrial: Boolean = false,
-    private val onBestTime: ((time: Float, isNewBest: Boolean) -> Unit)? = null
+    private val onBestTime: ((time: Float, isNewBest: Boolean) -> Unit)? = null,
+    private val achievementToast: AchievementToast? = null,
+    private val saveSlotFile: String = "save_slot_1.json"
 ) {
 
     private var lastTrialTime = 0f
     private var trialIsNewBest = false
+
+    /**
+     * Unlock an achievement by ID.  No-ops if already unlocked.
+     * Shows the toast if [achievementToast] is wired.
+     */
+    private fun tryUnlock(achievementId: String) {
+        val state = SaveManager.loadGame(saveSlotFile)
+        if (achievementId in state.unlockedAchievements) return
+        val newState = state.copy(
+            unlockedAchievements = state.unlockedAchievements + achievementId
+        )
+        SaveManager.saveGame(newState, saveSlotFile)
+        val achievement = AchievementRegistry.get(achievementId) ?: return
+        achievementToast?.show(achievement)
+        Gdx.app.log("Achievement", "Unlocked: $achievementId — ${achievement.title}")
+    }
 
     /** Shows the level-complete UI and persists the score. Returns the overlay. */
     fun startLevelComplete(
@@ -70,6 +89,9 @@ class LevelTransitionController(
             ))
             onBestTime?.invoke(lastTrialTime, trialIsNewBest)
             // no autosave to delete — time trial never writes checkpoints
+
+            // Achievement: speed_demon — time trial completed under 2 minutes
+            if (levelTimer < 120f) tryUnlock("speed_demon")
         } else {
             SaveManager.saveGame(existing.copy(
                 completedLevels = newCompleted,
@@ -77,6 +99,11 @@ class LevelTransitionController(
             ))
             SaveManager.deleteSave(checkpointAutosaveFile)
         }
+
+        // World/campaign clear achievements (checked after save so newCompleted is persisted)
+        if (level.id == "level1") tryUnlock("world_1_clear")
+        val allCampaignLevels = setOf("level1", "level2", "level3")
+        if (allCampaignLevels.all { it in newCompleted }) tryUnlock("all_clear")
 
         return overlay
     }

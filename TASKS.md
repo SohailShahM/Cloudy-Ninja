@@ -151,18 +151,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add `keybinds: Map<String, Int> = defaultKeybinds()` to `Settings` where keys are action names (`"left"`, `"right"`, `"jump"`, `"action"`, `"swap"`) and values are `Input.Keys.*` ints. Add a "Controls" section in `SettingsScreen` — for each action, show a VisTextButton displaying the current key name; clicking it enters "press a key" mode and records the next key press. `InputManager` reads keybinds from `SettingsManager.load().keybinds` on each poll instead of hardcoded constants.
 - **Done when:** Player can rebind all 5 actions in Settings, new bindings work in gameplay, persist across sessions. Compile clean.
 
-### T-037 — Achievement system + toast notifications  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`  *(multi-file but spec is concrete; spawn sub-agents for parallel work on the 12 achievement conditions)*
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** §22 ("Achievement System Spec")
-- **Files:** `progression/Achievement.kt` (new), `progression/AchievementRegistry.kt` (new), `screens/AchievementToast.kt` (new), `persist/GameState.kt`, `screens/LevelRunState.kt`, `screens/GameScreen.kt`, `screens/StatsScreen.kt` (see T-041)
-- **Goal:** Implement the 12 achievements from GDD §22.1. Add `unlockedAchievements: Set<String>` to `GameState`. Add `AchievementToast` — slides in from top-right, holds 2.4 s, fades out, never overlaps. `LevelRunState.update()` checks unlock conditions for in-game achievements (first_jump, first_cleanse, eco_sweep, no_death_run). `LevelTransitionController` checks speed_demon and world clear achievements. `GameScreen` renders toast above Layer 4 (HUD).
-- **Done when:** At least 6 achievements can be unlocked during normal play; toast appears and dismisses cleanly; unlocked set persists. Compile clean.
 
 ### T-038 — Ghost replay in time trials  [P3]
 - **Status:** Todo
@@ -260,7 +248,19 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
-_(none — all claimed tasks completed)_
+### T-037 — Achievement system + toast notifications  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`  *(multi-file but spec is concrete; spawn sub-agents for parallel work on the 12 achievement conditions)*
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sonnet
+- **Branch:** claude/T-037-achievements
+- **Started:** 2026-05-11
+- **Depends on:** _none_
+- **GDD ref:** §22 ("Achievement System Spec")
+- **Files:** `progression/Achievement.kt` (new), `progression/AchievementRegistry.kt` (new), `screens/AchievementToast.kt` (new), `persist/GameState.kt`, `screens/LevelRunState.kt`, `screens/GameScreen.kt`, `screens/StatsScreen.kt` (see T-041)
+- **Goal:** Implement the 12 achievements from GDD §22.1. Add `unlockedAchievements: Set<String>` to `GameState`. Add `AchievementToast` — slides in from top-right, holds 2.4 s, fades out, never overlaps. `LevelRunState.update()` checks unlock conditions for in-game achievements (first_jump, first_cleanse, eco_sweep, no_death_run). `LevelTransitionController` checks speed_demon and world clear achievements. `GameScreen` renders toast above Layer 4 (HUD).
+- **Done when:** At least 6 achievements can be unlocked during normal play; toast appears and dismisses cleanly; unlocked set persists. Compile clean.
 
 
 <!--

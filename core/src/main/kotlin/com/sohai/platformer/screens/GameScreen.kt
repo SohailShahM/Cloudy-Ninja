@@ -62,6 +62,7 @@ class GameScreen(
 
     private companion object {
         const val CHECKPOINT_AUTOSAVE_FILE = "checkpoint_autosave.json"
+        const val SAVE_SLOT_FILE           = "save_slot_1.json"
     }
 
     // ── Core rendering resources ──────────────────────────────────────────────
@@ -96,6 +97,7 @@ class GameScreen(
     private val parallaxBg: ParallaxBackground
     private val screenFade: ScreenFade
     private val particles = ParticleSystem(maxParticles = 200)
+    private val achievementToast: AchievementToast
 
     // ── Subsystems ────────────────────────────────────────────────────────────
     private val renderer: LevelRenderer
@@ -166,6 +168,8 @@ class GameScreen(
         hud.onSwapCharacter = { runState.switchCharacter() }
         hud.setTimeTrial(isTimeTrial)
         Gdx.input.inputProcessor = hud.stage
+
+        achievementToast = AchievementToast(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
 
         parallaxBg = ParallaxBackground(
             theme = when (level.id) {
@@ -243,7 +247,9 @@ class GameScreen(
             world, hud, game, particles, screenFade,
             eboAnimator, layaAnimator, camera, pendingBodyDestroy,
             renderer, enemies, CHECKPOINT_AUTOSAVE_FILE,
-            isTimeTrial = isTimeTrial
+            isTimeTrial      = isTimeTrial,
+            achievementToast = achievementToast,
+            saveSlotFile     = SAVE_SLOT_FILE
         )
 
         // Wire boss sentinel into runState (callbacks set after runState exists)
@@ -256,6 +262,7 @@ class GameScreen(
                 Gdx.app.log("GameScreen", "Storm Sentinel defeated — level complete")
                 runState.levelCompleted = true
                 hud.showTransientMessage("Storm Sentinel defeated!", 2.5f)
+                runState.tryUnlock("boss_defeated")
             }
         }
 
@@ -277,9 +284,11 @@ class GameScreen(
         transitionCtrl = LevelTransitionController(
             level, game, screenFade, ecoTokens,
             CHECKPOINT_AUTOSAVE_FILE,
-            onInputChange = { stage -> Gdx.input.inputProcessor = stage },
-            onDispose     = { dispose() },
-            isTimeTrial   = isTimeTrial
+            onInputChange    = { stage -> Gdx.input.inputProcessor = stage },
+            onDispose        = { dispose() },
+            isTimeTrial      = isTimeTrial,
+            achievementToast = achievementToast,
+            saveSlotFile     = SAVE_SLOT_FILE
         )
 
         pauseOverlay = PauseOverlay(
@@ -342,6 +351,7 @@ class GameScreen(
             if (runState.hitstopFrames > 0) runState.hitstopFrames--
             else runState.update(clampedDelta)
         }
+        achievementToast.update(clampedDelta)
 
         // Drive music crossfade even while paused (audio should not glitch)
         MusicManager.update(clampedDelta)
@@ -372,6 +382,9 @@ class GameScreen(
         // Layer 4: HUD
         hud.stage.act(clampedDelta)
         hud.stage.draw()
+
+        // Layer 4.5: achievement toast (above HUD, below pause/fade)
+        achievementToast.render(spriteBatch)
 
         // Layer 5: screen fade overlay
         screenFade.render()
@@ -427,6 +440,7 @@ class GameScreen(
         atlasOverlay?.resize(width, height)
         levelCompleteOverlay?.resize(width, height)
         gameOverOverlay?.resize(width, height)
+        achievementToast.resize(width, height)
     }
 
     override fun pause()  {}
@@ -442,6 +456,7 @@ class GameScreen(
 
         snapshotPickups.forEach { world.destroyBody(it.body) }
         snapshotPickups.clear()
+        achievementToast.dispose()
         atlasOverlay?.dispose();       atlasOverlay        = null
         levelCompleteOverlay?.dispose(); levelCompleteOverlay = null
         gameOverOverlay?.dispose();     gameOverOverlay      = null
