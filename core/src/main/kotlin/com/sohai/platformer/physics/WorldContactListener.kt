@@ -7,7 +7,9 @@ import com.sohai.platformer.physics.CleanseEventQueue
 import com.sohai.platformer.entities.EcoToken
 import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
+import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
+import com.sohai.platformer.Constants
 
 class WorldContactListener : ContactListener {
     override fun beginContact(contact: Contact) {
@@ -94,6 +96,34 @@ class WorldContactListener : ContactListener {
             val player = playerFixture.body.userData as? PlayerController
             if (player != null && !player.isFlashing) {
                 player.isDead = true
+            }
+        }
+
+        // Projectile contacts — kill player or mark wall-hit for deferred destroy
+        if (begin) {
+            val projA = fixA.body.userData as? Projectile
+            val projB = fixB.body.userData as? Projectile
+            when {
+                projA != null && fixB.body.userData is PlayerController -> {
+                    val player = fixB.body.userData as PlayerController
+                    if (!player.isFlashing) player.isDead = true
+                    projA.hitWall = true  // expire on contact
+                }
+                projB != null && fixA.body.userData is PlayerController -> {
+                    val player = fixA.body.userData as PlayerController
+                    if (!player.isFlashing) player.isDead = true
+                    projB.hitWall = true
+                }
+                projA != null && (udB == "ground" || udB == "hazard" || udB == "hazard_cleaned"
+                    || fixB.filterData.categoryBits == Constants.BIT_GROUND
+                    || fixB.filterData.categoryBits == Constants.BIT_WALL) -> {
+                    projA.hitWall = true
+                }
+                projB != null && (udA == "ground" || udA == "hazard" || udA == "hazard_cleaned"
+                    || fixA.filterData.categoryBits == Constants.BIT_GROUND
+                    || fixA.filterData.categoryBits == Constants.BIT_WALL) -> {
+                    projB.hitWall = true
+                }
             }
         }
 

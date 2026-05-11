@@ -273,7 +273,7 @@ class GameScreen(
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
         // Layer 0–2: parallax + obstacles + VFX + particles
-        renderer.renderWorld(runState.cleanseRatio, runState.currentCharacter)
+        renderer.renderWorld(runState.cleanseRatio, runState.currentCharacter, runState.projectiles)
 
         // Layer 2b: player sprite
         renderer.renderPlayer(runState.currentCharacter)

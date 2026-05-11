@@ -17,6 +17,7 @@ import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.entities.EcoToken
 import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
+import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.input.InputManager
 import com.sohai.platformer.levels.Level
@@ -77,6 +78,10 @@ class LevelRunState(
     var levelCompleted = false
     var levelCompletionTimer = 0f
     val activatedCheckpoints = mutableSetOf<String>()
+
+    // ── Projectiles ──────────────────────────────────────────────────────────
+
+    val projectiles = mutableListOf<Projectile>()
 
     // ── Character switching ───────────────────────────────────────────────────
 
@@ -180,6 +185,11 @@ class LevelRunState(
         hud.showTransientMessage("$currentCharacter: ${player.ability?.getAbilityName() ?: ""}", 0.8f)
     }
 
+    /** Creates a new projectile at world coordinates (x, y) with velocity (vx, vy). */
+    fun spawnProjectile(x: Float, y: Float, vx: Float, vy: Float) {
+        projectiles.add(Projectile(world, x, y, vx, vy))
+    }
+
     // ── Main update loop ──────────────────────────────────────────────────────
 
     fun update(delta: Float) {
@@ -280,6 +290,17 @@ class LevelRunState(
         if (stepsThisFrame == 5) physicsAccum = 0f
 
         eboAbility.drainDeadDroplets { pendingBodyDestroy.add(it) }
+
+        // Projectile update — queue body-destroy for expired or wall-hit projectiles
+        val projIter = projectiles.iterator()
+        while (projIter.hasNext()) {
+            val proj = projIter.next()
+            proj.update(delta)
+            if (proj.isExpired) {
+                pendingBodyDestroy.add(proj.body)
+                projIter.remove()
+            }
+        }
 
         // Landing detection + dust particles
         particles.update(delta)

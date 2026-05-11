@@ -14,6 +14,7 @@ import com.sohai.platformer.abilities.ZephyrAbility
 import com.sohai.platformer.entities.EcoToken
 import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
+import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.rendering.CharacterAnimator
 import com.sohai.platformer.rendering.ParallaxBackground
@@ -71,6 +72,7 @@ class LevelRenderer(
         val TOKEN               = Color(0.2f,  0.9f,  0.3f,  1f)
         val SPARKLE_TOKEN       = Color(0.3f,  1f,    0.9f,  1f)
         val SPARKLE_SNAPSHOT    = Color(1f,    0.9f,  0.2f,  1f)
+        val PROJECTILE          = Color(1f,    0.6f,  0f,    1f)
         val tmpWindCol          = Color(1f,    1f,    1f,    1f)
     }
 
@@ -79,7 +81,7 @@ class LevelRenderer(
      * tokens, snapshots, platforms, particles. Opens and closes one ShapeRenderer
      * Filled block. Caller must NOT have an open SR block before calling this.
      */
-    fun renderWorld(cleanseRatio: Float, currentCharacter: String) {
+    fun renderWorld(cleanseRatio: Float, currentCharacter: String, projectiles: List<Projectile> = emptyList()) {
         shapeRenderer.projectionMatrix = camera.combined
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
 
@@ -198,6 +200,13 @@ class LevelRenderer(
                 shapeRenderer.triangle(p.x - r, p.y,  p.x, p.y + ri,  p.x + r, p.y)
                 shapeRenderer.triangle(p.x - r, p.y,  p.x, p.y - ri,  p.x + r, p.y)
             }
+        }
+
+        // Projectiles
+        shapeRenderer.color = PROJECTILE
+        for (proj in projectiles) {
+            val pos = proj.body.position
+            shapeRenderer.circle(pos.x, pos.y, Projectile.RADIUS)
         }
 
         // Particles (alpha blend enabled; works inside the Filled block via GL blend state)
