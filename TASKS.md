@@ -102,13 +102,16 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Done when:** Hub loads, player can walk through portals into each world's first level, locked worlds show visually distinct portals. Compile clean.
 
 ### T-034 — Boss encounter: Storm Sentinel  [P2]
-- **Status:** In Progress
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `StormSentinel` entity with 3 HP and REST/LIGHTNING_TELEGRAPH/LIGHTNING/SWEEP_TELEGRAPH/SWEEP state machine. Level 3 extended to 2840 px with boss arena (boss_floor + 3 combat platforms). BossDef data class + getBossDef() in TmxLevel. Storm_system Atlas entry (6th card). Contact listener handles droplet-on-boss_sentinel. GameScreen instantiates + wires sentinel; defeat sets levelCompleted=true.
+- **Commit/PR:** 1f1157c
 - **Agent:** claude
 - **Branch:** claude/T-034-storm-sentinel
 - **Started:** 2026-05-11
 - **Depends on:** T-029, T-040
 - **GDD ref:** §20 ("Boss Design Spec")
-- **Files:** `entities/StormSentinel.kt` (new), `assets/maps/level3.tmx`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `levels/TmxLevelDefinition.kt`
+- **Files:** `entities/StormSentinel.kt` (new), `assets/maps/level3.tmx`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `screens/GameScreen.kt`, `levels/TmxLevelDefinition.kt`, `physics/WorldContactListener.kt`, `atlas/CloudAtlasEntry.kt`
 - **Goal:** Extend `level3.tmx` with a 640 px boss arena past the current exit. Add `StormSentinel` — a static sensor entity with 3-phase attack cycle (lightning columns → wind sweep → rest/Seed-Slam window). 3 Seed Slam hits defeat the boss; defeat triggers level exit + unlocks `storm_system` Cloud Atlas entry. Move the Level 3 exit sensor inside the boss room. `LevelRunState` holds an optional `sentinel: StormSentinel?` and updates it if non-null.
 - **Done when:** Player reaches boss arena in Level 3, boss cycles attacks, can be defeated in 3 hits, defeat triggers level complete. Compile clean.
 
