@@ -30,13 +30,26 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y xvfb
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
       - name: Smoke run ${{ matrix.level }}
-        # Hard 90s wall-clock timeout — kills the JVM if smoke mode ever hangs.
-        # The autoquit timer fires at 10s, gradle/JVM startup takes ~30s, so
-        # 90s is ~2x margin. Exit code 124 = timeout fired (which IS a failure
-        # signal — something hung).
+        # Hard 240s wall-clock timeout — kills the JVM if smoke mode ever hangs.
+        # First-run budget breakdown on a cold Ubuntu runner with xvfb:
+        #   - gradle init + dep download: ~60s (cached on subsequent runs)
+        #   - JVM cold start + asset generation: ~30s
+        #   - autoquit timer: 10s
+        #   - cleanup: ~5s
+        # 240s gives ~135s margin over the cold-start budget. With cache hits
+        # on subsequent runs, the same job will finish in ~45s. Exit code 124
+        # from timeout = failure signal (something hung).
         run: |
-          timeout 90 xvfb-run -a ./gradlew --no-daemon :lwjgl3:run \
+          timeout 240 xvfb-run -a ./gradlew --no-daemon :lwjgl3:run \
             -PcloudyAutopilot=true \
             -PcloudyAutopilotSeconds=8 \
             -PcloudyAutoquitSeconds=10 \
