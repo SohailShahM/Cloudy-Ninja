@@ -22,6 +22,7 @@ import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.input.InputManager
 import com.sohai.platformer.levels.Level
+import com.sohai.platformer.levels.Level0_0
 import com.sohai.platformer.persist.Checkpoint
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.persist.SettingsManager
@@ -145,6 +146,8 @@ class LevelRunState(
     var onAtlasCollected: ((SnapshotPickup) -> Unit)? = null
     /** Called when spirit health hits 0; GameScreen creates the game-over overlay. */
     var onGameOverStart: (() -> Unit)? = null
+    /** Called when a portal is activated in the hub world; GameScreen navigates to the target level. */
+    var onPortalActivated: ((targetLevelId: String) -> Unit)? = null
 
     init {
         totalHazards = obstacleManager.rects().count { it.kind == ObstacleKind.HAZARD }
@@ -472,6 +475,23 @@ class LevelRunState(
             Gdx.app.log("LevelRunState", "Exit reached — level=${level.id}")
             levelCompleted         = true
             levelCompletionTimer   = 4f
+        }
+
+        // Portal activation (hub world only)
+        val portalId = player.portalContact
+        if (portalId != null && !levelCompleted && level is Level0_0) {
+            val targetLevel = Level0_0.portalTargetLevel(portalId)
+            val required    = Level0_0.portalUnlockRequirement(portalId)
+            val state       = SaveManager.loadGame()
+            val unlocked    = required.all { it in state.completedLevels }
+            if (unlocked && targetLevel != null) {
+                Gdx.app.log("LevelRunState", "Portal activated — $portalId -> $targetLevel")
+                player.portalContact = null
+                onPortalActivated?.invoke(targetLevel)
+            } else {
+                // Locked portal — just ignore the contact
+                player.portalContact = null
+            }
         }
 
         // Camera: dead-zone + forward-focus (Itay Keren style)

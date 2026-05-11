@@ -17,6 +17,8 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
     val isTouchingWallLeft get() = wallLeftContactCount > 0
     var isDead = false
     var hasReachedExit = false
+    /** Set by WorldContactListener when the player contacts a portal sensor (e.g. "portal_world0"). Null when not touching any portal. */
+    var portalContact: String? = null
     var onJump: (() -> Unit)? = null
     /**
      * Invoked when a footstep should spawn a particle.
@@ -228,6 +230,7 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
         body.gravityScale = 1f  // reset any apex-hang scaling that was active at death
         isDead = false
         hasReachedExit = false
+        portalContact = null
         airJumpAvailable = true
         deathFlashTimer = 1.2f  // blink for 1.2s after respawn
         groundContactCount = 0

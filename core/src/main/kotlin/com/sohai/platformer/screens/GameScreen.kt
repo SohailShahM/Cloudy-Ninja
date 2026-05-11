@@ -29,6 +29,7 @@ import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.SmogSprite
 import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.levels.Level
+import com.sohai.platformer.levels.LevelManager
 import com.sohai.platformer.levels.TmxLevel
 import com.sohai.platformer.persist.SettingsManager
 import com.sohai.platformer.physics.WorldContactListener
@@ -235,6 +236,13 @@ class GameScreen(
             )
             Gdx.input.inputProcessor = gameOverOverlay!!.stage
         }
+        runState.onPortalActivated = { targetLevelId ->
+            val targetLevel = LevelManager.getLevel(targetLevelId)
+            if (targetLevel != null && game != null) {
+                game.screen = GameScreen(targetLevel, game)
+                dispose()
+            }
+        }
 
         transitionCtrl = LevelTransitionController(
             level, game, screenFade, ecoTokens,
@@ -309,6 +317,11 @@ class GameScreen(
 
         // Layer 2b: player sprite
         renderer.renderPlayer(runState.currentCharacter)
+
+        // Layer 2c: portal labels (hub world only)
+        if (level is com.sohai.platformer.levels.Level0_0) {
+            renderer.renderPortalLabels()
+        }
 
         // Layer 3: dynamic lighting
         rayHandler.setCombinedMatrix(

@@ -17,7 +17,10 @@ import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
+import com.sohai.platformer.levels.Level0_0
+import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.rendering.CharacterAnimator
+import com.sohai.platformer.FontManager
 import com.sohai.platformer.rendering.ParallaxBackground
 import com.sohai.platformer.rendering.ParticleSystem
 import com.sohai.platformer.rendering.SpriteFactory
@@ -75,6 +78,10 @@ class LevelRenderer(
         val SPARKLE_TOKEN       = Color(0.3f,  1f,    0.9f,  1f)
         val SPARKLE_SNAPSHOT    = Color(1f,    0.9f,  0.2f,  1f)
         val PROJECTILE          = Color(1f,    0.6f,  0f,    1f)
+        val PORTAL_UNLOCKED     = Color(0.2f,  0.45f, 0.95f, 0.85f)
+        val PORTAL_LOCKED       = Color(0.35f, 0.35f, 0.38f, 0.65f)
+        val PORTAL_UNLOCKED_EDGE = Color(0.4f, 0.65f, 1f,    1f)
+        val PORTAL_LOCKED_EDGE  = Color(0.50f, 0.50f, 0.52f, 0.8f)
         val tmpWindCol          = Color(1f,    1f,    1f,    1f)
     }
 
@@ -139,6 +146,20 @@ class LevelRenderer(
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
                     shapeRenderer.color = WALL_EDGE
                     shapeRenderer.rect(cx - w, cy - he, 0.03f, he * 2f)
+                }
+                rect.kind == ObstacleKind.EXIT && ud.startsWith("portal_") -> {
+                    // Hub-world portal door: blue if unlocked, grey if locked
+                    val required  = Level0_0.portalUnlockRequirement(ud)
+                    val completed = SaveManager.loadGame().completedLevels
+                    val unlocked  = required.all { it in completed }
+                    val baseCol   = if (unlocked) PORTAL_UNLOCKED else PORTAL_LOCKED
+                    val edgeCol   = if (unlocked) PORTAL_UNLOCKED_EDGE else PORTAL_LOCKED_EDGE
+                    shapeRenderer.color = baseCol
+                    shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
+                    shapeRenderer.color = edgeCol
+                    shapeRenderer.rect(cx - w, cy - he, 0.05f, he * 2f)
+                    shapeRenderer.rect(cx + w - 0.05f, cy - he, 0.05f, he * 2f)
+                    shapeRenderer.rect(cx - w, cy + he - 0.04f, w * 2f, 0.04f)
                 }
                 rect.kind == ObstacleKind.EXIT -> {
                     shapeRenderer.color = EXIT_BASE
@@ -251,6 +272,29 @@ class LevelRenderer(
         if (player.isFlashing || currentCharacter == "Zephyr") spriteBatch.setColor(Color.WHITE)
         spriteBatch.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
+    }
+
+    /**
+     * Draws text labels above each portal in the hub world.
+     * Called from GameScreen after renderWorld/renderPlayer for Level0_0 only.
+     */
+    fun renderPortalLabels() {
+        val font = FontManager.getShared(14)
+        val completedLevels = SaveManager.loadGame().completedLevels
+        spriteBatch.projectionMatrix = camera.combined
+        spriteBatch.begin()
+        for (portal in Level0_0.PORTALS) {
+            val required = Level0_0.portalUnlockRequirement(portal.userData)
+            val unlocked = required.all { it in completedLevels }
+            val label    = if (unlocked) portal.label else "[Locked]"
+            val worldX   = portal.centerXPx / Constants.PPM
+            val worldY   = (Level0_0.PORTAL_CENTER_Y_PX + Level0_0.PORTAL_HALF_H_PX + 15f) / Constants.PPM
+            font.color = if (unlocked) Color.WHITE else Color.GRAY
+            // GlyphLayout for centering; approximate width from label length
+            font.draw(spriteBatch, label, worldX - 0.3f, worldY)
+        }
+        spriteBatch.end()
+        font.color = Color.WHITE // reset
     }
 
     // ── Particle spawn helpers (called from LevelRunState on game events) ─────

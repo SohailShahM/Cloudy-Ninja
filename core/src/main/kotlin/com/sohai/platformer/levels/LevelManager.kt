@@ -18,6 +18,7 @@ object LevelManager {
      * all campaign levels come from [LevelRegistry].
      */
     private val levels: List<Level> = buildList {
+        add(Level0_0())  // Hub world — index 0
         add(Level0_1())
         add(Level0_2())
         add(Level0_3())
