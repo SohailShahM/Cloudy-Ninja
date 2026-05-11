@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class GameState(
-    val level: String = "level1",
+    val level: String = "level0_0",
     val characterName: String = "Ebo",
     val checkpoint: Checkpoint = Checkpoint(),
     val stats: PlayerStats = PlayerStats(),
@@ -29,7 +29,7 @@ data class GameState(
 
 @Serializable
 data class Checkpoint(
-    val levelName: String = "level1",
+    val levelName: String = "level0_0",
     val x: Float = 0f,
     val y: Float = 0f
 )

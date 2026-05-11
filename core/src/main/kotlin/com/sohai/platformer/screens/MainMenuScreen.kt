@@ -16,7 +16,6 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.sohai.platformer.atlas.CloudAtlasLibrary
 import com.sohai.platformer.levels.LevelManager
-import com.sohai.platformer.levels.LevelRegistry
 import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
 
@@ -224,11 +223,11 @@ class MainMenuScreen(private val game: Game) : Screen {
         pendingDeleteSlot = -1
         val filename = SLOT_FILES[slotIndex]
         val initialState = GameState(
-            level       = "level1",
+            level       = "level0_0",
             lastPlayed  = todayIso()
         )
         SaveManager.saveGame(initialState, filename)
-        openGameAtLevel("level1")
+        openGameAtLevel("level0_0")
     }
 
     /**
@@ -255,7 +254,7 @@ class MainMenuScreen(private val game: Game) : Screen {
 
     private fun openGameAtLevel(levelId: String, resumeCheckpoint: Vector2? = null) {
         val level = LevelManager.getLevel(levelId)
-            ?: LevelRegistry.buildLevel("level1")
+            ?: LevelManager.getLevel("level0_0")
             ?: LevelManager.getAllLevels().firstOrNull()
             ?: return
         game.screen = GameScreen(level, game, resumeCheckpoint)

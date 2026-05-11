@@ -136,6 +136,18 @@ class WorldContactListener : ContactListener {
             (playerFixture.body.userData as? PlayerController)?.hasReachedExit = true
         }
 
+        // Portal sensors (hub world) — userData starts with "portal_"
+        val portalA = (udA as? String)?.startsWith("portal_") == true
+        val portalB = (udB as? String)?.startsWith("portal_") == true
+        if (portalA || portalB) {
+            val portalId      = if (portalA) udA as String else udB as String
+            val playerFixture = if (portalA) fixB else fixA
+            val player = playerFixture.body.userData as? PlayerController
+            if (player != null) {
+                player.portalContact = if (begin) portalId else null
+            }
+        }
+
         // Player hazard detection (player death) — skip while flashing (post-respawn invincibility)
         if ((udA == "hazard" || udB == "hazard") && begin) {
             val playerFixture = if (udA == "hazard") fixB else fixA
