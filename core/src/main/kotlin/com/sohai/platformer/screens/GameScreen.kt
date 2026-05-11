@@ -162,10 +162,7 @@ class GameScreen(
         val settings = SettingsManager.load()
         MusicManager.setMusicVolume(settings.volMusic)
         SoundManager.setVolume(settings.volSfx)
-        val uiVolume = settings.volUi.coerceIn(0f, 1f)
-        if (uiVolume != settings.volUi) {
-            SettingsManager.save(settings.copy(volUi = uiVolume))
-        }
+        SoundManager.setUiVolume(settings.volUi)
 
         ecoTokens.addAll(level.getEcoTokenPositions().map { EcoToken(world, it.x, it.y) })
         snapshotPickups.addAll(level.getSnapshotPickups(world))

@@ -19,6 +19,7 @@ object SoundManager : Disposable {
 
     private var enabled = true
     private var volume = 0.8f
+    private var uiVolume = 0.9f
     private val sounds = mutableMapOf<String, Sound>()
 
     /**
@@ -91,6 +92,7 @@ object SoundManager : Disposable {
     fun play(name: String) = play(name, 1f)
 
     fun setVolume(v: Float) { volume = v.coerceIn(0f, 1f) }
+    fun setUiVolume(v: Float) { uiVolume = v.coerceIn(0f, 1f) }
     fun setEnabled(e: Boolean) { enabled = e }
 
     override fun dispose() {
