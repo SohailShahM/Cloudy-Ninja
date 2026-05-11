@@ -95,6 +95,7 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
             Constants.BIT_HAZARD.toInt() or
             Constants.BIT_CHECKPOINT.toInt() or
             Constants.BIT_EXIT.toInt() or
+            Constants.BIT_ENEMY.toInt() or
             Constants.BIT_ECOTOKEN.toInt()
         ).toShort()
 

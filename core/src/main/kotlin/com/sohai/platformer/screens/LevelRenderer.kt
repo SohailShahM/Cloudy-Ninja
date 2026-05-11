@@ -12,6 +12,7 @@ import com.sohai.platformer.abilities.EboAbility
 import com.sohai.platformer.abilities.LayaAbility
 import com.sohai.platformer.abilities.ZephyrAbility
 import com.sohai.platformer.entities.EcoToken
+import com.sohai.platformer.entities.Enemy
 import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.Projectile
@@ -41,6 +42,7 @@ class LevelRenderer(
     private val movingPlatforms: List<MovingPlatform>,
     private val ecoTokens: List<EcoToken>,
     private val snapshotPickups: List<SnapshotPickup>,
+    private val enemies: List<Enemy>,
     private val player: PlayerController,
     private val eboAnimator: CharacterAnimator,
     private val layaAnimator: CharacterAnimator,
@@ -207,6 +209,11 @@ class LevelRenderer(
         for (proj in projectiles) {
             val pos = proj.body.position
             shapeRenderer.circle(pos.x, pos.y, Projectile.RADIUS)
+        }
+
+        // Enemies
+        for (enemy in enemies) {
+            enemy.draw(shapeRenderer)
         }
 
         // Particles (alpha blend enabled; works inside the Filled block via GL blend state)
