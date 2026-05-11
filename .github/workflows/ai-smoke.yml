@@ -5,6 +5,14 @@ on:
   push:
     branches: [main]
 
+# Auto-cancel in-flight runs when a newer commit lands on the same branch.
+# Prevents 3+ parallel runs saturating GitHub's free runner queue (which is
+# what happened on the very first PR — multiple pushes triggered runs that
+# never completed because they were all competing for runner slots).
+concurrency:
+  group: ai-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   smoke:
     runs-on: ubuntu-latest
