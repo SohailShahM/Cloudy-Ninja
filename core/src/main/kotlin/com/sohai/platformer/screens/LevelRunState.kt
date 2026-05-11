@@ -149,6 +149,11 @@ class LevelRunState(
     private var apJumpCooldown         = 0f
     private var apPeriodicJumpTimer    = 0f
     private var apAbilityTimer         = 0f
+    private val debugSmokeMode         = java.lang.Boolean.getBoolean("cloudy.smokeMode")
+    private var smokeStartX            = Float.NaN
+    private var smokeMaxX              = Float.NEGATIVE_INFINITY
+    private var smokeFrameTimes        = FloatArray(7200)   // ~120s at 60Hz; we never need more
+    private var smokeFrameIdx          = 0
 
     // ── Side-effect callbacks (set by GameScreen before first update) ─────────
 
@@ -238,6 +243,13 @@ class LevelRunState(
             val apActive = debugAutopilotTimer < debugAutopilotSeconds && !isGameOver
             if (apActive) {
                 val playerX  = player.body.position.x
+                if (debugSmokeMode) {
+                    if (smokeStartX.isNaN()) smokeStartX = playerX
+                    if (playerX > smokeMaxX) smokeMaxX = playerX
+                    if (smokeFrameIdx < smokeFrameTimes.size) {
+                        smokeFrameTimes[smokeFrameIdx++] = delta * 1000f  // ms
+                    }
+                }
                 val onGround = player.isGrounded
                 val touchWall = player.isTouchingWallLeft || player.isTouchingWallRight
                 val justLeftGround = !onGround && prevGrounded && player.body.linearVelocity.y >= -1.5f
@@ -268,7 +280,16 @@ class LevelRunState(
             }
             if (debugAutoQuitTimer != null) {
                 debugAutoQuitTimer = (debugAutoQuitTimer ?: 0f) - delta
-                if ((debugAutoQuitTimer ?: 0f) <= 0f) { Gdx.app.log("LevelRunState", "Auto-quit."); Gdx.app.exit() }
+                if ((debugAutoQuitTimer ?: 0f) <= 0f) {
+                    if (debugSmokeMode) {
+                        val p99 = computeP99(smokeFrameTimes, smokeFrameIdx)
+                        Gdx.app.log("smoke",
+                            "level=${level.id} startX=%.3f maxX=%.3f deltaX=%.3f frameP99Ms=%.2f frames=%d"
+                                .format(smokeStartX, smokeMaxX, smokeMaxX - smokeStartX, p99, smokeFrameIdx))
+                    }
+                    Gdx.app.log("LevelRunState", "Auto-quit.")
+                    Gdx.app.exit()
+                }
             }
         }
 
@@ -566,5 +587,12 @@ class LevelRunState(
             for (b in pendingBodyDestroy) world.destroyBody(b)
             pendingBodyDestroy.clear()
         }
+    }
+
+    private fun computeP99(times: FloatArray, count: Int): Float {
+        if (count == 0) return 0f
+        val sorted = times.copyOfRange(0, count).also { it.sort() }
+        val idx = ((count - 1) * 0.99f).toInt()
+        return sorted[idx]
     }
 }

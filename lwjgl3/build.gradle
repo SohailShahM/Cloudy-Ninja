@@ -73,6 +73,8 @@ run {
   if (project.hasProperty('cloudyAutopilot')) cloudyProps['cloudy.autopilot'] = project.property('cloudyAutopilot').toString()
   if (project.hasProperty('cloudyAutopilotSeconds')) cloudyProps['cloudy.autopilotSeconds'] = project.property('cloudyAutopilotSeconds').toString()
   if (project.hasProperty('cloudyAutoquitSeconds')) cloudyProps['cloudy.autoquitSeconds'] = project.property('cloudyAutoquitSeconds').toString()
+  if (project.hasProperty('cloudySmokeMode')) cloudyProps['cloudy.smokeMode'] = project.property('cloudySmokeMode').toString()
+  if (project.hasProperty('cloudySmokeLevel')) cloudyProps['cloudy.smokeLevel'] = project.property('cloudySmokeLevel').toString()
   systemProperties cloudyProps
 
 // You can uncomment the next line if your IDE claims a build failure even when the app closed properly.

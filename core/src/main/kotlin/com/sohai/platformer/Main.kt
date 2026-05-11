@@ -20,7 +20,18 @@ class Main : Game() {
         ProceduralSoundGenerator.generateAll()
         ProceduralMusicGenerator.generateAll()
         SoundManager.init()
-        setScreen(MainMenuScreen(this))
+        val smokeLevel = System.getProperty("cloudy.smokeLevel")
+        if (smokeLevel != null) {
+            val level = com.sohai.platformer.levels.LevelManager.getLevel(smokeLevel)
+            if (level != null) {
+                setScreen(com.sohai.platformer.screens.GameScreen(level, this))
+            } else {
+                com.badlogic.gdx.Gdx.app.error("Main", "Unknown smoke level: $smokeLevel")
+                com.badlogic.gdx.Gdx.app.exit()
+            }
+        } else {
+            setScreen(MainMenuScreen(this))
+        }
     }
 
     override fun resize(width: Int, height: Int) {

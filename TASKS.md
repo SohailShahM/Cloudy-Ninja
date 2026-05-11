@@ -189,9 +189,66 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 
 ---
 
+## Backlog — AI testing v2 (planned, after MVP T-A1/T-A2 lands)
+
+MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf regressions). The tickets below add coverage for failure modes the MVP cannot catch. Build them only when a specific bug demands the work — do not pre-spend.
+
+### T-A3 — Input record & replay
+- Determinism prerequisite: every site flagged as "needs work" in T-A2's DETERMINISM.md must be fixed (seeded RNG wrapper, sorted Map iteration, fixed timestep)
+- `InputRecorder` writes JSON: `{levelId, seed, gameVersion, frames[], endStateChecksum}`
+- `ReplayAgent` deterministically replays a recording; CI asserts checksum match within tolerance
+- Use case: pinning a known-good run of a tricky level as a regression; reproducing flaky bug reports
+- Estimated tokens: ~80k (Sonnet sub-agent), $0.55
+
+### T-A4 — Reactive `SensorAgent` (replaces hand-tuned waypoints)
+- Box2D raycast-based local sensing: wall ahead → jump; gap ahead → pre-jump; hazard ahead → ability; stuck → swap character
+- Zero per-level config; generalizes to new levels automatically
+- Use case: when `BasicAutopilot` gets stuck on a future level we add. Defer until that happens.
+- Estimated tokens: ~60k (Sonnet sub-agent), $0.40
+
+### T-A7 — Menu/UI smoke agent + UI invariants
+- `MenuSmokeAgent` taps through every Scene2D screen reachable from MainMenu
+- `UiInvariantChecker` runs per screen: no UI overflow, every button has a click handler, every Label uses `FontManager` font (catches T-044 Settings-font-style bugs), no overlapping interactive elements, contrast ΔE > 20
+- Use case: catching menu/settings regressions that the gameplay-level smoke (T-A1) cannot see. Build when we ship the first UI regression.
+- Estimated tokens: ~70k (Sonnet sub-agent), $0.45
+
+### T-A8 — Windowed CI lane (visual regression)
+- Separate nightly workflow that runs windowed (real GL via `xvfb-run`)
+- Screenshots framebuffer at fixed replay frames, diffs against golden PNGs in `tests/golden/`
+- Defer until T-046 (full art overhaul) is done — visual diffs against procedural geometry are too noisy to maintain
+- Estimated tokens: ~60k
+
+### T-A9 — Boss combat sub-agent
+- Recognize Storm Sentinel lightning telegraph, dodge, attack on REST phase
+- Already decided **not worth doing** (6h+ of tuning, flaky CI risk). Documented here only so a future contributor doesn't redo the analysis.
+- Replacement coverage (in T-A1): "boss entered IDLE_COMBAT within 5s of player entering arena" invariant.
+
+**v2 total if all built:** ~$2.85 in Sonnet sub-agent tokens.
+
+---
+
 ## In Progress
 
-_(none — all claimed tasks completed)_
+### T-A1 — AI smoke test: per-level autopilot run via CI
+- **Status:** In Progress
+- **Agent:** claude
+- **Branch:** claude/T-034-storm-sentinel
+- **Started:** 2026-05-11
+- **Depends on:** _none_
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt`, `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `lwjgl3/build.gradle`, `.github/workflows/ai-smoke.yml` (new)
+- **Goal:** Reuse the existing `BasicAutopilot` block in `LevelRunState` to smoke-test every registered level on every PR. Add a `cloudy.smokeMode=true` flag that (a) tracks `maxXReached` and `frame_p99` during the autopilot run and (b) emits a single structured log line `[smoke] level=... maxX=... startX=... frameP99=... duration=...` at auto-quit. Add `cloudy.smokeLevel=level1` flag in `Main.kt` to bypass MainMenuScreen → SlotSelect and go directly to `GameScreen(LevelManager.getLevel(name))`. CI workflow runs the game once per registered level via `xvfb-run`, parses the smoke log line, fails the run if `maxX - startX < 1.0` (spawn-death like the T-043 flipY bug) or `frameP99 > 30ms` (perf regression like the T-043 SaveManager spam) or process crashed (like the T-043 portal crash).
+- **Done when:** Open a PR with a synthetic spawn-death (set `flipY=false` on any level) and CI catches it within 30s per level. All current levels pass smoke on main. Total CI runtime <10 min for 7 levels.
+- **Progress notes:** MVP of v2 AI testing plan — see "Backlog (planned)" below for full design.
+
+### T-A2 — Determinism audit (`DETERMINISM.md`)
+- **Status:** In Progress
+- **Agent:** claude
+- **Branch:** claude/T-034-storm-sentinel
+- **Started:** 2026-05-11
+- **Depends on:** _none_
+- **Files:** `DETERMINISM.md` (new)
+- **Goal:** Grep `core/src` for all sources of non-determinism that could break future record/replay (`MathUtils.random*`, `Math.random()`, `mutableMapOf` iteration in hot paths, `HashMap` iteration, asset-list ordering, variable-timestep `world.step`). For each site record: file:line, hot-path or not, deterministic across runs?, action needed (fix / accept / N/A). Don't fix anything yet — the audit is the deliverable. Future record/replay work (T-A3+) will fix sites listed as "needs work".
+- **Done when:** `DETERMINISM.md` exists at repo root with a table of every site found. No code changes.
 
 <!--
 Template for moving a task here:

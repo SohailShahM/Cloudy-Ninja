@@ -1,0 +1,54 @@
+name: AI smoke test
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        level: [level0_0, level0_1, level0_2, level0_3, level0_4, level1, level2, level3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install xvfb
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Smoke run ${{ matrix.level }}
+        run: |
+          xvfb-run -a ./gradlew --no-daemon :lwjgl3:run \
+            -PcloudyAutopilot=true \
+            -PcloudyAutopilotSeconds=8 \
+            -PcloudyAutoquitSeconds=10 \
+            -PcloudySmokeMode=true \
+            -PcloudySmokeLevel=${{ matrix.level }} \
+            2>&1 | tee smoke-${{ matrix.level }}.log
+      - name: Parse smoke log
+        run: |
+          set -e
+          LOG="smoke-${{ matrix.level }}.log"
+          LINE=$(grep -o '\[smoke\].*$' "$LOG" || true)
+          if [ -z "$LINE" ]; then
+            echo "FAIL: no [smoke] line in log — process crashed or autopilot disabled"
+            tail -50 "$LOG"
+            exit 1
+          fi
+          echo "Smoke line: $LINE"
+          DELTA=$(echo "$LINE" | grep -oP 'deltaX=\K[\d.-]+')
+          P99=$(echo "$LINE"   | grep -oP 'frameP99Ms=\K[\d.-]+')
+          echo "deltaX=$DELTA frameP99Ms=$P99"
+          awk -v d="$DELTA" -v p="$P99" 'BEGIN { if (d+0 < 1.0)  { print "FAIL: deltaX="d" < 1.0 (spawn-death suspected)";   exit 1 } }'
+          awk -v p="$P99"                'BEGIN { if (p+0 > 30.0) { print "FAIL: frameP99="p"ms > 30ms (perf regression)"; exit 1 } }'
+          echo "PASS"
+      - name: Upload log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-log-${{ matrix.level }}
+          path: smoke-${{ matrix.level }}.log
