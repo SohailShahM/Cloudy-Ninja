@@ -20,6 +20,7 @@ import com.sohai.platformer.Constants
 import com.sohai.platformer.abilities.EboAbility
 import com.sohai.platformer.abilities.LayaAbility
 import com.sohai.platformer.abilities.ZephyrAbility
+import com.sohai.platformer.audio.MusicManager
 import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.entities.EcoToken
 import com.sohai.platformer.entities.MovingPlatform
@@ -234,6 +235,9 @@ class GameScreen(
 
         hud.updateSpiritHealth(runState.spiritHealth)
         hud.showTransientMessage(level.name, 2.5f)
+
+        // Start background music for this level
+        MusicManager.play(level.musicTrack, fadeIn = true)
     }
 
     private fun setPaused(paused: Boolean) {
@@ -268,6 +272,9 @@ class GameScreen(
             if (runState.hitstopFrames > 0) runState.hitstopFrames--
             else runState.update(clampedDelta)
         }
+
+        // Drive music crossfade even while paused (audio should not glitch)
+        MusicManager.update(clampedDelta)
 
         Gdx.gl.glClearColor(0f, 0f, 0f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)

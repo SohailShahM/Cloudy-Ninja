@@ -40,7 +40,9 @@ data class TmxLevelDefinition(
     val exitXPx: Float,
     val ecoTokens: List<Vector2> = emptyList(),
     val snapshots: List<SnapshotDef> = emptyList(),
-    val checkpoints: List<LevelCheckpoint> = emptyList()
+    val checkpoints: List<LevelCheckpoint> = emptyList(),
+    /** Music track base name (loaded from `audio/music/{musicTrack}.wav`). */
+    val musicTrack: String = "ambient_arid"
 )
 
 /**
@@ -73,6 +75,7 @@ class TmxLevel(private val def: TmxLevelDefinition) : Level() {
     override val spawnX: Float      get() = def.spawnX
     override val spawnY: Float      get() = def.spawnY
     override val levelWidthPx: Float get() = def.levelWidthPx
+    override val musicTrack: String  get() = def.musicTrack
 
     override fun setup(
         world: World,
@@ -152,7 +155,8 @@ object LevelRegistry {
                 Vector2(1400f, 450f),
                 Vector2(1610f, 450f),
                 Vector2(1800f, 410f)
-            )
+            ),
+            musicTrack = "ambient_arid"
         ),
 
         // ── Level 2 — "Winds of Change" ─────────────────────────────────────
@@ -184,7 +188,8 @@ object LevelRegistry {
                 Vector2(1550f,  180f),
                 Vector2(1720f,  230f),
                 Vector2(1920f,  200f)
-            )
+            ),
+            musicTrack = "ambient_wind"
         ),
 
         // ── Level 3 — "Stormy Heights" ───────────────────────────────────────
@@ -222,7 +227,8 @@ object LevelRegistry {
                 Vector2(1745f, 315f),
                 // Ketsu zone — exit island reward
                 Vector2(2120f, 225f)
-            )
+            ),
+            musicTrack = "ambient_eco"
         )
     )
 
