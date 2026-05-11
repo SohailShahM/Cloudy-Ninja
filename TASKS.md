@@ -166,6 +166,16 @@ Each task below cites a `GDD ref:` (section number in `GDD_ADDENDUM.md`) when ap
 - **Goal:** Add a "Stats" button to `MainMenuScreen` that opens `StatsScreen`. Stats screen shows per-slot: total deaths, levels completed (count + list), eco-tokens collected (running total from completed runs), best times per level, achievements unlocked (count/12 + list). All data read from `SaveManager.loadGame()` + `AchievementRegistry`. Back button returns to main menu.
 - **Done when:** Stats screen opens from main menu, displays accurate data for the active slot, back button works. Compile clean.
 
+### T-046 — Full graphics overhaul: pixel-art sprites + tilesets  [P3]
+- **Status:** Todo
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-031
+- **GDD ref:** _to be written in GDD_ADDENDUM_
+- **Files:** `assets/tilesets/` (PNG atlases), `assets/sprites/` (character sprite sheets), `rendering/SpriteFactory.kt`, `rendering/CharacterAtlas.kt`, `rendering/TileRenderer.kt` (from T-031)
+- **Goal:** Replace all procedurally-generated geometry with hand-drawn (or tool-generated) pixel-art assets. Minimum deliverable: (a) 3 character sprite sheets (Ebo/Laya/Zephyr) at 64×64 per frame — idle, run (4f), jump, fall, wall-slide; (b) 3 tileset PNGs (tiles_arid/tiles_wind/tiles_eco) replacing ShapeRenderer ground/wall rectangles — solid interior + grass/rock top tile variants (completes T-031); (c) enemy sprite (Smog Sprite oval → proper sprite); (d) boss sprite (Storm Sentinel box → animated sprite). All assets at 32×32 base scaled by `DisplayScale.spriteScale` at load time. Remove ShapeRenderer primitive draw paths after verifying visual coverage.
+- **Done when:** Game renders no ShapeRenderer primitives for terrain or characters. All visual elements use TextureRegion. T-031 is a blocker (tile-fill infrastructure). Compile and run clean.
+
 ### T-045 — Cloud Atlas expansion to 12 entries  [P3]
 - **Status:** Todo
 - **Agent:** _unclaimed_
@@ -201,6 +211,28 @@ Template for moving a task here:
 ---
 
 ## Done
+
+### T-044 — Polish: HUD transparency + Settings font scaling + visual geometry
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** (1) All 5 HUD buttons set to `color.a = BTN_ALPHA = 0.55f` so the player character is visible through them. (2) `SettingsScreen` body labels migrated from `VisLabel` (baked VisUI skin font, non-scaling) to `Label` with `FontManager.getShared(16)` (DisplayScale-aware, sharp at 4K). (3) `ParallaxBackground` upgraded: 3-band sky gradient, new midground hill layer (scrollFactor=0.28), stars in corrupted sky (fade by cleanseRatio=0.5), mountain peak highlight caps, pine-crown triangles above tree trunks. (4) `LevelRenderer` upgraded: grass tufts along ground top surface (deterministic sin-based height variation), triangular spike shapes on hazard tiles, bottom shadow strip on ground blocks, underside shadow on moving platforms.
+- **Commit/PR:** (this session — claude/T-034-storm-sentinel branch)
+- **Depends on:** T-042
+
+### T-043 — Bug fixes: SaveManager per-frame spam + Box2D portal crash + spawn-death flipY
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** (1) `SaveManager` in-memory cache (`private val cache`) prevents per-frame disk reads — `LevelRenderer.renderWorld()` was calling `loadGame()` on every frame for portal color checks. (2) Portal transition deferred to end-of-frame via `pendingPortalTarget: String?` field in `LevelRunState`; `GameScreen.render()` handles the actual `game.screen = GameScreen(...)` + `dispose()` after all rendering is done, eliminating Box2D native crash (`EXCEPTION_ACCESS_VIOLATION` in `gdx-box2d64.dll`). (3) `TmxLevel.setup()` changed from `flipY=false` to `flipY=true` — libGDX's TmxMapLoader already flips rectangle Y internally so the second flip corrects it; without this fix ground was placed at the top of the screen and all campaign-level players spawn-died immediately.
+- **Commit/PR:** (this session — claude/T-034-storm-sentinel branch)
+- **Depends on:** _none_
+
+### T-042 — 4K / HiDPI display scaling
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** `DisplayScale` singleton computes `fontScale = min(physW/1280, physH/720)` and `spriteScale = max(1, floor(fontScale))` at startup and after mode changes. `FontManager.create(size)` multiplies by `fontScale` so text renders at exactly `size` virtual pixels regardless of physical resolution. Resolution presets (HD/FHD/2K/4K) and fullscreen toggle added to `SettingsScreen`; `applyDisplaySettings()` calls `DisplayScale.init() + FontManager.clearSharedCache()` after mode switch. Game tested at 2560×1440 (fontScale=2.0).
+- **Commit/PR:** (this session — claude/T-034-storm-sentinel branch)
+- **Depends on:** _none_
+- **Files:** `rendering/DisplayScale.kt` (new), `FontManager.kt`, `screens/SettingsScreen.kt`
 
 ### T-001 — Migrate Hud.kt buttons to VisUI
 - **Status:** Done
@@ -361,7 +393,7 @@ Template for moving a task here:
 ### T-025 — Level 3 pacing rebalance per Kishōtenketsu
 - **Status:** Done
 - **Completed:** 2026-05-09
-- **Outcome:** `assets/maps/level3.tmx` rewritten with Ki/Shō/Ten/Ketsu zones; wall-jump shaft moved to ~55%; moving-platform gauntlet in final 15%. `TmxLevelDefinition.setup()` fixed: `flipY=false` (all TMX files are y-up). LevelRegistry level3 checkpoints and eco-tokens updated to match new layout.
+- **Outcome:** `assets/maps/level3.tmx` rewritten with Ki/Shō/Ten/Ketsu zones; wall-jump shaft moved to ~55%; moving-platform gauntlet in final 15%. LevelRegistry level3 checkpoints and eco-tokens updated to match new layout. *(Note: the flipY fix shipped later in T-043 — `flipY=true` is now correct.)*
 - **Commit/PR:** this branch
 
 ### T-028 — Android lint + build verification

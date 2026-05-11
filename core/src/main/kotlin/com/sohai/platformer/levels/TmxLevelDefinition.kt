@@ -127,7 +127,10 @@ class TmxLevel(private val def: TmxLevelDefinition) : Level() {
         obstacleManager: ObstacleManager,
         movingPlatforms: MutableList<MovingPlatform>
     ) {
-        MapLevelLoader.load(def.mapPath, obstacleManager, movingPlatforms, world, flipY = false)
+        // flipY=true: libGDX's TmxMapLoader already flips rectangle Y to y-up internally.
+        // MapLevelLoader's own flip cancels that out and correctly maps Tiled y-down
+        // coordinates onto the Box2D y-up world (ground at y=0 → bottom of physics world).
+        MapLevelLoader.load(def.mapPath, obstacleManager, movingPlatforms, world, flipY = true)
 
         // Pit safety net so the player lands somewhere before the death threshold
         obstacleManager.addRectNormalized(

@@ -18,7 +18,6 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.badlogic.gdx.utils.Array as GdxArray
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.kotcrab.vis.ui.VisUI
-import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisScrollPane
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
@@ -43,9 +42,10 @@ class SettingsScreen(
 
     private val titleFont   = FontManager.getShared(32)
     private val sectionFont = FontManager.getShared(20)
+    private val bodyFont    = FontManager.getShared(16)
 
     /** Toast feedback label shown after save/load/delete actions */
-    private val toastLabel = VisLabel("")
+    private val toastLabel = Label("", Label.LabelStyle(bodyFont, Color(0.3f, 1f, 0.55f, 1f)))
     private var toastTimer = 0f
 
     companion object {
@@ -59,6 +59,7 @@ class SettingsScreen(
         val skin = VisUI.getSkin()
         val titleStyle   = Label.LabelStyle(titleFont,   Color(0.3f, 1f, 0.55f, 1f))
         val sectionStyle = Label.LabelStyle(sectionFont, Color(0.7f, 0.85f, 0.75f, 1f))
+        val bodyStyle    = Label.LabelStyle(bodyFont,    Color(0.82f, 0.88f, 0.82f, 1f))
 
         val root = VisTable()
         root.setFillParent(true)
@@ -83,7 +84,7 @@ class SettingsScreen(
             ResPreset("3840 × 2160  (4K / UHD)",   3840, 2160)
         )
 
-        inner.add(VisLabel("Resolution")).left().padRight(16f)
+        inner.add(Label("Resolution", bodyStyle)).left().padRight(16f)
         val resBox = SelectBox<ResPreset>(skin)
         val resItems = GdxArray<ResPreset>()
         resPresets.forEach { resItems.add(it) }
@@ -112,13 +113,13 @@ class SettingsScreen(
         })
         inner.add(chkFullscreen).left().padBottom(4f).row()
 
-        inner.add(VisLabel("Sprites sharpen fully at next launch.")).left()
+        inner.add(Label("Sprites sharpen fully at next launch.", bodyStyle)).left()
             .padBottom(16f).row()
 
         // ── Audio ──────────────────────────────────────────────────────────
         inner.add(Label("Audio", sectionStyle)).left().padBottom(8f).row()
 
-        inner.add(VisLabel("Music Volume")).left().padRight(16f)
+        inner.add(Label("Music Volume", bodyStyle)).left().padRight(16f)
         val sliderMusic = Slider(0f, 1f, 0.05f, false, skin)
         sliderMusic.value = settings.volMusic
         sliderMusic.addListener(object : ChangeListener() {
@@ -128,7 +129,7 @@ class SettingsScreen(
         })
         inner.add(sliderMusic).width(260f).row()
 
-        inner.add(VisLabel("SFX Volume")).left().padRight(16f)
+        inner.add(Label("SFX Volume", bodyStyle)).left().padRight(16f)
         val sliderSfx = Slider(0f, 1f, 0.05f, false, skin)
         sliderSfx.value = settings.volSfx
         sliderSfx.addListener(object : ChangeListener() {
@@ -171,7 +172,7 @@ class SettingsScreen(
 
         // ── Assist Mode ───────────────────────────────────────────────────
         inner.add(Label("Assist Mode", sectionStyle)).left().padBottom(8f).row()
-        inner.add(VisLabel("Accessibility options — relax the challenge as needed.")).left().padBottom(6f).row()
+        inner.add(Label("Accessibility options — relax the challenge as needed.", bodyStyle)).left().padBottom(6f).row()
 
         val chkInfiniteSpirits = CheckBox(" Infinite Spirits (no game over)", skin)
         chkInfiniteSpirits.isChecked = settings.assistInfiniteSpirits
@@ -191,7 +192,7 @@ class SettingsScreen(
         })
         inner.add(chkInvincible).left().padBottom(16f).row()
 
-        inner.add(VisLabel("Slow Speed")).left().padRight(16f)
+        inner.add(Label("Slow Speed", bodyStyle)).left().padRight(16f)
         val sliderSpeed = Slider(0.25f, 1f, 0.05f, false, skin)
         sliderSpeed.value = settings.assistSlowSpeed
         sliderSpeed.addListener(object : ChangeListener() {
@@ -218,7 +219,7 @@ class SettingsScreen(
 
         for (action in actionNames) {
             val row = VisTable()
-            row.add(VisLabel(displayNames[action] ?: action)).left().width(180f).padRight(16f)
+            row.add(Label(displayNames[action] ?: action, bodyStyle)).left().width(180f).padRight(16f)
 
             val currentKey = settings.keybinds[action] ?: defaultKeybinds()[action] ?: -1
             val btn = VisTextButton(Input.Keys.toString(currentKey))
