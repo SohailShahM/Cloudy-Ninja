@@ -17,6 +17,7 @@ import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
+import com.sohai.platformer.entities.StormSentinel
 import com.sohai.platformer.levels.Level0_0
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.rendering.CharacterAnimator
@@ -49,7 +50,8 @@ class LevelRenderer(
     private val player: PlayerController,
     private val eboAnimator: CharacterAnimator,
     private val layaAnimator: CharacterAnimator,
-    private val footstepColor: Color
+    private val footstepColor: Color,
+    private val sentinel: StormSentinel? = null
 ) {
 
     // ── Hot-path colour constants (hoisted to avoid per-frame allocation) ─────
@@ -237,6 +239,9 @@ class LevelRenderer(
         for (enemy in enemies) {
             enemy.draw(shapeRenderer)
         }
+
+        // Boss sentinel (drawn after enemies so telegraph rings appear on top)
+        sentinel?.draw(shapeRenderer)
 
         // Particles (alpha blend enabled; works inside the Filled block via GL blend state)
         Gdx.gl.glEnable(GL20.GL_BLEND)

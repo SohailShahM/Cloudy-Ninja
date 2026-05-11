@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.9" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down"
-     width="138" height="46" tilewidth="16" tileheight="16" infinite="0" nextobjectid="80">
+     width="178" height="46" tilewidth="16" tileheight="16" infinite="0" nextobjectid="120">
 
   <!--
     Cloudy Ninja — Level 3: "Stormy Heights"  (T-025 Kishōtenketsu rebalance)
@@ -47,14 +47,25 @@
     <!-- Final exit island (reachable via moving platforms) -->
     <object id="11" name="final_a"       x="2060" y="160" width="160" height="20"/>
 
+    <!-- Boss arena (x=2200–2820, T-034) ────────────────────────────── -->
+    <!-- Full arena floor — player lands here after crossing boss_gap -->
+    <object id="80" name="boss_floor"   x="2280" y="0"   width="560" height="40"/>
+
+    <!-- Three combat platforms for firing Seed Slam droplets from above.
+         platform_left / platform_right surface at y=240 px.
+         platform_mid (optimal firing perch) surface at y=340 px. -->
+    <object id="81" name="boss_plat_l" x="2240" y="220" width="140" height="20"/>
+    <object id="82" name="boss_plat_m" x="2460" y="320" width="180" height="20"/>
+    <object id="83" name="boss_plat_r" x="2640" y="220" width="140" height="20"/>
+
   </objectgroup>
 
   <!-- ── Walls ────────────────────────────────────────────────────────────── -->
   <objectgroup name="walls" draworder="index" color="#795548">
 
-    <!-- Level boundaries -->
+    <!-- Level boundaries — right wall now wraps the entire boss arena -->
     <object id="20" name="left_wall"    x="0"    y="0"   width="20"  height="600"/>
-    <object id="21" name="right_wall"   x="2150" y="0"   width="20"  height="600"/>
+    <object id="21" name="right_wall"   x="2820" y="0"   width="20"  height="600"/>
 
     <!-- Wall-jump shaft at ~55% (x=1200).
          100 px interior (1220–1320) — same width as Level0_3 chimney.
@@ -77,6 +88,9 @@
 
     <!-- Ketsu zone: long gap forces the player onto the moving platform ferry -->
     <object id="34" name="gap5"  x="1990" y="0"   width="70"  height="15"/>
+
+    <!-- Boss arena: hazard gap separating Ketsu exit from boss floor -->
+    <object id="35" name="boss_gap" x="2220" y="0"   width="60"  height="15"/>
 
   </objectgroup>
 

@@ -20,6 +20,7 @@ import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
+import com.sohai.platformer.entities.StormSentinel
 import com.sohai.platformer.input.InputManager
 import com.sohai.platformer.levels.Level
 import com.sohai.platformer.levels.Level0_0
@@ -81,6 +82,15 @@ class LevelRunState(
     var levelCompleted = false
     var levelCompletionTimer = 0f
     val activatedCheckpoints = mutableSetOf<String>()
+
+    // ── Boss ─────────────────────────────────────────────────────────────────
+
+    /**
+     * The level boss, if any. Set by [GameScreen] after construction.
+     * Callbacks ([StormSentinel.onSpawnProjectile], [StormSentinel.onDefeated]) are
+     * also wired by GameScreen so they can reference runState.levelCompleted.
+     */
+    var sentinel: StormSentinel? = null
 
     // ── Projectiles ──────────────────────────────────────────────────────────
 
@@ -300,6 +310,9 @@ class LevelRunState(
             pendingBodyDestroy.add(dead.body)
             enemies.remove(dead)
         }
+
+        // Boss update (before physics step so attack spawns queue up correctly)
+        sentinel?.update(delta)
 
         // Fixed-timestep physics
         physicsAccum += delta

@@ -85,8 +85,8 @@ class CloudAtlasLibraryTest : BehaviorSpec({
                 ids.toSet().size shouldBe ids.size
             }
 
-            then("the total entry count matches the expected 5") {
-                allEntries shouldHaveSize 5
+            then("the total entry count matches the expected 6") {
+                allEntries shouldHaveSize 6
             }
         }
     }

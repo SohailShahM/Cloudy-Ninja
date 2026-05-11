@@ -10,6 +10,7 @@ import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
+import com.sohai.platformer.entities.StormSentinel
 import com.sohai.platformer.Constants
 
 class WorldContactListener : ContactListener {
@@ -44,6 +45,20 @@ class WorldContactListener : ContactListener {
                     fixA.userData = "hazard_cleaned"
                     val pos = fixA.body.position
                     CleanseEventQueue.push(pos.x, pos.y)
+                    udB.destroy()
+                }
+            }
+        }
+
+        // Droplet hitting Storm Sentinel boss -> damage boss and destroy droplet
+        if (begin) {
+            when {
+                udA is WaterDroplet && udB == "boss_sentinel" -> {
+                    (fixB.body.userData as? StormSentinel)?.takeDamage()
+                    udA.destroy()
+                }
+                udB is WaterDroplet && udA == "boss_sentinel" -> {
+                    (fixA.body.userData as? StormSentinel)?.takeDamage()
                     udB.destroy()
                 }
             }

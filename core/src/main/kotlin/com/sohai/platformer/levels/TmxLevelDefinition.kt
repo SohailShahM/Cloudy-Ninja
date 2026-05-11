@@ -30,6 +30,7 @@ import com.sohai.platformer.world.ObstacleManager
  * @param snapshots     Pairs of (CloudAtlasLibrary id, x px, y px) for snapshot pickups.
  * @param checkpoints   Static checkpoint definitions for this level.
  * @param enemies       Enemy placement definitions for this level.
+ * @param bossDef       Optional boss definition; null for levels with no boss encounter.
  */
 data class TmxLevelDefinition(
     val id: String,
@@ -43,6 +44,8 @@ data class TmxLevelDefinition(
     val snapshots: List<SnapshotDef> = emptyList(),
     val checkpoints: List<LevelCheckpoint> = emptyList(),
     val enemies: List<EnemyDef> = emptyList(),
+    /** Optional boss encounter definition. Null = no boss in this level. */
+    val bossDef: BossDef? = null,
     /** Music track base name (loaded from `audio/music/{musicTrack}.wav`). */
     val musicTrack: String = "ambient_arid"
 )
@@ -65,6 +68,26 @@ data class EnemyDef(
     val yPx: Float,
     val patrolLeftPx: Float,
     val patrolRightPx: Float
+)
+
+/**
+ * Lightweight description of a boss encounter inside a level.
+ *
+ * Positions are in virtual pixels; [TmxLevel] / [GameScreen] converts to
+ * world metres by dividing by [Constants.PPM].
+ *
+ * @param type          Boss type identifier (e.g. "storm_sentinel").
+ * @param xPx           Boss spawn centre X in virtual pixels.
+ * @param yPx           Boss spawn centre Y in virtual pixels.
+ * @param arenaLeftPx   Left boundary of the boss arena in virtual pixels.
+ * @param arenaRightPx  Right boundary of the boss arena in virtual pixels.
+ */
+data class BossDef(
+    val type: String,
+    val xPx: Float,
+    val yPx: Float,
+    val arenaLeftPx: Float,
+    val arenaRightPx: Float
 )
 
 /**
@@ -124,6 +147,8 @@ class TmxLevel(private val def: TmxLevelDefinition) : Level() {
         def.ecoTokens.map { Vector2(it.x / Constants.PPM, it.y / Constants.PPM) }
 
     fun getEnemyDefs(): List<EnemyDef> = def.enemies
+
+    fun getBossDef(): BossDef? = def.bossDef
 
     override fun getSnapshotPickups(world: World): List<SnapshotPickup> =
         def.snapshots.mapNotNull { snap ->
@@ -225,23 +250,29 @@ object LevelRegistry {
         // ── Level 3 — "Stormy Heights" ───────────────────────────────────────
         // Kishōtenketsu layout (T-025): Ki = ground run, Shō = ascending steps,
         // Ten = wall-jump shaft + sky sequence, Ketsu = moving-platform gauntlet.
+        // Boss arena (T-034): Storm Sentinel at x=2200–2820, defeated = level end.
         TmxLevelDefinition(
             id           = "level3",
             name         = "Stormy Heights",
             mapPath      = "maps/level3.tmx",
             spawnX       = 80f,
             spawnY       = 80f,
-            levelWidthPx = 2200f,
-            exitXPx      = 2130f,
+            levelWidthPx = 2840f,
+            exitXPx      = 2780f,
             checkpoints  = listOf(
                 // cp1: Shō entry, first step platform
                 LevelCheckpoint("cp1",  6.0f,  0.8f, "level3"),
                 // cp2: top of wall-jump shaft, sky_landing platform (y=410px)
                 LevelCheckpoint("cp2", 13.8f,  4.5f, "level3"),
                 // cp3: sky3 platform before Ketsu gauntlet (y=320px)
-                LevelCheckpoint("cp3", 19.3f,  3.5f, "level3")
+                LevelCheckpoint("cp3", 19.3f,  3.5f, "level3"),
+                // cp4: boss arena entrance (just past the boss gap)
+                LevelCheckpoint("cp4", 23.0f,  0.8f, "level3")
             ),
-            snapshots = emptyList(),
+            snapshots = listOf(
+                // Above the mid combat platform — collected while fighting the boss
+                SnapshotDef("storm_system", 2540f, 380f)
+            ),
             ecoTokens = listOf(
                 // Ki zone — flat ground run
                 Vector2( 170f,  60f),
@@ -256,7 +287,18 @@ object LevelRegistry {
                 Vector2(1585f, 395f),
                 Vector2(1745f, 315f),
                 // Ketsu zone — exit island reward
-                Vector2(2120f, 225f)
+                Vector2(2120f, 225f),
+                // Boss arena — reward tokens on the combat platforms
+                Vector2(2310f, 265f),
+                Vector2(2550f, 370f),
+                Vector2(2710f, 265f)
+            ),
+            bossDef = BossDef(
+                type         = "storm_sentinel",
+                xPx          = 2520f,
+                yPx          = 150f,
+                arenaLeftPx  = 2200f,
+                arenaRightPx = 2820f
             ),
             musicTrack = "ambient_eco"
         )

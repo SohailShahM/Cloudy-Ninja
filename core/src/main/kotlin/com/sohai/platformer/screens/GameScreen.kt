@@ -28,6 +28,7 @@ import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.SmogSprite
 import com.sohai.platformer.entities.SnapshotPickup
+import com.sohai.platformer.entities.StormSentinel
 import com.sohai.platformer.levels.Level
 import com.sohai.platformer.levels.LevelManager
 import com.sohai.platformer.levels.TmxLevel
@@ -107,6 +108,9 @@ class GameScreen(
     private var atlasOverlay: CloudAtlasOverlay? = null
     private var levelCompleteOverlay: LevelCompleteOverlay? = null
     private var gameOverOverlay: GameOverOverlay? = null
+
+    // ── Boss ─────────────────────────────────────────────────────────────────
+    private var sentinel: StormSentinel? = null
 
     // ── Body destruction queue ────────────────────────────────────────────────
     private val pendingBodyDestroy = mutableSetOf<Body>()
@@ -198,11 +202,32 @@ class GameScreen(
             }
         }
 
+        // Instantiate boss from level definition, if present
+        if (level is TmxLevel) {
+            val bdef = level.getBossDef()
+            if (bdef != null) {
+                when (bdef.type) {
+                    "storm_sentinel" -> {
+                        sentinel = StormSentinel(
+                            world,
+                            x          = bdef.xPx          / Constants.PPM,
+                            y          = bdef.yPx          / Constants.PPM,
+                            arenaLeft  = bdef.arenaLeftPx  / Constants.PPM,
+                            arenaRight = bdef.arenaRightPx / Constants.PPM
+                        )
+                        Gdx.app.log("GameScreen", "Storm Sentinel spawned at (${bdef.xPx}, ${bdef.yPx}) px")
+                    }
+                    else -> Gdx.app.error("GameScreen", "Unknown boss type: ${bdef.type}")
+                }
+            }
+        }
+
         renderer = LevelRenderer(
             shapeRenderer, spriteBatch, camera, parallaxBg, particles,
             eboAbility, layaAbility, zephyrAbility,
             obstacleManager, movingPlatforms, ecoTokens, snapshotPickups,
-            enemies, player, eboAnimator, layaAnimator, footstepColor
+            enemies, player, eboAnimator, layaAnimator, footstepColor,
+            sentinel = sentinel
         )
 
         player.onJump = {
@@ -220,6 +245,19 @@ class GameScreen(
             renderer, enemies, CHECKPOINT_AUTOSAVE_FILE,
             isTimeTrial = isTimeTrial
         )
+
+        // Wire boss sentinel into runState (callbacks set after runState exists)
+        if (sentinel != null) {
+            runState.sentinel = sentinel
+            sentinel!!.onSpawnProjectile = { x, y, vx, vy ->
+                runState.spawnProjectile(x, y, vx, vy)
+            }
+            sentinel!!.onDefeated = {
+                Gdx.app.log("GameScreen", "Storm Sentinel defeated — level complete")
+                runState.levelCompleted = true
+                hud.showTransientMessage("Storm Sentinel defeated!", 2.5f)
+            }
+        }
 
         runState.onAtlasCollected = { snap ->
             atlasOverlay = CloudAtlasOverlay(snap.entry) {
@@ -385,6 +423,10 @@ class GameScreen(
     override fun dispose() {
         if (isDisposed) return
         isDisposed = true
+        // Destroy boss body before world.dispose() to avoid stale-reference risk
+        sentinel?.let { world.destroyBody(it.body) }
+        sentinel = null
+
         snapshotPickups.forEach { world.destroyBody(it.body) }
         snapshotPickups.clear()
         atlasOverlay?.dispose();       atlasOverlay        = null

@@ -83,6 +83,20 @@ object CloudAtlasLibrary {
                        "rebound warming. The hard-light arrays in World 4 are " +
                        "a fictional, weaponised version of this real concept.",
             character = "Silas"
+        ),
+
+        CloudAtlasEntry(
+            id       = "storm_system",
+            title    = "Storm Systems",
+            subtitle = "The sentinel's power source",
+            body     = "Large-scale storm systems form when warm, moist air rises " +
+                       "rapidly, creating low-pressure centres that draw in " +
+                       "surrounding air. As the inflow spirals upward it releases " +
+                       "enormous latent energy as precipitation. The Storm Sentinel " +
+                       "corrupts this natural process, converting the Great Haze into " +
+                       "concentrated lightning — until Ebo's cleansing rain breaks " +
+                       "the feedback loop.",
+            character = "Ebo"
         )
 
     ).associateBy { it.id }
