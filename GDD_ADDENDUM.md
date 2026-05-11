@@ -1,6 +1,6 @@
 # Cloudy Ninja — Technical GDD Addendum (v3)
 
-**Last updated:** 2026-05-09 (Sprint A complete + Sprint B complete + Sprint C plan)
+**Last updated:** 2026-05-11 (Sprint A complete + Sprint B complete + Sprint C complete + Sprint D planned)
 **Audience:** Future AI agents and human contributors continuing development.
 **Companion to:** the original Cloudy Ninja GDD (theme, characters, worlds 0–5, Sky Sanctuary, Cloud Atlas).
 **Purpose:** Translate the design vision into concrete engineering targets, calibration numbers from successful 2D platformers, and a prioritized work plan.
@@ -9,64 +9,55 @@
 
 ---
 
-## 0. Project Snapshot (May 2026, after Sprint A)
+## 0. Project Snapshot (May 2026, post Sprint C)
 
 | Metric | Value |
 |---|---|
 | Engine | libGDX 1.14.0 + Box2D, Kotlin |
-| Lines of Kotlin | ~4 200 across 38 files |
-| Resolution | 1280×720 virtual, PPM = 100 |
-| Levels shipped | 3 (level1 / level2 / level3) |
-| Characters | 2 of 6 (Ebo + Laya playable) |
-| Cloud Atlas entries | 5 (all defined; 4 placed in levels) |
-| Test coverage | persist + entities (5 test files) |
-| Audio assets | 0 (SoundManager is silent-stubbed) |
-| Font assets | 0 (default BitmapFont fallback) |
+| Resolution | 1280×720 virtual, PPM = 100; 4K/HiDPI via `DisplayScale` |
+| Levels shipped | 7 (4 tutorial rooms + 3 campaign; Level3 has boss arena) |
+| Characters | 3 of 3 v1.0 chars (Ebo, Laya, Zephyr — all playable) |
+| Cloud Atlas entries | 6 shipped (target 12 via T-045) |
+| Test coverage | 9 Kotest specs (player movement, persistence, contacts, particles, atlas, TMX coords) |
+| Audio assets | 8 SFX + 3 ambient music tracks (procedurally generated) |
+| Font assets | `FontManager` FreeType cache — DisplayScale-aware |
 
-### Sprint A status (completed 2026-05-09)
+### Sprint A — Done (2026-05-09)
 
-✅ **All 6 P0 bugs resolved**
-- Moving platforms now carry the player (manual platform-rider via `platformContacts` map)
-- Save/load restores checkpoint position via `resumeCheckpoint` constructor param
-- `Checkpoint`/`LevelCheckpoint` data classes disambiguated
-- Touch input no longer double-fires Jump+Action (raw screen-quadrant heuristics removed; HUD buttons own touch)
-- Cloud Atlas progress persisted to `GameState.collectedAtlasIds`
-- Body-destroy queue (`pendingBodyDestroy`) drained at end of update — never inside `world.step`
+- All 6 P0 bugs resolved: platform carry, checkpoint respawn, data-class collision, touch double-fire, atlas persistence, body-destroy queue
+- Movement calibrated to Celeste reference (apex-hang, asymmetric gravity, coyote/buffer windows)
+- Game-feel: 200-particle pool, screen shake, hitstop, camera dead-zone + forward focus
 
-✅ **Movement calibrated to Celeste reference**
-- New constants block in `Constants.kt` with apex-hang gravity, asymmetric fall, terminal velocity
-- `PlayerController.update()` sets `body.gravityScale` per frame for hang/fall asymmetry
-- Coyote time tightened to 0.10s, wall-jump impulse increased
+### Sprint B — Done (2026-05-09)
 
-✅ **Game-feel additions**
-- `ParticleSystem` (200-particle pool) — landing dust, jump puffs, collect sparkles, death burst
-- Screen shake — 4–8px on hard landings/death (respects `Settings.screenShake`)
-- Hitstop — 5-frame freeze on death
+- Hot-path Color allocations hoisted; `FontManager` shared cache; atomic save writes; fixed-timestep accumulator
+- `Settings` + `SettingsManager` — volumes, accessibility flags, keybind scaffold
+- `CloudAtlasScreen` browseable from main menu; round-trip persistence tests added
+- **BUG-001 (intermittent native Box2D crash):** resolved — root cause was stale body reference during portal transition. Fix: portal deferred to end-of-frame via `pendingPortalTarget`; `SaveManager` in-memory cache eliminates per-frame disk reads that masked the stale reference. Fix verified in T-043.
 
-✅ **Camera upgrade (Itay Keren / Celeste)**
-- Dead-zone follow (`camDeadZoneHalfW = 1m`)
-- Forward focus (`camForwardOffset = 1.5m`, flips on facing change)
-- Smooth lerp toward target
+### Sprint C — Done (2026-05-11)
 
-### Sprint B status (in progress)
+- Enemy framework: `Enemy` abstract base + `SmogSprite` patroller (T-029); stomp-defeat mechanic (T-032)
+- `Projectile` kinematic hazard entity (T-040)
+- Boss encounter: Storm Sentinel with 3-phase attack cycle, 3 HP, defeat unlocks atlas entry (T-034)
+- Hub world: Sky Sanctuary Level0_0 with 4 portal doors (T-033)
+- Background music system: `MusicManager` with 1.5s crossfade, 3 procedural ambient tracks (T-030)
+- Key rebinding UI in Settings (T-036)
+- 4K/HiDPI display scaling via `DisplayScale` singleton (T-042)
+- Polish: HUD transparency, Settings font scaling, parallax background upgrade, terrain visual detail (T-044)
+- Bug fixes: SaveManager cache, portal crash, spawn-death flipY (T-043)
 
-✅ Hot-path `Color(...)` allocations hoisted to `GameScreen.Palette` companion object — ~30 alloc/frame eliminated
-✅ `FontManager.getShared(size)` cache — single atlas per size for the app lifetime
-✅ Atomic save writes — `tmp` + copy + delete (defends against mid-write crashes)
-✅ Fixed-timestep accumulator (max 5 steps/frame) — frame-rate-independent physics
-✅ `Settings` + `SettingsManager` — separate file for volumes/keybinds/accessibility, including assist-mode flags
-✅ `CloudAtlasScreen` — collected snapshots browseable from main menu
-✅ Existing tests pass; new round-trip tests cover `completedLevels` / `collectedAtlasIds` / `bestScores` and old-save backward compatibility
+### Sprint D — Planned (next 2 weeks)
 
-⚠️ **KNOWN ISSUE: Intermittent native Box2D crash**
-- `EXCEPTION_ACCESS_VIOLATION` in `gdx-box2d64.dll+0x22a40` from `Body.jniGetPosition`
-- Stack trace: GameScreen.update → Body.getPosition → JNI
-- Reproduces after 30s–4min of play, address always varies
-- Defensive fixes already applied: deferred body-destroy queue, `platformContacts.clear()` on respawn, `gravityScale` reset on respawn, fixed-timestep
-- **Hypothesis:** stale body reference in `platformContacts` after a contact-end event was missed during teleport; OR a Box2D contact-pair internal pointer aliasing bug
-- **Investigation path:** disable platform-carry feature in `PlayerController.update()` to isolate; add logging in contact begin/end to verify map invariants
-
-**Status:** core loop runs at locked 120 FPS, world-state-persistence (cleanseRatio) is wired, eco-spirit health is in HUD, level-select / pause / victory / atlas overlays exist. The game is *playable end-to-end* but the **feel needs calibration** and several P0 bugs block clean experience on level 3.
+- T-031 tile-based terrain rendering
+- T-035 audio bus sliders (Music / SFX / UI)
+- T-037 achievement system + toast notifications
+- T-038 ghost replay in time trials
+- T-041 stats screen on main menu
+- T-045 Cloud Atlas expansion to 12 entries
+- T-A1/T-A2 AI smoke testing — validate green for 2 weeks
+- T-046 graphics overhaul starts (art production)
+- First public alpha to itch.io (private link, ~5 testers)
 
 ---
 

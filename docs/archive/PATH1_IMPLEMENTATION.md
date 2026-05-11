@@ -1,3 +1,6 @@
+> **ARCHIVED 2026-05-11.** This is a Phase-1 milestone snapshot. For current
+> game state see GAME_PLAN.md; for task tracking see TASKS.md.
+
 # Path 1: Fast Loop Implementation — COMPLETE
 
 **Date:** May 8, 2026  
