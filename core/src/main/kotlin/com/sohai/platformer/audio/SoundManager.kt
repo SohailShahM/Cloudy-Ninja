@@ -19,7 +19,7 @@ object SoundManager : Disposable {
 
     private var enabled = true
     private var volume = 0.8f
-    private var uiVolume = 0.9f
+    private var uiVolume = 1f
     private val sounds = mutableMapOf<String, Sound>()
 
     /**
@@ -88,6 +88,7 @@ object SoundManager : Disposable {
             ?: Gdx.app.log("SoundManager", "play() called for unknown sound: $name")
     }
 
+    /** Play a UI sound using the UI bus volume configured via [setUiVolume]. */
     fun playUi(name: String, pitch: Float = 1f) {
         if (!enabled) return
         sounds[name]?.play(uiVolume, pitch, 0f)
