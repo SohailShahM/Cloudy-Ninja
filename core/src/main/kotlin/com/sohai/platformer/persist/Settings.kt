@@ -25,7 +25,7 @@ data class Settings(
     val volMusic: Float = 0.7f,
     val volSfx: Float = 0.9f,
     val volAmbient: Float = 0.6f,
-    val volUi: Float = 0.8f,
+    val volUi: Float = 0.9f,
 
     // Display
     val fullscreen: Boolean = false,
