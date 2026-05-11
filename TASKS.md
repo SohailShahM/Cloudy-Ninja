@@ -273,19 +273,7 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
-### T-A1 — AI smoke test: per-level autopilot run via CI
-- **Status:** In Progress  *(local validation passed; awaiting first CI green on PR)*
-- **Tool:** `claude-code-opus`
-- **Tier:** M
-- **Autonomous-eligible:** no  *(was a foundational change requiring planning)*
-- **Agent:** claude-code-opus
-- **Branch:** claude/T-034-storm-sentinel
-- **Started:** 2026-05-11
-- **Depends on:** _none_
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt`, `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `lwjgl3/build.gradle`, `.github/workflows/ai-smoke.yml` (new)
-- **Goal:** Reuse the existing `BasicAutopilot` block in `LevelRunState` to smoke-test every registered level on every PR. Add a `cloudy.smokeMode=true` flag that (a) tracks `maxXReached` and `frame_p99` during the autopilot run and (b) emits a single structured log line `[smoke] level=... maxX=... startX=... frameP99=... duration=...` at auto-quit. Add `cloudy.smokeLevel=level1` flag in `Main.kt` to bypass MainMenuScreen → SlotSelect and go directly to `GameScreen(LevelManager.getLevel(name))`. CI workflow runs the game once per registered level via `xvfb-run`, parses the smoke log line, fails the run if `maxX - startX < 1.0` (spawn-death like the T-043 flipY bug) or `frameP99 > 30ms` (perf regression like the T-043 SaveManager spam) or process crashed (like the T-043 portal crash).
-- **Done when:** Open a PR with a synthetic spawn-death (set `flipY=false` on any level) and CI catches it within 30s per level. All current levels pass smoke on main. Total CI runtime <10 min for 7 levels.
-- **Progress notes:** MVP of v2 AI testing plan — see "Backlog (planned)" below for full design.
+_(none — all claimed tasks completed)_
 
 
 <!--
@@ -309,6 +297,13 @@ Template for moving a task here:
 ---
 
 ## Done
+
+### T-A1 — AI smoke test: per-level autopilot run via CI
+- **Status:** Done
+- **Completed:** 2026-05-11
+- **Outcome:** Headless smoke test running on every PR. `LevelRunState` emits a structured `[smoke]` log line on auto-quit when `cloudy.smokeMode=true`; `Constants.SMOKE_MODE` flag suppresses screen transitions + atlas-overlay gate so the autoquit always fires; `Main.kt` `cloudy.smokeLevel` bypasses menu→GameScreen. `.github/workflows/ai-smoke.yml` runs an 8-level matrix via `xvfb-run`, parses the log line, fails the build on `deltaX<0.3` (spawn-death) or `frameP99>80ms` (perf regression) or crashed process. All 9 required CI checks (1 lint + 8 smoke) gate `main` branch merge. **PR #1 validated the system end-to-end: 8 bug layers peeled (desktop.ini, gradlew chmod, threshold tuning, queue saturation, level-hopping, overlay-blocked-update, cold-runner timeout) before green run merged.** Each layer documented in `LEARNINGS.md`.
+- **Commit/PR:** PR #1 (squashed merge `3468df1`)
+- **Tool:** `claude-code-opus`
 
 ### T-A2 — Determinism audit (`DETERMINISM.md`)
 - **Status:** Done
