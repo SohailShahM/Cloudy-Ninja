@@ -179,12 +179,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Updated dependency (2026-05-12):** T-045 now depends on **T-049** (climate-source compilation). The climate.gov URLs in the original prompt are dead (site archived to noaa.gov). T-049 produces a `research/climate-sources/` folder with verified-live URLs + downloaded PDFs, ready to feed NotebookLM in one step.
 
 ### T-057 — Color-blind palette toggle  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-057-colorblind-palette`
+- **Started:** 2026-05-12
 - **Depends on:** _none_
 - **GDD ref:** GAME_PLAN.md (accessibility-first design)
 - **Files:** `persist/Settings.kt`, `screens/SettingsScreen.kt`, `screens/LevelRenderer.kt` (Palette)
@@ -218,12 +219,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** All user-facing string literals in `screens/` route through `Strings.get(...)`. ≥40 keys defined. AI smoke CI passes (verifies no visual regressions).
 
 ### T-060 — Best-times row in StatsScreen  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-060-stats-best-times`
+- **Started:** 2026-05-12
 - **Depends on:** T-024, T-041
 - **GDD ref:** §23 (time-trial spec) + StatsScreen (T-041 outcome)
 - **Files:** `screens/StatsScreen.kt`
@@ -242,6 +244,97 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Files:** `.github/workflows/ai-smoke.yml`, `core/src/main/kotlin/com/sohai/platformer/Main.kt` (cloudy.smokeCharacter property)
 - **Goal:** Extend smoke matrix from 9 (level × default-character) to 27 (level × {ebo, laya, zephyr}). Add `cloudy.smokeCharacter` system property to `Main.kt` that pre-selects the starting character before `GameScreen` init. Update workflow to include a `character` axis.
 - **Done when:** All 27 smoke jobs pass on a PR; CI duration acceptable (parallel jobs, should still finish under 6 min).
+
+### T-062 — Second enemy type: "Drift Husk" (drop-from-above)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-029
+- **GDD ref:** §17 ("Enemy Design Spec") — second concrete subclass of `Enemy`
+- **Files:** `entities/DriftHusk.kt` (new), `entities/Enemy.kt` (no changes expected — just a new subclass), `levels/TmxLevelDefinition.kt` (add `DriftHuskDef`), `levels/LevelRegistry.kt` (place 2 in Level 2), `screens/LevelRenderer.kt` (render as floating purple oval with trailing wisp)
+- **Goal:** Add a second enemy archetype to widen combat variety. DriftHusk floats stationary above its `triggerX` (horizontal patrol band), drops vertically (gravity-driven kinematic body) when player crosses the trigger, and respawns 4s after impact-or-defeat. 2 Seed-Slam hits to defeat. Mirror SmogSprite's class structure. Add Kotest specs alongside (≥10 tests in `entities/DriftHuskTest.kt`).
+- **Done when:** Level 2 contains 2 Drift Husks, they drop on player passage, can be stomped or Seed-Slammed, respawn after 4s, compile clean, smoke CI passes, tests pass.
+
+### T-063 — Pause menu visual polish + fade-in  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (polish for itch.io alpha)
+- **Files:** `screens/PauseScreen.kt` (or wherever the pause overlay lives), `screens/LevelRenderer.kt` (backdrop dim)
+- **Goal:** Add a 0.2s fade-in to the pause overlay (alpha 0 → 0.7 on Esc-press), darken the backdrop behind the menu (~55% black overlay over gameplay), and right-align a tiny "press Esc to resume" hint at the bottom. Keep input handling identical.
+- **Done when:** Fade-in visible at 60 FPS without input lag, hint visible, smoke CI passes.
+
+### T-064 — Victory screen best-time delta indicator  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-024
+- **GDD ref:** §23 (time-trial spec)
+- **Files:** `screens/VictoryScreen.kt`
+- **Goal:** When the run completes a time-trial AND there's a prior best, display the delta below the current time: `−2.31s under best` (green) or `+0.42s slower` (grey). Use `GameState.bestTimes[levelId]` for the comparison. No delta shown if no prior best.
+- **Done when:** Delta displays correctly on the second+ time-trial completion of a level; formatting matches existing screen typography.
+
+### T-066 — Achievement icons (16×16 pixel art)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes-with-review  *(visual assets — review icons before commit)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-037
+- **GDD ref:** §22 (achievements list)
+- **Files:** `assets/icons/achievements/*.png` (new), `progression/Achievement.kt` (add `iconPath: String` field), `screens/AchievementToast.kt` (render icon), `screens/AchievementsScreen.kt` (render icon in list)
+- **Goal:** Procedurally generate (via a one-off Kotlin tool in `tools/`) or hand-place 12 distinct 16×16 PNG icons — one per achievement. Each icon should be a simple iconic symbol (stomp = boot, time-trial = stopwatch, atlas_full = open book, etc.). Add `iconPath` to `Achievement`. Render at 2× scale (32×32) in toast + atlas list. Procedural-gen is fine for v1; replace with hand-art later.
+- **Done when:** All 12 icons visible in achievement toast + atlas screen; PNGs committed at 16×16; compile clean; smoke CI passes.
+
+### T-069 — Settings screen: categorized layout  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-035, T-036
+- **GDD ref:** GAME_PLAN.md (UX polish)
+- **Files:** `screens/SettingsScreen.kt`
+- **Goal:** Restructure SettingsScreen into 4 collapsible/tabbed sections: **Display** (resolution, fullscreen, font scaling), **Audio** (music/sfx/ui sliders), **Controls** (key rebinding), **Accessibility** (color-blind mode, reduced motion, assist mode). Keep all existing widgets — just reorganize.
+- **Done when:** Settings screen has 4 visually-distinct sections, all existing controls functional, no widget removed, smoke CI passes.
+
+### T-073 — User research: pixel-platformer default keyboard layouts  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** S  *(research-only, no code)*
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-073-keyboard-layouts`
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (default input scheme)
+- **Files:** `research/keyboard-layout-conventions.md` (new)
+- **Goal:** Catalog default keyboard bindings across 10–15 popular indie pixel platformers (Celeste, Hollow Knight, Hyper Light Drifter, Hades, Dead Cells, Risk of Rain, Stardew Valley, Owlboy, Shovel Knight, etc.). Capture for each: jump key, action key, dash key, alt-action key, pause key, inventory key, accessibility-mode key (if any). Synthesize a most-common default + a recommended Cloudy-Ninja default that maximizes "feels familiar to platformer players."
+- **Done when:** `research/keyboard-layout-conventions.md` exists with a comparison table + a recommended default mapping for Cloudy Ninja's 5 actions (left/right/jump/action/swap), plus a 2-sentence rationale per binding.
+
+### T-075 — Steam tags + keyword research  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** S  *(research-only, no code)*
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-075-steam-tags`
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (launch/visibility plan)
+- **Files:** `marketing/steam-tags-research.md` (new)
+- **Goal:** Cloudy Ninja's eventual Steam listing needs the right tag combination. Survey Steam's top-rated 2D pixel-art platformers with eco/climate/accessibility angles. Cross-reference Steam's official tag taxonomy. Identify: (a) tag combinations correlating with discovery success, (b) tag conflicts that *hurt* visibility, (c) the 3-5 must-have tags for our pitch, (d) 5-8 "stretch" tags that broaden audience without diluting positioning.
+- **Done when:** `marketing/steam-tags-research.md` exists with a recommended primary tag set, a stretch tag set, and rationale citing 3+ comparable games per tag.
 
 ---
 
