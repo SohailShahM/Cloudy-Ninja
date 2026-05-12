@@ -39,15 +39,17 @@ The collaboration channel between Claude Code and Antigravity that `prompts/buil
 - AGV side: `~/.gemini/antigravity/mcp_config.json` ditto
 - Shared SQLite state: `C:\Users\Radmin\cc-agv-bridge\state.sqlite` (deliberately not under `%APPDATA%` — Claude Code's MSIX package virtualizes APPDATA per app)
 
-**What it gives you that TASKS.md doesn't** (in rough order of how often you'll reach for them, given AGV's capacity profile):
-- `bridge_ask` — ask AGV a blocking question mid-flight (5 min default timeout). One round-trip, low quota cost. The most-used tool.
-- `bridge_request_review` / `bridge_submit_review` — pull AGV in as a reviewer on a branch CC built. Capacity-light.
+**What it gives you that TASKS.md doesn't** (in rough order of how often you'll reach for them):
+- `bridge_ask` — ask AGV a blocking question mid-flight (5 min default timeout). On Flash this is effectively free. The most-used tool.
+- `bridge_request_review` / `bridge_submit_review` — pull AGV in as a reviewer on a branch CC built. Flash for single-file, Pro (low) for 5+ files.
 - `bridge_send` / `bridge_receive` — async messages, share insights, drop a plan for the other side to glance at.
-- `bridge_handoff` — transfer ownership of work. Reserve for **small surgical tasks** sized to AGV's remaining quota; AGV should `bridge_decline` rather than half-execute.
+- `bridge_handoff` — transfer ownership of work. **AGV-on-Flash is now in the workhorse pool** — bulk mechanical work is a valid handoff, not just small surgical tasks. AGV declines if every bucket would have to go red.
 - `bridge_diagnose` — first thing to call at session start; surfaces path-collision and stale-state failures in one call.
-- `bridge_status` — AGV self-rates remaining capacity here at session start as `green` / `yellow` / `red` (verified live: Gemini has no quota-introspection tool, so coarse buckets are the honest answer; CC reads this and routes accordingly).
+- `bridge_status` — AGV self-rates **per-model** capacity here at session start (format: `capacity: flash=green, pro=yellow, sonnet=green, opus=red`). CC reads this before sizing future asks/handoffs.
 
-**When to use it:** when CC wants AGV's perspective on the same ticket without going through TASKS.md. Bulk workhorse work still goes to `copilot-agent` or `claude-code-sonnet` — the bridge is not a queue for shipping AGV more work, it's a channel for getting AGV's input on work CC is already doing.
+**Model selection:** AGV exposes 6 models (Gemini 3 Flash + Pro low/high, Sonnet/Opus 4.6 Thinking, GPT-OSS 120B), each with its own quota bucket. AGV picks the right model per turn — see [model-routing.md](https://github.com/SohailShahM/cc-agv-bridge/blob/main/docs/model-routing.md). CC may hint at a preferred model in `bridge_ask`/`bridge_handoff` text; AGV decides whether to honor.
+
+**When to use it:** any work where CC and AGV could naturally collaborate. Flash makes AGV viable for real bulk handoffs now — not just consulting. `copilot-agent` still owns single-file UI from-issue work; `claude-code-sonnet` still owns determinism-sensitive code; otherwise the choice between Copilot and AGV-Flash is real and depends on which has capacity available.
 
 **Starter prompts** (paste at session start on either side) live at https://github.com/SohailShahM/cc-agv-bridge/blob/main/docs/starter-prompts.md — they handle the diagnose + drain-pending-work handshake automatically.
 
