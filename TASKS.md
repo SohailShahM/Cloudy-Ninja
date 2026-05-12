@@ -192,20 +192,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** `marketing/press-outreach-list.md` exists with ≥30 contacts (target mix: 5–8 tier-S, 10–15 tier-M, 10+ tier-L), spanning YouTube/written/podcast/social. Every URL WebFetched + confirmed alive.
 - **Constraints:** Markdown only. Do NOT touch any file outside `marketing/`. Do NOT include private email addresses you can't verify are intended for outreach — only contact forms or publicly-posted addresses.
 
-### T-051 — Dependency upgrade audit (Box2D, libGDX, Kotlin, VisUI)  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
-- **Tier:** S  *(research-only — the audit IS the deliverable; do not bump versions)*
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-051-dep-audit`
-- **Depends on:** _none_
-- **GDD ref:** LEARNINGS.md (Box2D crash history — T-017, T-043)
-- **Files:** `research/dependency-audit.md` (new)
-- **Goal:** Read the project's `build.gradle.kts`, `core/build.gradle.kts`, and `android/build.gradle.kts` to extract current versions of all major deps (libGDX, Box2D, Kotlin, VisUI, Kotest, JUnit, etc.). For each: find latest stable version, summarize changelog between current and latest, identify breaking changes that would require code edits (cite specific Kotlin file paths when possible), tag with **upgrade-risk** (LOW / MEDIUM / HIGH) and **upgrade-value** (LOW = cosmetic, MEDIUM = bugfixes, HIGH = perf/security/feature we need).
-- **Done when:** `research/dependency-audit.md` exists with: (a) comparison table of all major deps (current → latest), (b) per-dep section with changelog summary + breaking-change citations + risk/value ratings, (c) recommended upgrade order, (d) top-3 priority upgrades with one-paragraph rationale each.
-- **Constraints:** Markdown only — do NOT modify any gradle files or code. Do NOT touch any file outside `research/`.
-
 ### T-052 — Indie game festival + showcase eligibility research  [P3]
 - **Status:** Todo
 - **Tool:** `antigravity`
@@ -275,6 +261,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-051 — Dependency upgrade audit (Box2D, libGDX, Kotlin, VisUI)  [P3]
+- **Status:** In Progress
+- **Tool:** `antigravity`
+- **Tier:** S  *(research-only — the audit IS the deliverable; do not bump versions)*
+- **Autonomous-eligible:** yes
+- **Agent:** antigravity
+- **Branch:** `antigravity/T-051-dep-audit`
+- **Depends on:** _none_
+- **GDD ref:** LEARNINGS.md (Box2D crash history — T-017, T-043)
+- **Files:** `research/dependency-audit.md` (new)
+- **Goal:** Read the project's `build.gradle.kts`, `core/build.gradle.kts`, and `android/build.gradle.kts` to extract current versions of all major deps (libGDX, Box2D, Kotlin, VisUI, Kotest, JUnit, etc.). For each: find latest stable version, summarize changelog between current and latest, identify breaking changes that would require code edits (cite specific Kotlin file paths when possible), tag with **upgrade-risk** (LOW / MEDIUM / HIGH) and **upgrade-value** (LOW = cosmetic, MEDIUM = bugfixes, HIGH = perf/security/feature we need).
+- **Done when:** `research/dependency-audit.md` exists with: (a) comparison table of all major deps (current → latest), (b) per-dep section with changelog summary + breaking-change citations + risk/value ratings, (c) recommended upgrade order, (d) top-3 priority upgrades with one-paragraph rationale each.
+- **Constraints:** Markdown only — do NOT modify any gradle files or code. Do NOT touch any file outside `research/`.
+
 
 ### T-XXX — <title>
 - **Status:** In Progress
