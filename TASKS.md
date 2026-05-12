@@ -320,61 +320,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Either: (A) Android APK builds locally + CI step passes + a one-line "Mobile build OK as of 2026-05-12" note in LEARNINGS.md. Or: (B) `BUILD-LOG.md` + `QUESTIONS.md` entry documents the blocker; ticket marked blocked. Either outcome is a success — clarity is the goal.
 - **Constraints:** Do NOT attempt risky toolchain bumps (AGP > 1 minor, Kotlin > 1 minor, Java target changes). Do NOT publish APK to anywhere. Do NOT change signing config.
 
-### T-093 — Kotest specs for FontManager (scaling + shared cache)  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-093-fontmanager-tests`
-- **Started:** 2026-05-12
-- **Depends on:** T-042
-- **GDD ref:** T-042 (4K/HiDPI scaling — `fontScale` × requested size = effective px)
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/FontManagerTest.kt` (new)
-- **Goal:** Pure-logic tests for `FontManager`. Cover: (a) `getShared(size)` returns the same instance for the same size across calls, (b) `getShared` returns *different* instances for different sizes, (c) `fontScale` (from `DisplayScale`) multiplies into the effective font size correctly (mock DisplayScale or seed via reflection), (d) `clearSharedCache()` invalidates everything. Mirror style of `MapLevelLoaderCoordTest`. Use MockK for `BitmapFont` if construction requires GL.
-- **Done when:** ≥10 tests pass; no live libGDX renderer required.
-
-### T-094 — Kotest specs for MusicManager (crossfade timing + volume)  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-094-musicmanager-tests`
-- **Started:** 2026-05-12
-- **Depends on:** T-030
-- **GDD ref:** §18 ("Music System Spec")
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/audio/MusicManagerTest.kt` (new)
-- **Goal:** Pure-logic tests for `MusicManager`. Cover: (a) `play(track, fadeIn=true)` starts a 1.5s crossfade, (b) `update(delta)` advances the fade and switches active track at t=1.5s, (c) `setMusicVolume(v)` applies to the active track immediately, (d) `play(sameTrack)` is a no-op. Mock the libGDX `Music` class with MockK; assert via captured `setVolume(...)` calls.
-- **Done when:** ≥10 tests pass.
-
-### T-095 — Kotest specs for SoundManager (per-bus volume)  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-095-soundmanager-tests`
-- **Started:** 2026-05-12
-- **Depends on:** T-013, T-014, T-035
-- **GDD ref:** §18.4 (audio bus sliders)
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/audio/SoundManagerTest.kt` (new)
-- **Goal:** Pure-logic tests for `SoundManager`. Cover: (a) `play(id)` looks up the right loaded `Sound`, (b) `setVolume(v)` is applied on subsequent plays, (c) unknown id is a logged no-op (not a crash), (d) volume = 0 produces silent play. Mock `Sound` with MockK.
-- **Done when:** ≥8 tests pass.
-
-### T-096 — Kotest specs for ScreenFade state machine  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-096-screenfade-tests`
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** ScreenFade used in level transitions + pause flow
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/rendering/ScreenFadeTest.kt` (new)
-- **Goal:** Pure-logic tests for `ScreenFade`. Cover: `fadeIn(speed)`/`fadeOut(speed)` set the right target alpha, `update(delta)` lerps toward target at the requested speed, `isComplete` flips at the boundary, calling `fadeIn` mid-fadeOut reverses direction correctly. Use mocked `ShapeRenderer`.
-- **Done when:** ≥8 tests pass.
 
 ### T-097 — Death animation: player fade + zoom-out before respawn  [P3]
 - **Status:** Todo
@@ -657,6 +602,38 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Outcome:** Closes the i18n gap T-059 deliberately left. Added `Strings.format(key, vararg args: Any)` using a simple `{N}` regex substitution (chose this over `java.text.MessageFormat` to avoid locale-sensitive number/date quirks). **26 new keys**, **28 interpolation sites** swept across **10 screens** (`CloudAtlasOverlay`, `CloudAtlasScreen`, `Hud`, `LevelCompleteOverlay`, `LevelRunState`, `LevelSelectScreen`, `MainMenuScreen`, `PauseOverlay`, `StatsScreen`, `VictoryScreen`). New keys include `SLOT_LABEL`, `WORLD_PORTAL`, `SPIRIT_DEATH`, `COMBO_MULTIPLIER`, `ATLAS_PCT`, etc. **Byte-identical English output.** Deliberately left as literal: bare `"$score"` Labels (no surrounding copy), data values like `"${entry.title}"`, `Gdx.app.log` strings, printf templates using Kotlin's `.format()`.
 - **Commit/PR:** PR #48 (squashed merge `8c6486b`)
 - **Tool:** `claude-code-sub-agent`
+
+### T-093 — Kotest specs for FontManager (scaling + shared cache)
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** 22 tests in `core/src/test/kotlin/com/sohai/platformer/FontManagerTest.kt`. Mocked `BitmapFont` via MockK (uses Objenesis under the hood; no GL needed). Pre-populates `FontManager`'s private `sharedCache` map via reflection — covers cache identity (`===`), per-size distinctness, `clearSharedCache` + `disposeShared` (verified `dispose()` called on each cached mock). `fontScale` contract verified as a **pure-math mirror** of line 40 (`(size * fontScale).roundToInt().coerceAtLeast(size)`) at fontScale = 1.0/2.0/3.0 because `FontManager.create()` is unreachable headlessly (both branches touch GL).
+- **Commit/PR:** PR #52 (squashed merge `0134f2a`)
+- **Tool:** `claude-code-sub-agent`
+- **Follow-up flagged:** expose a factory seam (`var fontFactory: (Int, Color) -> BitmapFont`) so `create()` becomes unit-testable end-to-end.
+
+### T-094 — Kotest specs for MusicManager (crossfade timing + volume)
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** 35 cases across 16 `when` blocks. Covers 1.5s crossfade timing (midpoint within `EPS=1e-3`), volume application out-of-fade, `play(sameTrack)` no-op, unknown-track logged-not-crashing, volume-0 silent, multi-`play()` only-last-wins. Mocked `Music` instances with backed `volume` getter/setter for round-trip assertions; `Gdx.app`/`Gdx.files`/`Gdx.audio` mocked in `beforeSpec`.
+- **Commit/PR:** PR #50 (squashed merge `d0a734f`)
+- **Tool:** `claude-code-sub-agent`
+- **Source quirks pinned:** (1) `setMusicVolume()` silently skips during crossfades — silent UX failure if user drags slider mid-fade. (2) `stop()` is immediate despite doc claiming a fade. Spawn-task chip generated for fixing.
+
+### T-095 — Kotest specs for SoundManager (per-bus volume)
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** 15 tests. Covers default-volume play, volume change applied to next-play (not retroactively), unknown-id soft-fail, volume = 0/1 boundaries, clamping (`setVolume(2f)` → 1, `setVolume(-0.5f)` → 0 via `coerceIn`), multi-sound distinct mocks, separate game vs UI bus, `setEnabled(false)` suppression, custom pitch. `Gdx.app`/`Gdx.audio`/`Gdx.files` MockK-mocked, per-test reset via `dispose() + init()`.
+- **Commit/PR:** PR #51 (squashed merge `e88b18c`)
+- **Tool:** `claude-code-sub-agent`
+- **Contract surprise pinned:** unknown-id is logged at `log` level, not `error` (likely worth upgrading); `play()` uses the 3-arg `Sound.play(volume, pitch, pan)` overload.
+
+### T-096 — Kotest specs for ScreenFade state machine
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** 16 tests across 8 `given` blocks. Reverse-engineered actual semantics (worth documenting): `fadeIn(speed)` sets `alpha=1, targetAlpha=0` (alpha lerps **down**, screen clears); `fadeOut(speed)` sets `alpha=0, targetAlpha=1` (alpha lerps **up**, screen blacks). `speed` is units-of-alpha/second, not 1/duration. No public `isComplete` — completion is `alpha == targetAlpha`. `onFadeOutComplete` fires exactly once. Test isolation via `sun.misc.Unsafe.allocateInstance` to bypass the GL-required constructor + private-field reflection.
+- **Commit/PR:** PR #53 (squashed merge `cec4bf6`)
+- **Tool:** `claude-code-sub-agent`
+- **Naming note:** `fadeIn`/`fadeOut` semantics are intuitively reversed from common scene-transition convention — worth a doc comment or rename.
 
 ### T-049 — Climate-source compilation for NotebookLM
 - **Status:** Done
