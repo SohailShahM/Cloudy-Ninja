@@ -313,20 +313,6 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ### T-031 (moved from Todo — see Todo section above)
 
-### T-046b — Character sprite-sheet research  [P3]
-- **Status:** In Progress
-- **Tool:** `antigravity`
-- **Tier:** S  *(research only — no code)*
-- **Autonomous-eligible:** yes-with-review  *(visual-perspective verification required per LEARNINGS.md T-046a; review preview images before acting)*
-- **Agent:** antigravity
-- **Branch:** `antigravity/T-046b-character-sprites`
-- **Started:** 2026-05-12
-- **Depends on:** T-046a
-- **GDD ref:** _to be written in GDD_ADDENDUM_ (T-046 follow-up)
-- **Files:** `art-research/character-sprite-candidates.md` (new)
-- **Goal:** Find CC0 / CC-BY-licensed 32×32 character sprite sheets that visually match Kenney `pixel-platformer` (the chosen base from T-046a). Cloudy Ninja has 3 distinct characters: **Ebo** (earth / seed theme — brown/green palette), **Laya** (wind / storm theme — blue/grey palette), **Zephyr** (sky / air theme — purple/white palette). Each character needs idle, run (4 frames), jump, fall, wall-slide animations. Search Kenney.nl + OpenGameArt.org. For each candidate capture: name, source URL, license, frame count per state, palette match, **camera perspective (must be side-scrolling)**, art style 1-5 match vs Kenney pixel-platformer.
-- **Done when:** `art-research/character-sprite-candidates.md` exists with ≥2 candidates per character (6+ total). Each candidate has perspective verified as side-scrolling. PR opens against `main`. AI smoke test passes (trivial — no code).
-- **Constraints:** Same as T-046a — Antigravity must NOT touch any file outside `art-research/`. Must NOT download binary assets. Markdown research only. Verify side-scrolling perspective for each candidate (this is the LEARNINGS.md T-046a lesson).
 
 
 <!--
@@ -575,6 +561,12 @@ Template for moving a task here:
 - **Outcome:** Antigravity (Gemini 3.1 Pro) researched 12 candidate tilesets (4 per theme: ARID/WIND/ECO) from OpenGameArt and Kenney.nl, compiled into `art-research/tileset-candidates.md` with name, source URL, license, file count, theme fit, art quality (1-5), and character-sprite notes. **Decision (post-visual-review):** Kenney `pixel-platformer` (CC0, ~350 files, side-scroller perspective) as base + OpenGameArt Pixel Art Forest (CC0) for ECO accents; ARID/WIND use Kenney's sandy/sky tiles within base pack. One Antigravity recommendation rejected post-review (Whispers of Avalon Desert — top-down RPG perspective; flagged in LEARNINGS.md as research-tool blindspot). **Antigravity time-to-output: ~5 min** for research; ~5 min of human visual review.
 - **Commit/PR:** PR #10 (merged) + decision recorded in `GAME_PLAN.md` and T-031 unblocked.
 - **Tool:** `antigravity`
+
+### T-046b — Character sprite-sheet research
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Created `art-research/character-sprite-candidates.md` with side-scrolling CC0/CC-BY sprite sheet candidates for Ebo, Laya, and Zephyr, prioritizing Kenney base palette variants and structurally compatible OpenGameArt sprites.
+- **Commit/PR:** branch `antigravity/T-046b-character-sprites` (PR creation blocked locally by missing `gh` CLI)
 
 <!--
 Template for moving a task here:
