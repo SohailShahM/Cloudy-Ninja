@@ -352,6 +352,8 @@ class GameScreen(
 
     private fun setPaused(paused: Boolean) {
         isPaused = paused
+        // T-063: replay the 0.2s fade-in each time the overlay is shown.
+        if (paused) pauseOverlay.resetFade()
         Gdx.input.inputProcessor = if (paused) pauseOverlay.stage else hud.stage
     }
 
