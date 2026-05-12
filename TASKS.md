@@ -210,33 +210,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** `marketing/itch-listing-style-guide.md` exists with: (a) comparison table of 8–12 reference listings, (b) recommended headline-copy patterns, (c) screenshot composition rules with examples, (d) trailer structure recommendation (length, beats, music), (e) 3 recommended differentiators specific to Cloudy Ninja's pitch (climate/eco angle, multi-character switching, accessibility-first design). PR opens against `main`.
 - **Constraints:** Antigravity must NOT touch any file outside `marketing/`. Markdown research only. Do NOT scrape itch.io aggressively — limit to ~12 listings.
 
-### T-049 — Climate-source compilation for NotebookLM  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
-- **Tier:** S  *(research only — no code)*
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-049-climate-sources`
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN §educational-goals; supports T-045 Cloud Atlas content
-- **Files:** `research/climate-sources/INDEX.md` (new), `research/climate-sources/*.pdf` (downloaded), `research/climate-sources/urls.txt` (new)
-- **Goal:** Compile a curated, verified-live set of climate science sources ready to feed into NotebookLM for the T-045 Cloud Atlas content generation. The previous T-045 prompt cited `climate.gov` URLs that have been **archived** — the new live host is `noaa.gov`. Antigravity should:
-  1. Find authoritative climate science sources covering the 12 Cloud Atlas topics: water_cycle, silver_iodide, temperature_inversion, albedo_effect, transpiration, groundwater_recharge, carbon_sequestration, storm_system, biodiversity_index, soil_microbiome, ocean_acidification, cloud_seeding.
-  2. Verify each URL is live (HTTP 200) and current (not redirected to "archive" pages).
-  3. Cast wider than the original prompt — search for university extension publications, NOAA fact sheets, NASA Earth Observatory, IPCC, EPA, USGS, university (.edu) climate centers, peer-reviewed open-access papers. Find supplementary sources NotebookLM might find useful even if they're tangentially related (e.g. "weather modification ethics", "groundwater recharge case studies"). Aim for **breadth**.
-  4. For PDF resources: download to `research/climate-sources/*.pdf` (don't link to wherever they live online; bake them in).
-  5. For URL-only resources (NotebookLM can fetch live): list in `research/climate-sources/urls.txt` (one URL per line, with a short comment about which topic it covers).
-  6. Write `research/climate-sources/INDEX.md` — table of all sources with: filename or URL, topic coverage (one or more of the 12), source type (PDF/URL), authority (gov/edu/nonprofit/peer-review), publication date.
-- **Done when:**
-  - `research/climate-sources/INDEX.md` exists with ≥3 sources per Cloud Atlas topic (36+ total).
-  - All PDF downloads succeed; no broken URLs in `urls.txt`.
-  - PR opens against `main` with the new folder; passes AI smoke test (trivial — no code).
-- **Constraints:**
-  - Antigravity must NOT touch any file outside `research/climate-sources/`.
-  - Total PDF download size kept under 100 MB — pick the most authoritative source per topic, don't grab everything.
-  - Skip CC-incompatible sources (no proprietary textbooks or paywalled journal articles).
-  - Verify each URL with a live fetch before listing.
-
 ---
 
 ## Backlog — AI testing v2 (planned, after MVP T-A1/T-A2 lands)
@@ -279,7 +252,33 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
-_(no tasks in progress)_
+### T-049 — Climate-source compilation for NotebookLM  [P3]
+- **Status:** In Progress
+- **Tool:** `antigravity`
+- **Tier:** S  *(research only — no code)*
+- **Autonomous-eligible:** yes
+- **Agent:** antigravity
+- **Branch:** `antigravity/T-049-climate-sources`
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN §educational-goals; supports T-045 Cloud Atlas content
+- **Files:** `research/climate-sources/INDEX.md` (new), `research/climate-sources/*.pdf` (downloaded), `research/climate-sources/urls.txt` (new)
+- **Goal:** Compile a curated, verified-live set of climate science sources ready to feed into NotebookLM for the T-045 Cloud Atlas content generation. The previous T-045 prompt cited `climate.gov` URLs that have been **archived** — the new live host is `noaa.gov`. Antigravity should:
+  1. Find authoritative climate science sources covering the 12 Cloud Atlas topics: water_cycle, silver_iodide, temperature_inversion, albedo_effect, transpiration, groundwater_recharge, carbon_sequestration, storm_system, biodiversity_index, soil_microbiome, ocean_acidification, cloud_seeding.
+  2. Verify each URL is live (HTTP 200) and current (not redirected to "archive" pages).
+  3. Cast wider than the original prompt — search for university extension publications, NOAA fact sheets, NASA Earth Observatory, IPCC, EPA, USGS, university (.edu) climate centers, peer-reviewed open-access papers. Find supplementary sources NotebookLM might find useful even if they're tangentially related (e.g. "weather modification ethics", "groundwater recharge case studies"). Aim for **breadth**.
+  4. For PDF resources: download to `research/climate-sources/*.pdf` (don't link to wherever they live online; bake them in).
+  5. For URL-only resources (NotebookLM can fetch live): list in `research/climate-sources/urls.txt` (one URL per line, with a short comment about which topic it covers).
+  6. Write `research/climate-sources/INDEX.md` — table of all sources with: filename or URL, topic coverage (one or more of the 12), source type (PDF/URL), authority (gov/edu/nonprofit/peer-review), publication date.
+- **Done when:**
+  - `research/climate-sources/INDEX.md` exists with ≥3 sources per Cloud Atlas topic (36+ total).
+  - All PDF downloads succeed; no broken URLs in `urls.txt`.
+  - PR opens against `main` with the new folder; passes AI smoke test (trivial — no code).
+- **Constraints:**
+  - Antigravity must NOT touch any file outside `research/climate-sources/`.
+  - Total PDF download size kept under 100 MB — pick the most authoritative source per topic, don't grab everything.
+  - Skip CC-incompatible sources (no proprietary textbooks or paywalled journal articles).
+  - Verify each URL with a live fetch before listing.
+
 
 
 <!--
