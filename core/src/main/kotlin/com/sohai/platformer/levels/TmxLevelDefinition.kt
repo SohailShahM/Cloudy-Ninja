@@ -44,6 +44,8 @@ data class TmxLevelDefinition(
     val snapshots: List<SnapshotDef> = emptyList(),
     val checkpoints: List<LevelCheckpoint> = emptyList(),
     val enemies: List<EnemyDef> = emptyList(),
+    /** Drop-from-above Drift Husk placements for this level. */
+    val driftHusks: List<DriftHuskDef> = emptyList(),
     /** Optional boss encounter definition. Null = no boss in this level. */
     val bossDef: BossDef? = null,
     /** Music track base name (loaded from `audio/music/{musicTrack}.wav`). */
@@ -68,6 +70,23 @@ data class EnemyDef(
     val yPx: Float,
     val patrolLeftPx: Float,
     val patrolRightPx: Float
+)
+
+/**
+ * Lightweight description of a Drift Husk placement inside a level (T-062).
+ *
+ * Drift Husks float at ([xPx], [yPx]) and drop straight down when the player's
+ * x crosses [triggerXPx]. Positions are in virtual pixels; [TmxLevel] /
+ * [LevelRunState] converts to world metres by dividing by [Constants.PPM].
+ *
+ * @param xPx        Floating-origin X in virtual pixels.
+ * @param yPx        Floating-origin Y in virtual pixels.
+ * @param triggerXPx Player X (virtual px) that triggers the drop.
+ */
+data class DriftHuskDef(
+    val xPx: Float,
+    val yPx: Float,
+    val triggerXPx: Float
 )
 
 /**
@@ -150,6 +169,8 @@ class TmxLevel(private val def: TmxLevelDefinition) : Level() {
         def.ecoTokens.map { Vector2(it.x / Constants.PPM, it.y / Constants.PPM) }
 
     fun getEnemyDefs(): List<EnemyDef> = def.enemies
+
+    fun getDriftHuskDefs(): List<DriftHuskDef> = def.driftHusks
 
     fun getBossDef(): BossDef? = def.bossDef
 
@@ -246,6 +267,14 @@ object LevelRegistry {
                 Vector2(1550f,  180f),
                 Vector2(1720f,  230f),
                 Vector2(1920f,  200f)
+            ),
+            // T-062: Drift Husks float above the mid-level token run and
+            // drop on the player as they pass under. First husk hovers
+            // over the 730-950px token cluster; second over the 1550-1720px
+            // cluster.
+            driftHusks = listOf(
+                DriftHuskDef(xPx =  820f, yPx = 600f, triggerXPx =  820f),
+                DriftHuskDef(xPx = 1620f, yPx = 600f, triggerXPx = 1620f)
             ),
             musicTrack = "ambient_wind"
         ),
