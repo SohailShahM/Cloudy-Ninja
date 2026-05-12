@@ -251,13 +251,14 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Constraints:** One upgrade = one PR. Don't combine. If the audit lists 5 LOW upgrades, that's 5 PRs. Don't bypass CI. Don't touch source code beyond what each version bump strictly requires.
 
 ### T-077 — presskit() scaffold for Cloudy Ninja  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
-- **Tier:** M  *(real folder structure + HTML + populated metadata; not just markdown)*
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from `antigravity` — critical for Sprint D launch prep; AGV has been quiet)*
+- **Tier:** M
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-077-presskit`
-- **Depends on:** T-050, T-048  *(needs the outreach list and the style guide as inputs)*
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-077-presskit`
+- **Started:** 2026-05-12
+- **Depends on:** T-050, T-048
 - **GDD ref:** GAME_PLAN.md (launch/marketing)
 - **Files:** `marketing/presskit/` (new directory — full scaffold)
 - **Goal:** Build a real [presskit()](https://dopresskit.com/) compatible folder structure under `marketing/presskit/`. Generate `data.xml` (or the modern JSON equivalent), `presskit.css`, `index.html` from current game info (project name, tagline derived from T-048 style guide, description, key features list, system requirements stub, accessibility section, eco/climate angle). Drop placeholder images at the correct dimensions (cover.png 1920×1080, screenshot-01..06.png 1920×1080, logo.png with transparency). Populate `team.xml`-style author metadata using public info only (Sohail Shah, public GitHub). Pre-fill outreach contact info from the T-050 list as a CSV the user can mail-merge. Should be deployable to itch.io/GitHub Pages with zero further edits to the structure.
@@ -265,13 +266,14 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Constraints:** No third-party hosting required. Do NOT include private contact info anywhere. Generate placeholder PNGs via ImageMagick / Pillow — no need to source real screenshots.
 
 ### T-078 — Procedural achievement icon generator (Kotlin tool)  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
-- **Tier:** M  *(real code — writes a build-time Kotlin generator)*
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from `antigravity` — critical: unblocks T-066 achievement-icon wire-up)*
+- **Tier:** M
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-078-icon-generator`
-- **Depends on:** T-037  *(achievements exist)*
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-078-icon-generator`
+- **Started:** 2026-05-12
+- **Depends on:** T-037
 - **GDD ref:** T-066 (achievement icons — this ticket builds the *generator*; T-066 wires icons in)
 - **Files:** `tools/IconGenerator.kt` (new — standalone Kotlin script), `assets/icons/achievements/*.png` (generated outputs, 16×16, 12 files), `build.gradle.kts` (optional gradle task to invoke the generator).
 - **Goal:** Write a self-contained Kotlin tool (`tools/IconGenerator.kt`, runnable via `kotlinc -script` or as a `:tools:run` gradle task) that emits 12 distinct 16×16 PNG icons — one per achievement in `AchievementRegistry.ALL`. Each icon must be visually distinct (different shape silhouette + 2–3-color palette). Use simple primitives: stomp→boot, time-trial→stopwatch, atlas_full→open book, world_1_clear→shield, all_levels→trophy, etc. Stick to one shared palette across all icons (consistent visual language). Commit the generated PNGs alongside the generator so consumers don't have to re-run.
@@ -293,12 +295,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Constraints:** Do NOT reduce smoke matrix coverage. Every level still tested per PR. Do NOT skip lint or compile. If an optimization requires losing coverage to hit the 30% target, surface in QUESTIONS.md instead of doing it.
 
 ### T-080 — GitHub repo infrastructure (Issue templates + Discussions)  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from `antigravity` — critical: community readiness for itch.io alpha)*
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-080-repo-infra`
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-080-repo-infra`
+- **Started:** 2026-05-12
 - **Depends on:** _none_
 - **GDD ref:** GAME_PLAN.md (community readiness for itch.io alpha)
 - **Files:** `.github/ISSUE_TEMPLATE/bug-report.yml` (new), `.github/ISSUE_TEMPLATE/feature-request.yml` (new), `.github/ISSUE_TEMPLATE/accessibility-issue.yml` (new), `.github/ISSUE_TEMPLATE/config.yml` (new), `.github/PULL_REQUEST_TEMPLATE.md` (new), `.github/DISCUSSION_TEMPLATE/announcements.yml` (new), `.github/DISCUSSION_TEMPLATE/help.yml` (new).
@@ -322,9 +325,11 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 
 
 ### T-097 — Death animation: player fade + zoom-out before respawn  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** S
+- **Branch:** `claude/T-097-death-animation`
+- **Started:** 2026-05-12
 - **Autonomous-eligible:** yes
 - **Agent:** _unclaimed_
 - **Branch:** _none_
@@ -399,6 +404,58 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add gamepad via libGDX's `Controllers` API. Map: left stick / D-pad → move; A / cross → jump; X / square → action; Y / triangle → swap; Start → pause. Reads from `Settings.gamepadEnabled` (default true; opt-out toggle in Accessibility). Both keyboard and gamepad work simultaneously. Detect plug/unplug at runtime.
 - **Done when:** Verified locally with at least one gamepad (Xbox or DualShock 4); keyboard parallel works; smoke CI passes (no controller plugged = no-op).
 - **Constraints:** `gdx-controllers` extension required — verify it's already on the classpath before adding any new dep. If a new dep is needed, stop and post to QUESTIONS.md.
+
+### T-104 — Splash / asset-preload progress bar  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (cold-start UX)
+- **Files:** `screens/SplashScreen.kt` (new), `Main.kt` (start with SplashScreen instead of MainMenu), `audio/MusicManager.kt` (load tracks lazily via AssetManager hook if not already)
+- **Goal:** On first launch, show a 1-second minimum splash with a horizontal progress bar tracking asset preload (atlas pack, music tracks via `ProceduralMusicGenerator`, 8 SFX). Transition to `MainMenuScreen` when preload completes AND the 1s minimum has elapsed. The minimum prevents flash-frames on fast machines.
+- **Done when:** Splash visible on every cold start; progress bar reflects real preload; transition happens once both gates are met; smoke CI passes (smoke mode should fast-skip the splash via existing `cloudy.smokeMode` system property).
+
+### T-105 — Master volume slider in Settings (above per-bus)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-035, T-094, T-095
+- **GDD ref:** GAME_PLAN.md (audio UX — single mute/volume target most users reach for first)
+- **Files:** `persist/Settings.kt`, `screens/SettingsScreen.kt`, `audio/MusicManager.kt`, `audio/SoundManager.kt`
+- **Goal:** Add `volMaster: Float = 1.0f` to `Settings`. In the Audio section, render this as the FIRST slider (above the existing Music/SFX/UI sliders). Effective volume becomes `volMaster * volBus` — both managers multiply through. Add a small "mute" toggle next to the master slider (clamp to 0).
+- **Done when:** Master slider visible above per-bus; dragging it scales all three buses; mute toggle works; persists; smoke CI passes.
+
+### T-106 — Extract `LevelEntityFactory` from GameScreen  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** Code health — `GameScreen.kt` grew by 30+ lines per new entity type (T-029 SmogSprite, T-034 StormSentinel, T-062 DriftHusk all added parallel instantiation blocks)
+- **Files:** `screens/GameScreen.kt`, `levels/LevelEntityFactory.kt` (new)
+- **Goal:** Extract the entity-instantiation logic out of `GameScreen.init` (currently lines ~194–250 with three parallel `if (level is TmxLevel) { for (def in level.getXxx()) { … } }` blocks for enemies + boss + drift husks) into a new `LevelEntityFactory.spawn(level, world): SpawnedEntities` data class. `GameScreen` becomes a one-liner: `val spawned = LevelEntityFactory.spawn(level, world)`. Future enemy types (T-046's sprite work, future ticket additions) plug in via the factory, not via more parallel blocks in `GameScreen`.
+- **Done when:** `GameScreen.init` is shorter; entity behavior unchanged; smoke CI passes; future entity additions need no GameScreen edit.
+
+### T-107 — Hidden eco-token in each campaign level + "Collector" achievement  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-019, T-037
+- **GDD ref:** GAME_PLAN.md (collectibles + replay-value loop)
+- **Files:** `levels/TmxLevelDefinition.kt` (add 1 hidden eco-token per level1/2/3 in an off-path location), `progression/AchievementRegistry.kt` (add `collector` achievement: "Find all 3 hidden eco-tokens"), `screens/LevelRunState.kt` (track hidden-token collection separately + emit unlock)
+- **Goal:** Add 1 visually-distinct "hidden" eco-token to each of level1/2/3, placed in an out-of-the-way spot (e.g. behind a wall jump, in a ceiling alcove). Collecting all 3 across runs unlocks a new `collector` achievement. Hidden tokens render with a slight golden tint to distinguish from regular ones.
+- **Done when:** Each campaign level has 1 hidden token; collecting all 3 unlocks `collector`; smoke CI passes (autopilot is unlikely to find them — that's fine, they're hidden).
 
 
 ---
