@@ -2,31 +2,33 @@
 
 > Read this **before** anything else if you are picking up where a previous Claude Code session left off. Then read `START_HERE.md` for the normal onboarding. Update this file at the end of your session to capture state the next agent will need. Keep it short — under 200 lines.
 
-**Last updated:** 2026-05-12 by Claude Opus — a single multi-hour session that shipped **~32 tickets**, **~327 new Kotest tests**, **130+ i18n keys**, **5 a11y/UX features**, **1 new enemy archetype**, **2 new screens**, the full **cc-agv-bridge** (separate repo), **T-079 v2 CI optimization** (doc-PR skip filter empirically validated by PR #63 — smoke skipped on doc-only diff; 2m31s wall vs ~5min code-PR baseline), and **flipped the repo to PRIVATE**. Main HEAD at flip: `9a1342d`.
+**Last updated:** 2026-05-12 by Claude Opus — a single multi-hour session that shipped **~32 tickets**, **~327 new Kotest tests**, **130+ i18n keys**, **5 a11y/UX features**, **1 new enemy archetype**, **2 new screens**, the full **cc-agv-bridge** (separate repo), **T-079 v2 CI optimization** (doc-PR skip filter empirically validated; ~2.5min wall on doc PRs vs ~5min code-PR baseline), and added **proprietary LICENSE + NOTICE.md**. Repo flipped private mid-session then back to public after hitting the Education-Pack 3,000-min/mo Actions cap. Main HEAD at session close: `f2d9a70`.
 
-### ⚠ Repo is now PRIVATE — CI cost is metered
+### Repo state: public + proprietary-licensed
 
-Flipped from `public` → `private` at session end via `gh repo edit … --visibility private --accept-visibility-change-consequences`. Actions minutes now bill against the personal account's GitHub Free plan: **2,000 min/mo on Linux runners**, then ~$0.008/min overage.
+`SohailShahM/Cloudy-Ninja` is **public** (CI free + unlimited) but **proprietary** per `LICENSE` (all rights reserved; viewing/PRs OK, redistribution/derivative-works/commercial-use require permission). Kenney CC0 tiles keep their CC0 license per `NOTICE.md`.
 
-**Expected per-PR cost on private (with T-079 v2 active):**
-- **Code PR:** ~38–42 min compute, ~5 min wall. Matrix unchanged at 8 parallel jobs; cache warms over the first few PRs.
-- **Doc-only PR:** ~2.5 min total. Gate job ~6s + Compile/Test/Lint ~2m25s; all 8 smoke jobs skipped via gate `if: needs.gate.outputs.run_smoke == 'true'`. **~36 min saved/PR.**
+### CI billing journey (2026-05-12) — important to know
 
-At ~30 PRs/month (~⅓ doc-only): expect ~600–800 min consumed/month. Comfortable within the 2,000 free quota.
+The day went: **public → private (billing-block hit) → public + license**.
 
-### Cost-management knobs (unused; on hand if you ever blow the quota)
-- Pre-built JAR caching (compile once, reuse across 8 smoke jobs — biggest unrealized optimization).
-- Drop `cloudyAutopilotSeconds` from 8 → 6 (~16s/PR).
-- Self-hosted runner (your dev machine — 0 Actions minutes consumed).
-- Skip smoke on `draft: true` PRs.
-- Upgrade personal Pro plan ($4/mo → 3,000 min/mo).
+Real numbers observed:
+- **Public:** Actions free + unlimited. Status quo at session start, status quo now.
+- **Private (Free plan):** $0 default spending-limit blocks private Actions at workflow startup — zero-step `Agent: failure` pattern. Education Pack gives Pro (3,000 min/mo) but the user had already burned all 3,000 via this session's ~30 PRs. Result: every Actions run rejected, no remediation short of paying overage / setting up self-hosted runner / waiting for cycle reset.
+- **Public again:** unlimited Actions. Doc-PR skip optimization + path filters still active and saving compute.
+
+If you ever go private again, **set up the self-hosted runner first** (`docs/SELF_HOSTED_RUNNER.md` is on main as a setup guide — covers WSL2 Ubuntu install + GitHub Actions runner registration). Don't flip private without it pre-staged, or you'll repeat this loop.
+
+### Sprint D launch decision: keep public, ship as proprietary
+
+The license now signals commercial intent + reserves rights without preventing visibility. For an unreleased indie, source-visible-but-proprietary is a reasonable middle ground: bug reports + contributor PRs work, brand + community + execution + the asset polish stay your moat. See [LICENSE](LICENSE) for exact terms.
 
 ---
 
 ## What you absolutely need to know
 
 ### Repo / environment
-- **Repo:** https://github.com/SohailShahM/Cloudy-Ninja — **PRIVATE as of 2026-05-12 end-of-session**. Actions metered against personal Free plan (2,000 min/mo on Linux). See "⚠ Repo is now PRIVATE" section above.
+- **Repo:** https://github.com/SohailShahM/Cloudy-Ninja — **public + proprietary-licensed** as of 2026-05-12 session close. Actions free + unlimited. License terms in `LICENSE` reserve commercial rights. See "Repo state" + "CI billing journey" sections above.
 - **JDK for local builds:** `C:\Program Files\Android\Android Studio\jbr`
   - Bash: `export JAVA_HOME='/c/Program Files/Android/Android Studio/jbr' && export PATH="$JAVA_HOME/bin:$PATH"`
   - PowerShell: `$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"; $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"`
