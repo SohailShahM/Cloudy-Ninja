@@ -64,7 +64,11 @@ object SaveManager {
             }
 
             val jsonString = saveFile.readString()
-            val state = json.decodeFromString<GameState>(jsonString)
+            // Route every load through the migration chain (T-113). Pre-T-113
+            // saves omit `saveFormatVersion` and are treated as v1 — the
+            // current version at scaffold introduction — so they pass through
+            // the chain unchanged.
+            val state = SaveMigrations.migrate(jsonString)
             Gdx.app.log("SaveManager", "Loaded from $filename")
             cache[filename] = state
             state
