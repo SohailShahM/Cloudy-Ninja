@@ -291,19 +291,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add `BUILD_VERSION` and `BUILD_DATE` constants in `Constants.kt` (manually maintained for alpha). MainMenu shows a tiny right-bottom label: `v{0} · {1}` (e.g. `v0.1.0 · 2026-05-12`). Style: `FontManager.getShared(11)`, dim grey `(0.5f, 0.5f, 0.5f, 0.6f)`, 8px from corner. Add `StringKey.MENU_BUILD_INFO`.
 - **Done when:** Label visible on MainMenu; reads from constants; smoke CI passes.
 
-### T-101 — Credits screen  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-031, T-046a
-- **GDD ref:** GAME_PLAN.md (legal compliance + community goodwill)
-- **Files:** `screens/CreditsScreen.kt` (new), `screens/SettingsScreen.kt` (add a "Credits" button in the footer row), `i18n/Strings.kt` (credit-related keys)
-- **Goal:** Scrollable Credits screen reachable from Settings. Sections: **Game** (Sohail Shah, design + code, 2026); **Code assistants** (Claude Code/Anthropic, GitHub Copilot, Antigravity/Gemini/Google, NotebookLM); **Art** (Kenney pixel-platformer, CC0, kenney.nl + entries from `art-research/tileset-candidates.md`); **Audio** (procedural via T-013/T-030 + candidates in `art-research/audio-candidates.md`); **Engine** (libGDX, Box2D, Kotlin, VisUI, Kotest); **Climate sources** (NOAA, NASA Earth Observatory, IPCC etc. — see `research/climate-sources/INDEX.md`). Section header `FontManager.getShared(22)`, body `getShared(14)`. Back button bottom-center.
-- **Done when:** Screen reachable, all sections render, no asset URLs hardcoded (in `Strings.kt`), smoke CI passes.
-
 ### T-102 — Controller (gamepad) input support  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -414,6 +401,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
+### T-101 — Credits screen  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-101-credits-screen
+- **Started:** 2026-05-12
+- **Depends on:** T-031, T-046a
+- **GDD ref:** GAME_PLAN.md (legal compliance + community goodwill)
+- **Files:** `screens/CreditsScreen.kt` (new), `screens/SettingsScreen.kt` (add a "Credits" button in the footer row), `i18n/Strings.kt` (credit-related keys)
+- **Goal:** Scrollable Credits screen reachable from Settings. Sections: **Game** (Sohail Shah, design + code, 2026); **Code assistants** (Claude Code/Anthropic, GitHub Copilot, Antigravity/Gemini/Google, NotebookLM); **Art** (Kenney pixel-platformer, CC0, kenney.nl + entries from `art-research/tileset-candidates.md`); **Audio** (procedural via T-013/T-030 + candidates in `art-research/audio-candidates.md`); **Engine** (libGDX, Box2D, Kotlin, VisUI, Kotest); **Climate sources** (NOAA, NASA Earth Observatory, IPCC etc. — see `research/climate-sources/INDEX.md`). Section header `FontManager.getShared(22)`, body `getShared(14)`. Back button bottom-center.
+- **Done when:** Screen reachable, all sections render, no asset URLs hardcoded (in `Strings.kt`), smoke CI passes.
+
+<!--
 ### T-XXX — <title>
 - **Status:** In Progress
 - **Agent:** <your-identity-from-START_HERE.md-section-1>
