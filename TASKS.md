@@ -341,21 +341,6 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
-### T-052 — Indie game festival + showcase eligibility research  [P3]
-- **Status:** In Progress
-- **Tool:** `antigravity`
-- **Tier:** S  *(research-only, no code; time-sensitive — deadlines decay)*
-- **Autonomous-eligible:** yes
-- **Agent:** antigravity
-- **Branch:** `antigravity/T-052-festival-research`
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (launch/visibility plan)
-- **Files:** `marketing/festival-eligibility.md` (new)
-- **Goal:** Catalog indie-game showcases, festivals, and curated events Cloudy Ninja could submit to. Cover: Steam Next Fest, IGF, A MAZE, Wholesome Direct, Day of the Devs, indie-game-showcase events, university student showcases, climate-game-specific events (e.g. Games for Change), regional indie scenes (East Asia, UK, Scandinavia). For each: name, next event date + recurring cadence, submission deadline (verified against the event's official site — many 3rd-party aggregators are stale), eligibility rules (release-status, team size, budget), submission fee, prize value, audience reach, fit-score for Cloudy Ninja 1–5 based on eco/climate angle + accessibility + pixel-art fit.
-- **Done when:** `marketing/festival-eligibility.md` exists with ≥15 events catalogued, sorted by submission deadline ascending. Top-of-file "Recommended next 5" prioritized list with one-line rationale each.
-- **Constraints:** Markdown only. Do NOT touch any file outside `marketing/`. Skip paywalled-only events ($500+ submission fee for a solo/student-tier project). Verify all deadlines against the event's *own* website.
-
-
 ### T-XXX — <title>
 - **Status:** In Progress
 - **Agent:** <your-identity-from-START_HERE.md-section-1>
@@ -374,6 +359,13 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## Done
+
+### T-052 — Indie game festival + showcase eligibility research
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Catalogued 15 indie game festivals with focus on eco/wholesome events; prioritized top 5 including Wholesome Direct and Games for Change.
+- **Commit/PR:** PR #29
+- **Tool:** ntigravity
 
 ### T-053 — Eco-themed games design comparison study
 - **Status:** Done
