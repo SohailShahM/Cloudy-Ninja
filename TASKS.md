@@ -314,19 +314,11 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ### T-031 (moved from Todo — see Todo section above)
 
 ### T-046b — Character sprite-sheet research  [P3]
-- **Status:** In Progress
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Antigravity researched CC0/CC-BY 32×32 character sprite candidates from Kenney.nl and OpenGameArt.org. All candidates verified as side-scrolling perspective. Results documented in `art-research/character-sprite-candidates.md` with ≥2 candidates per character (Ebo/Laya/Zephyr), each with name, source URL, license, frame count, palette match, perspective verification, and art style match score.
+- **Commit/PR:** PR (branch `antigravity/T-046b-character-sprites`)
 - **Tool:** `antigravity`
-- **Tier:** S  *(research only — no code)*
-- **Autonomous-eligible:** yes-with-review  *(visual-perspective verification required per LEARNINGS.md T-046a; review preview images before acting)*
-- **Agent:** antigravity
-- **Branch:** `antigravity/T-046b-character-sprites`
-- **Started:** 2026-05-12
-- **Depends on:** T-046a
-- **GDD ref:** _to be written in GDD_ADDENDUM_ (T-046 follow-up)
-- **Files:** `art-research/character-sprite-candidates.md` (new)
-- **Goal:** Find CC0 / CC-BY-licensed 32×32 character sprite sheets that visually match Kenney `pixel-platformer` (the chosen base from T-046a). Cloudy Ninja has 3 distinct characters: **Ebo** (earth / seed theme — brown/green palette), **Laya** (wind / storm theme — blue/grey palette), **Zephyr** (sky / air theme — purple/white palette). Each character needs idle, run (4 frames), jump, fall, wall-slide animations. Search Kenney.nl + OpenGameArt.org. For each candidate capture: name, source URL, license, frame count per state, palette match, **camera perspective (must be side-scrolling)**, art style 1-5 match vs Kenney pixel-platformer.
-- **Done when:** `art-research/character-sprite-candidates.md` exists with ≥2 candidates per character (6+ total). Each candidate has perspective verified as side-scrolling. PR opens against `main`. AI smoke test passes (trivial — no code).
-- **Constraints:** Same as T-046a — Antigravity must NOT touch any file outside `art-research/`. Must NOT download binary assets. Markdown research only. Verify side-scrolling perspective for each candidate (this is the LEARNINGS.md T-046a lesson).
 
 
 <!--
