@@ -22,6 +22,7 @@ import com.sohai.platformer.abilities.LayaAbility
 import com.sohai.platformer.abilities.ZephyrAbility
 import com.sohai.platformer.audio.MusicManager
 import com.sohai.platformer.audio.SoundManager
+import com.sohai.platformer.entities.DriftHusk
 import com.sohai.platformer.entities.EcoToken
 import com.sohai.platformer.entities.Enemy
 import com.sohai.platformer.entities.MovingPlatform
@@ -213,6 +214,24 @@ class GameScreen(
             }
         }
 
+        // Instantiate Drift Husks from level definition (parallel to enemies; T-062)
+        val driftHusks = mutableListOf<DriftHusk>()
+        if (level is TmxLevel) {
+            for (def in level.getDriftHuskDefs()) {
+                driftHusks.add(
+                    DriftHusk.create(
+                        world,
+                        x        = def.xPx        / Constants.PPM,
+                        y        = def.yPx        / Constants.PPM,
+                        triggerX = def.triggerXPx / Constants.PPM
+                    )
+                )
+            }
+            if (driftHusks.isNotEmpty()) {
+                Gdx.app.log("GameScreen", "Spawned ${driftHusks.size} Drift Husks for level ${level.id}")
+            }
+        }
+
         // Instantiate boss from level definition, if present
         if (level is TmxLevel) {
             val bdef = level.getBossDef()
@@ -248,7 +267,8 @@ class GameScreen(
             enemies, player, eboAnimator, layaAnimator, footstepColor,
             sentinel      = sentinel,
             tileRenderer  = tileRenderer,
-            parallaxTheme = parallaxTheme
+            parallaxTheme = parallaxTheme,
+            driftHusks    = driftHusks
         )
 
         player.onJump = {
@@ -266,7 +286,8 @@ class GameScreen(
             renderer, enemies, CHECKPOINT_AUTOSAVE_FILE,
             isTimeTrial      = isTimeTrial,
             achievementToast = achievementToast,
-            saveSlotFile     = SAVE_SLOT_FILE
+            saveSlotFile     = SAVE_SLOT_FILE,
+            driftHusks       = driftHusks
         )
 
         // Wire boss sentinel into runState (callbacks set after runState exists)
