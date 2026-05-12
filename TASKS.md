@@ -305,19 +305,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Verified locally with at least one gamepad (Xbox or DualShock 4); keyboard parallel works; smoke CI passes (no controller plugged = no-op).
 - **Constraints:** `gdx-controllers` extension required — verify it's already on the classpath before adding any new dep. If a new dep is needed, stop and post to QUESTIONS.md.
 
-### T-104 — Splash / asset-preload progress bar  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (cold-start UX)
-- **Files:** `screens/SplashScreen.kt` (new), `Main.kt` (start with SplashScreen instead of MainMenu), `audio/MusicManager.kt` (load tracks lazily via AssetManager hook if not already)
-- **Goal:** On first launch, show a 1-second minimum splash with a horizontal progress bar tracking asset preload (atlas pack, music tracks via `ProceduralMusicGenerator`, 8 SFX). Transition to `MainMenuScreen` when preload completes AND the 1s minimum has elapsed. The minimum prevents flash-frames on fast machines.
-- **Done when:** Splash visible on every cold start; progress bar reflects real preload; transition happens once both gates are met; smoke CI passes (smoke mode should fast-skip the splash via existing `cloudy.smokeMode` system property).
-
 ### T-105 — Master volume slider in Settings (above per-bus)  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -414,6 +401,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Files:** `screens/CreditsScreen.kt` (new), `screens/SettingsScreen.kt` (add a "Credits" button in the footer row), `i18n/Strings.kt` (credit-related keys)
 - **Goal:** Scrollable Credits screen reachable from Settings. Sections: **Game** (Sohail Shah, design + code, 2026); **Code assistants** (Claude Code/Anthropic, GitHub Copilot, Antigravity/Gemini/Google, NotebookLM); **Art** (Kenney pixel-platformer, CC0, kenney.nl + entries from `art-research/tileset-candidates.md`); **Audio** (procedural via T-013/T-030 + candidates in `art-research/audio-candidates.md`); **Engine** (libGDX, Box2D, Kotlin, VisUI, Kotest); **Climate sources** (NOAA, NASA Earth Observatory, IPCC etc. — see `research/climate-sources/INDEX.md`). Section header `FontManager.getShared(22)`, body `getShared(14)`. Back button bottom-center.
 - **Done when:** Screen reachable, all sections render, no asset URLs hardcoded (in `Strings.kt`), smoke CI passes.
+
+### T-104 — Splash / asset-preload progress bar  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-104-splash-preload
+- **Started:** 2026-05-12
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (cold-start UX)
+- **Files:** `screens/SplashScreen.kt` (new), `Main.kt` (start with SplashScreen instead of MainMenu), `audio/MusicManager.kt` (load tracks lazily via AssetManager hook if not already)
+- **Goal:** On first launch, show a 1-second minimum splash with a horizontal progress bar tracking asset preload (atlas pack, music tracks via `ProceduralMusicGenerator`, 8 SFX). Transition to `MainMenuScreen` when preload completes AND the 1s minimum has elapsed. The minimum prevents flash-frames on fast machines.
+- **Done when:** Splash visible on every cold start; progress bar reflects real preload; transition happens once both gates are met; smoke CI passes (smoke mode should fast-skip the splash via existing `cloudy.smokeMode` system property).
 
 <!--
 ### T-XXX — <title>
