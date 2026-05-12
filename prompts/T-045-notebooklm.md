@@ -4,28 +4,22 @@
 **Ticket tier:** S — content generation
 **Autonomous:** yes-with-review (human skim-reviews NotebookLM output before wiring)
 
-## Step 1 — NotebookLM (you, ~20 min)
+## Step 1 — NotebookLM (you, ~10 min)
+
+### Prerequisite: T-049 must be Done
+
+T-049 (a separate Antigravity ticket — see `prompts/T-049-antigravity.md`) compiles a verified-live source bundle into `research/climate-sources/`. Run T-049 first; you can then drag-drop the whole folder into NotebookLM in one step instead of curating URLs by hand. **The climate.gov URLs in earlier drafts are dead** — climate.gov has been archived; the new home is noaa.gov, which T-049 will use.
 
 ### Launch procedure
 
 1. Open **https://notebooklm.google.com** → "New notebook"
-2. Upload 8–15 source documents. Recommended free sources:
-   - **IPCC AR6 WG1 SPM** — search "IPCC AR6 working group 1 summary for policymakers" → download PDF
-   - **NOAA climate.gov primers** (paste URLs):
-     - https://www.climate.gov/news-features/understanding-climate/water-cycle
-     - https://www.climate.gov/news-features/featured-images/understanding-albedo
-     - https://www.climate.gov/news-features/understanding-climate/ocean-acidification
-   - **NASA Earth Observatory** — search and paste article URLs for: cloud seeding, transpiration, temperature inversion, carbon sequestration
-   - **Wikipedia** (paste URLs):
-     - https://en.wikipedia.org/wiki/Cloud_seeding
-     - https://en.wikipedia.org/wiki/Silver_iodide
-     - https://en.wikipedia.org/wiki/Temperature_inversion
-     - https://en.wikipedia.org/wiki/Albedo
-     - https://en.wikipedia.org/wiki/Transpiration
-     - https://en.wikipedia.org/wiki/Groundwater_recharge
-     - https://en.wikipedia.org/wiki/Biodiversity_index
-     - https://en.wikipedia.org/wiki/Soil_microbiology
-3. Wait for "X sources" indicator. Open the chat.
+2. Upload sources from `research/climate-sources/` in the repo:
+   - **PDFs**: drag-drop every `.pdf` file in that folder into NotebookLM's source panel (auto-uploads).
+   - **URLs**: open `research/climate-sources/urls.txt`. For each non-comment line, paste the URL into "Add source" → "URL" in NotebookLM.
+3. Wait for the "X sources" indicator to show 30+ sources.
+4. In the notebook chat, paste the prompt body below.
+5. Save the output to `prompts/T-045-content-from-notebooklm.md` (create this file when done).
+6. Skim-review for accuracy (don't trust uncited claims; cross-check anything suspicious against the cited source).
 
 ### Prompt body — paste verbatim into the NotebookLM chat
 
