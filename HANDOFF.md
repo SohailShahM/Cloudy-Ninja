@@ -112,6 +112,18 @@ When AGV is quiet on a critical-path ticket, **re-tag it to `claude-code-sub-age
 
 **Suggested next batch (4-way parallel, no conflicts):** T-098 + T-101 + T-104 + T-107. T-099/T-100 sequential (share MainMenuScreen). T-105/T-106 also sequential with each other but OK alongside the above.
 
+### Copilot agent under-utilized — dogfood candidate
+
+The previous session shipped **zero `copilot-agent` dispatches** — everything went through Claude Code (Opus + Sonnet sub-agents). The Agent tool's direct dispatch is lower-friction than the `gh issue create → @copilot assignment → wait for draft PR` loop, so I defaulted to Sonnet in every batch. That under-uses the routing model: Copilot has been idle while AGV was idle while Sonnet did everything.
+
+**Concrete pickup:** **T-035 (audio bus sliders)** is still in `## Todo`, tagged `copilot-agent`, Tier S, single-screen scope — exactly the shape Copilot is best at. Next session, dispatch it deliberately:
+
+1. `gh issue create --repo SohailShahM/Cloudy-Ninja --title "T-035: …" --body "$(cat the ticket goal/done-when/files)"`
+2. Web UI or `gh issue edit <N> --add-assignee @copilot` (Web UI is more reliable per LEARNINGS.md)
+3. Watch the draft PR, admin-merge when CI green.
+
+This is the only `copilot-agent` ticket in `## Todo` right now. T-045 is `notebooklm-then-copilot-agent` but is blocked on the user's NotebookLM step first.
+
 ### AGV pipeline (5 tickets, all re-route candidates if AGV stays quiet)
 - T-073 Pixel-platformer keyboard layout research (informs default bindings)
 - T-075 Steam tags + keyword research
