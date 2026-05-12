@@ -10,11 +10,55 @@ on:
 # what happened on the very first PR — multiple pushes triggered runs that
 # never completed because they were all competing for runner slots).
 concurrency:
-  group: ai-smoke-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # T-079 v2: gate job decides whether the 8-way smoke matrix needs to run.
+  # Doc-only PRs (markdown, prompts, marketing, research, repo templates) can't
+  # break the game runtime, so we skip the ~36min smoke matrix entirely on them.
+  # We use a gate-job + needs: + if: pattern rather than `on.paths` because
+  # `on.paths` causes a "no check has run" status that confuses branch protection.
+  # With this pattern, branch protection sees the gate job pass and each matrix
+  # job report as `skipped` (which counts as a passing required check).
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      run_smoke: ${{ steps.decide.outputs.run_smoke }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Decide whether to run smoke matrix
+        id: decide
+        run: |
+          set -e
+          # On push to main, always run (post-merge sanity check).
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "Not a PR (event=${{ github.event_name }}) — always running smoke."
+            echo "run_smoke=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          echo "Diffing $BASE_SHA...$HEAD_SHA"
+          CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "Changed files:"
+          echo "$CHANGED"
+          # Files that affect the game runtime / build → MUST run smoke.
+          # If ANY changed file matches one of these globs, run smoke.
+          RUNTIME_PATTERNS='^(core/|lwjgl3/|android/|assets/|gradle/|gradle\.properties$|.*\.gradle($|\.kts$)|\.github/workflows/ai-smoke\.yml$|\.github/workflows/ci\.yml$)'
+          if echo "$CHANGED" | grep -E "$RUNTIME_PATTERNS" > /dev/null; then
+            echo "Runtime-affecting change detected → running smoke."
+            echo "run_smoke=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No runtime-affecting files changed → skipping smoke matrix."
+            echo "run_smoke=false" >> "$GITHUB_OUTPUT"
+          fi
+
   smoke:
+    needs: gate
+    if: needs.gate.outputs.run_smoke == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -26,6 +70,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+          cache: gradle
       - name: Install xvfb
         run: sudo apt-get update && sudo apt-get install -y xvfb
       - name: Grant execute permission for gradlew
@@ -36,8 +81,12 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: gradle-${{ runner.os }}-
+          # T-079 v2: cache key prefix moved to `${{ runner.os }}-gradle-…` so
+          # `restore-keys: ${{ runner.os }}-gradle-` finds partial matches on
+          # first-time PRs (previously the prefix was `gradle-…` and the
+          # restore-keys didn't actually share between branches the way intended).
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
       - name: Smoke run ${{ matrix.level }}
         # Hard 360s wall-clock timeout — kills the JVM if smoke mode ever hangs.
         # Cold-runner budget breakdown (observed on the actual SohailShahM CI):
