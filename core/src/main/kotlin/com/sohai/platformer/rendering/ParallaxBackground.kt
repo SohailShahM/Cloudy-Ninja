@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.sohai.platformer.Constants
+import com.sohai.platformer.persist.SettingsManager
 
 /**
  * Visual theme for [ParallaxBackground].
@@ -209,11 +210,17 @@ class ParallaxBackground(private val theme: ParallaxTheme = ParallaxTheme.ARID) 
         val col2 = Color(lerp(palette.corTrees,     palette.clrTrees,     t))
         val layerColors = arrayOf(col0, col1, col2)
 
+        // Accessibility: when reduced-motion is enabled, force every layer's
+        // effective scroll-factor to 1.0 so the background tracks the camera
+        // 1:1 and appears completely static to the viewer (no parallax drift).
+        val reducedMotion = SettingsManager.load().reducedMotion
+
         for ((idx, layer) in layers.withIndex()) {
             val baseCol = layerColors[idx]
 
             val patternW      = layer.patternWidthPx / ppm
-            val scrollOffset  = camX * layer.scrollFactor
+            val effectiveScroll = if (reducedMotion) 1f else layer.scrollFactor
+            val scrollOffset  = camX * effectiveScroll
             val patternOffset = ((scrollOffset % patternW) + patternW) % patternW
 
             for (el in layer.elements) {

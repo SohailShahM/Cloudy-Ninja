@@ -484,6 +484,14 @@ class LevelRenderer(
 
     // ── Particle spawn helpers (called from LevelRunState on game events) ─────
 
+    /**
+     * Clamp a default particle-burst count when reduced-motion is enabled.
+     * Returns 1 if the accessibility toggle is on, otherwise the unmodified default.
+     * Behaviour with reducedMotion == false is byte-identical to before T-058.
+     */
+    private fun clampBurstCount(default: Int): Int =
+        if (SettingsManager.load().reducedMotion) 1 else default
+
     fun spawnFootstep(x: Float, y: Float) {
         particles.spawn(x, y, 0f, 0f, 0.05f, 0.2f, footstepColor, gravity = 0f)
     }
@@ -494,7 +502,8 @@ class LevelRenderer(
             "Zephyr" -> Color(0.75f, 0.55f, 1.00f, 0.8f)
             else     -> Color(0.9f, 0.95f, 1f, 0.8f)
         }
-        for (i in 0..2) {
+        val puffMax = clampBurstCount(3)
+        for (i in 0 until puffMax) {
             val ang   = (MathUtils.random() * 1.2f) + 0.2f
             val sign  = if (MathUtils.randomBoolean()) -1f else 1f
             val speed = MathUtils.random(0.4f, 0.8f)
@@ -513,7 +522,7 @@ class LevelRenderer(
 
     fun spawnLandingDust(x: Float, y: Float, fallSpeed: Float) {
         val intensity = (-fallSpeed / 18f).coerceIn(0.5f, 1.5f)
-        val count     = (5 * intensity).toInt().coerceIn(4, 8)
+        val count     = clampBurstCount((5 * intensity).toInt().coerceIn(4, 8))
         val col       = Color(0.55f, 0.50f, 0.42f, 0.85f)
         for (i in 0 until count) {
             val sign    = if (i % 2 == 0) -1f else 1f
@@ -532,7 +541,8 @@ class LevelRenderer(
 
     fun spawnCleanseBurst(x: Float, y: Float) {
         val col = Color(0.25f, 0.85f, 0.60f, 0.9f)
-        for (i in 0 until 12) {
+        val count = clampBurstCount(12)
+        for (i in 0 until count) {
             val ang   = MathUtils.random() * MathUtils.PI2
             val speed = MathUtils.random(1.0f, 2.8f)
             particles.spawn(
@@ -548,7 +558,8 @@ class LevelRenderer(
     }
 
     fun spawnCollectSparkle(x: Float, y: Float, color: Color) {
-        for (i in 0 until 8) {
+        val count = clampBurstCount(8)
+        for (i in 0 until count) {
             val ang   = MathUtils.random() * MathUtils.PI2
             val speed = MathUtils.random(0.8f, 2.0f)
             particles.spawn(
@@ -564,7 +575,7 @@ class LevelRenderer(
     }
 
     fun spawnTokenSparkle(x: Float, y: Float) {
-        val count = 6 + (Math.random() * 5).toInt()
+        val count = clampBurstCount(6 + (Math.random() * 5).toInt())
         for (i in 0 until count) {
             particles.spawn(
                 x + (Math.random() * 0.12 - 0.06).toFloat(),
@@ -580,7 +591,7 @@ class LevelRenderer(
     }
 
     fun spawnSnapshotSparkle(x: Float, y: Float) {
-        val count = 6 + (Math.random() * 5).toInt()
+        val count = clampBurstCount(6 + (Math.random() * 5).toInt())
         for (i in 0 until count) {
             particles.spawn(
                 x + (Math.random() * 0.12 - 0.06).toFloat(),
@@ -597,7 +608,7 @@ class LevelRenderer(
 
     /** Spawn a grey smoke burst at the enemy position when stomped to defeat. */
     fun spawnStompSmokeBurst(x: Float, y: Float) {
-        val count = 5 + (Math.random() * 4).toInt()  // 5–8 particles
+        val count = clampBurstCount(5 + (Math.random() * 4).toInt())  // 5–8 particles
         for (i in 0 until count) {
             val ang   = MathUtils.random() * MathUtils.PI2
             val speed = MathUtils.random(0.8f, 1.8f)

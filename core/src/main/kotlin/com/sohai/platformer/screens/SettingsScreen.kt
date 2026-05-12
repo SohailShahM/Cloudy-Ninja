@@ -199,7 +199,16 @@ class SettingsScreen(
                 settings = SettingsManager.update { it.copy(colorBlindMode = m) }
             }
         })
-        inner.add(cbBox).width(300f).padBottom(16f).row()
+        inner.add(cbBox).width(300f).padBottom(8f).row()
+
+        val chkReducedMotion = CheckBox(" Reduce motion (disable shake, limit particles, freeze background)", skin)
+        chkReducedMotion.isChecked = settings.reducedMotion
+        chkReducedMotion.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(reducedMotion = chkReducedMotion.isChecked) }
+            }
+        })
+        inner.add(chkReducedMotion).left().padBottom(16f).row()
 
         // ── Assist Mode ───────────────────────────────────────────────────
         inner.add(Label("Assist Mode", sectionStyle)).left().padBottom(8f).row()
