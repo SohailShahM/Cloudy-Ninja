@@ -345,6 +345,176 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Each campaign level has 1 hidden token; collecting all 3 unlocks `collector`; smoke CI passes (autopilot is unlikely to find them — that's fine, they're hidden).
 
 
+<!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D — "Alpha launch readiness"
+     T-109..T-120 batch (planned 2026-05-12 by claude-code-opus).
+     Three tickets clear HANDOFF.md "Source-side quirks" (T-109/T-110/T-111).
+     The remainder address alpha-launch gaps: pause-on-focus-loss, save
+     migration scaffolding, itch.io deploy, crash reporting, juice
+     (shake/duck), mute shortcut, slot-delete confirm, i18n audit.
+═══════════════════════════════════════════════════════════════ -->
+
+### T-109 — FontManager testability seam  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** HANDOFF.md source-side quirk #2 — `FontManager.create()` is unreachable headlessly; needs a factory seam for end-to-end testability
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/FontManager.kt`, `core/src/test/kotlin/com/sohai/platformer/FontManagerTest.kt`
+- **Goal:** Extract the font-loading codepath inside `FontManager.create()` into a small delegate (e.g. `interface FontLoader { fun load(handle: FileHandle): BitmapFont }`) with a default `Gdx.files`-backed implementation. Expose a package-private setter so tests can inject a no-op loader without mocking `Gdx.files`. Runtime behavior unchanged.
+- **Done when:** Existing `FontManagerTest` no longer needs to mock `Gdx.files` for the loader path; the `create()` codepath becomes reachable in headless tests; no behavioral regression in-game; smoke CI passes.
+
+### T-110 — ScreenFade semantics: rename or doc  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** HANDOFF.md source-side quirk #3 — `fadeIn` / `fadeOut` semantics are intuitively reversed (`fadeIn` makes screen clear)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/rendering/ScreenFade.kt` + all callers (find via `Grep "fadeIn|fadeOut" --type kt`)
+- **Goal:** Pick ONE and apply consistently: **(A)** rename `fadeIn` → `fadeFromBlack` and `fadeOut` → `fadeToBlack`, update all callers + tests; **(B)** add a KDoc paragraph above each function explaining the reversed-from-intuition semantics. Default to (A) unless caller count exceeds 20.
+- **Done when:** No caller is left ambiguous; existing `ScreenFadeTest` passes (renamed if (A) chosen); smoke CI passes.
+
+### T-111 — SoundManager unknown-id: log → error  [P3]
+- **Status:** Todo
+- **Tool:** `copilot-agent`  *(autonomous from GitHub Issue)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** HANDOFF.md source-side quirk #1 — `SoundManager` unknown-id uses `Gdx.app.log` not `Gdx.app.error`; IS an error state
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/audio/SoundManager.kt`, `core/src/test/kotlin/com/sohai/platformer/audio/SoundManagerTest.kt`
+- **Goal:** In the unknown-sound-id branch of `SoundManager.play()` (search for `Gdx.app.log` referring to unknown ids), switch to `Gdx.app.error(...)`. Update the existing test to assert error-level logging instead of info.
+- **Done when:** Unknown sound id triggers an error-level log; existing tests pass; smoke CI passes.
+
+### T-112 — Auto-pause on window focus loss  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-104  *(both touch `Main.kt` — sequential)*
+- **GDD ref:** GAME_PLAN.md (alpha polish — players will alt-tab during testing)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
+- **Goal:** Implement libGDX's `ApplicationListener.pause()` in `Main` (or the active `Game` subclass) to forward to the active screen if it's a `GameScreen`. `GameScreen.pause()` activates the existing pause overlay (T-063). On `resume()`, the overlay stays up — player must explicitly resume. Respect `SMOKE_MODE` — skip auto-pause in smoke.
+- **Done when:** Alt-tab while in-game triggers the pause overlay; resume keeps overlay up until input; smoke CI passes (no auto-pause in smoke mode).
+
+### T-113 — Save format version field + migration scaffold  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (alpha launch — once players have saves, schema changes must be migration-safe)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/SaveManager.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/SaveMigrations.kt` (new), `core/src/test/kotlin/com/sohai/platformer/persist/SaveMigrationsTest.kt` (new)
+- **Goal:** Add `saveFormatVersion: Int = 1` to `GameState`. In `SaveManager.loadGame()`, route the deserialized JSON through `SaveMigrations.migrate(json): GameState` before returning. `SaveMigrations` is a chain of `(version, JsonValue) -> JsonValue` steps; v1 is an identity no-op. Existing saves without a version field are treated as v1. Persist writes always use the current version.
+- **Done when:** Saves carry a version field; loads route through the migration chain; existing saves remain loadable; new test covers the migration scaffold with a fake v0→v1 step; smoke CI passes.
+- **Constraints:** Don't change the save schema beyond adding the version field. The scaffold is what matters, not migrations themselves.
+
+### T-114 — itch.io deploy workflow (butler)  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes-with-review  *(secret-handling needs sanity check)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (Sprint D — public alpha to itch.io)
+- **Files:** `.github/workflows/itch-deploy.yml` (new), `scripts/deploy-itch.sh` (new), `docs/itch-deploy.md` (new)
+- **Goal:** Manual-trigger (`workflow_dispatch`) workflow that (1) builds the desktop JAR (`./gradlew desktop:dist`), (2) downloads butler, (3) uploads via `butler push <jar> sohailshahm/cloudy-ninja:<channel> --userversion <tag>`. Reads `ITCH_API_KEY` from repo secrets. Inputs: `channel` (default `desktop`), `version-tag` (optional, defaults to short SHA). `docs/itch-deploy.md` explains itch.io page setup + API key creation.
+- **Done when:** Workflow file exists; runs cleanly on dispatch with a valid secret; docs explain setup.
+- **Constraints:** **Do NOT add the `ITCH_API_KEY` secret yourself** — note in PR description that the user runs `gh secret set ITCH_API_KEY` before the workflow can fire. Do NOT change signing config. Do NOT publish a build from the PR itself.
+
+### T-115 — In-game crash report dumper  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-104  *(both touch `Main.kt` — sequential)*
+- **GDD ref:** GAME_PLAN.md (alpha bug-reporting — players need something to attach)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/CrashReporter.kt` (new), `core/src/test/kotlin/com/sohai/platformer/persist/CrashReporterTest.kt` (new)
+- **Goal:** Wire `Thread.setDefaultUncaughtExceptionHandler` in `Main.create()` to write a crash file at `<userHome>/.cloudy-ninja/crashes/crash-{yyyyMMdd-HHmmss}.log` containing: timestamp, OS + JDK + game version (`BUILD_VERSION` from T-100), full stack trace, save-slot metadata (slot indices + completed-level counts, **no PII**). After writing, re-throw or exit per libGDX convention. `CrashReporter` is a pure object; `Main` calls into it. Respect `SMOKE_MODE` — no-op in smoke.
+- **Done when:** A deliberately-thrown exception in dev produces a crash file in the documented path; smoke CI doesn't write crash files; tests cover the pure-function formatter path.
+- **Constraints:** Don't read save *contents* into the crash log (PII risk). Only metadata.
+
+### T-116 — Screen shake on stomp + boss hit  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-098  *(both touch `LevelRenderer.kt` — sequential)*
+- **GDD ref:** GAME_PLAN.md (combat juice — T-098 hit-flash pairs with shake for full hit-feedback)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/physics/WorldContactListener.kt`, `core/src/main/kotlin/com/sohai/platformer/rendering/ScreenShake.kt` (new), `core/src/test/kotlin/com/sohai/platformer/rendering/ScreenShakeTest.kt` (new)
+- **Goal:** Add `ScreenShake` utility (decaying amplitude over time, `update(delta)` + `offset(): Vector2`). On stomp-defeat in `WorldContactListener` and Storm Sentinel hit-confirm, call `ScreenShake.trigger(amplitude=4f, duration=0.15f)`. `LevelRenderer` applies the offset to the camera before rendering each frame. **Respect `Settings.reducedMotion`** — when on, `trigger()` is a no-op.
+- **Done when:** Visible shake on stomp + boss hit; no shake when `reducedMotion` is on; shake never exceeds duration; pure-function tests on the decay curve pass; smoke CI passes.
+
+### T-117 — Audio ducking on pause overlay  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-104  *(MusicManager contention)*
+- **GDD ref:** GAME_PLAN.md (alpha audio polish)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
+- **Goal:** Add `MusicManager.duck(amount: Float = 0.3f, fadeMs: Int = 250)` and `MusicManager.unduck(fadeMs: Int = 250)`. While ducked, effective volume is `volMusic * amount`. `GameScreen` calls `duck()` on pause-overlay open, `unduck()` on close. Stacks idempotently — multiple `duck()` calls collapse, one `unduck()` restores.
+- **Done when:** Pause open ↔ music dips audibly; close ↔ music restores; rapid open/close doesn't desync the fade; existing `MusicManagerTest` passes; new test covers duck/unduck math; smoke CI passes.
+
+### T-118 — Master mute keyboard shortcut (M key)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-105  *(needs `volMaster` to exist)*
+- **GDD ref:** GAME_PLAN.md (alpha streamer/recorder friendliness)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/input/InputManager.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Add a `keybind("mute")` (default `Input.Keys.M`) in `Settings.defaultKeybinds()` and the Controls section. Pressing M toggles a transient mute — internally clamps `volMaster` effective value to 0 without overwriting the slider position. Toggling off restores. Briefly flash a `[MUTED]` toast (1.5s) on toggle-on.
+- **Done when:** M-key mutes/unmutes from any screen; master slider position is preserved; rebindable in Settings; persists across sessions; smoke CI passes.
+
+### T-119 — Save slot delete confirmation modal  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-099, T-100  *(MainMenuScreen contention)*
+- **GDD ref:** GAME_PLAN.md (alpha safety — accidental slot deletion is a top-of-funnel rage bug)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Tapping Delete on a save slot now opens a modal: `Delete slot {N}? This cannot be undone.` with `Cancel` / `Delete`. Default-focus is `Cancel`. `Esc` cancels. Only `Delete` fires `SaveManager.deleteSlot()`. Empty slots hide (or disable) the delete affordance to match existing slot-card style.
+- **Done when:** No path deletes a slot without the confirm modal; Cancel preserves the slot; smoke CI passes (verify autopilot doesn't open the modal — that path stays unaffected).
+
+### T-120 — Localization coverage audit  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`  *(Flash workhorse — pure mechanical scan)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-120-i18n-coverage-audit`
+- **Depends on:** T-091  *(i18n format API)*
+- **GDD ref:** HANDOFF.md ("i18n scaffolding (T-059) + Strings.format API (T-091); 130+ keys") — verify nothing leaked
+- **Files:** `research/i18n-coverage.md` (new), entries in `QUESTIONS.md` if hardcoded user-facing strings found
+- **Goal:** Scan all `*.kt` files under `core/src/main/kotlin/com/sohai/platformer/screens/`, `entities/`, and other UI-adjacent paths for string literals that look user-facing (`Label("...")`, `TextButton("...")`, `setText("...")`; log messages excluded). For each hit record: file, line, literal, recommended `StringKey` name. Group by category (settings/menu/gameplay/achievements). Produce a punch-list — **do NOT modify code**. If high-confidence cases are found, file ONE summary QUESTIONS.md entry asking whether to wire each as a follow-up Copilot ticket.
+- **Done when:** `research/i18n-coverage.md` exists with a table of all candidate strings + recommended keys; QUESTIONS.md gets one summary entry if any are found; no source-code changes in this PR.
+- **Constraints:** Research-only. Do NOT add new `StringKey` entries. Do NOT modify Kotlin source files. Do NOT auto-fix.
+
+
 
 ---
 
