@@ -393,20 +393,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Implement libGDX's `ApplicationListener.pause()` in `Main` (or the active `Game` subclass) to forward to the active screen if it's a `GameScreen`. `GameScreen.pause()` activates the existing pause overlay (T-063). On `resume()`, the overlay stays up — player must explicitly resume. Respect `SMOKE_MODE` — skip auto-pause in smoke.
 - **Done when:** Alt-tab while in-game triggers the pause overlay; resume keeps overlay up until input; smoke CI passes (no auto-pause in smoke mode).
 
-### T-114 — itch.io deploy workflow (butler)  [P2]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes-with-review  *(secret-handling needs sanity check)*
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (Sprint D — public alpha to itch.io)
-- **Files:** `.github/workflows/itch-deploy.yml` (new), `scripts/deploy-itch.sh` (new), `docs/itch-deploy.md` (new)
-- **Goal:** Manual-trigger (`workflow_dispatch`) workflow that (1) builds the desktop JAR (`./gradlew desktop:dist`), (2) downloads butler, (3) uploads via `butler push <jar> sohailshahm/cloudy-ninja:<channel> --userversion <tag>`. Reads `ITCH_API_KEY` from repo secrets. Inputs: `channel` (default `desktop`), `version-tag` (optional, defaults to short SHA). `docs/itch-deploy.md` explains itch.io page setup + API key creation.
-- **Done when:** Workflow file exists; runs cleanly on dispatch with a valid secret; docs explain setup.
-- **Constraints:** **Do NOT add the `ITCH_API_KEY` secret yourself** — note in PR description that the user runs `gh secret set ITCH_API_KEY` before the workflow can fire. Do NOT change signing config. Do NOT publish a build from the PR itself.
-
 ### T-115 — In-game crash report dumper  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -530,6 +516,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-114 — itch.io deploy workflow (butler)  [P2]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes-with-review  *(secret-handling needs sanity check)*
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-114-itch-deploy
+- **Started:** 2026-05-12
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (Sprint D — public alpha to itch.io)
+- **Files:** `.github/workflows/itch-deploy.yml` (new), `scripts/deploy-itch.sh` (new), `docs/itch-deploy.md` (new)
+- **Goal:** Manual-trigger (`workflow_dispatch`) workflow that (1) builds the desktop JAR (`./gradlew desktop:dist`), (2) downloads butler, (3) uploads via `butler push <jar> sohailshahm/cloudy-ninja:<channel> --userversion <tag>`. Reads `ITCH_API_KEY` from repo secrets. Inputs: `channel` (default `desktop`), `version-tag` (optional, defaults to short SHA). `docs/itch-deploy.md` explains itch.io page setup + API key creation.
+- **Done when:** Workflow file exists; runs cleanly on dispatch with a valid secret; docs explain setup.
+- **Constraints:** **Do NOT add the `ITCH_API_KEY` secret yourself** — note in PR description that the user runs `gh secret set ITCH_API_KEY` before the workflow can fire. Do NOT change signing config. Do NOT publish a build from the PR itself.
 
 ### T-109 — FontManager testability seam  [P3]
 - **Status:** In Progress
