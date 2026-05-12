@@ -1,0 +1,42 @@
+name: Feature request
+description: Suggest a new feature or improvement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: "Tell us about the use case first — we'll figure out the solution together."
+  - type: input
+    id: summary
+    attributes:
+      label: One-line summary
+      description: A short headline for the feature.
+    validations:
+      required: true
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User story
+      placeholder: "As a [type of player], I want to [goal] so that [reason]."
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why this matters
+      description: What pain point or unmet need does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you've considered so far
+      description: Optional — design alternatives, prior art, or rough sketches.
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Audience size you imagine benefiting
+      options:
+        - Most players
+        - Specific niche
+        - Edge case
+        - Unsure

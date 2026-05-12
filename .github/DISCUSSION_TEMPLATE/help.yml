@@ -1,0 +1,32 @@
+title: "[Help] "
+labels: ["help-wanted", "question"]
+body:
+  - type: markdown
+    attributes:
+      value: "Stuck on something? Share what you've tried — we'll help where we can."
+  - type: input
+    id: title
+    attributes:
+      label: One-line title for your question
+      description: A short summary so folks can find it later.
+    validations:
+      required: true
+  - type: textarea
+    id: body
+    attributes:
+      label: What's going on?
+      description: Describe what you're trying to do, what you've tried, and where it breaks down.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where are you stuck?
+      options:
+        - Installation
+        - Gameplay
+        - Performance
+        - Accessibility
+        - Other
+    validations:
+      required: true

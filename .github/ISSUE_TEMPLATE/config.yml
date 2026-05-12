@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/SohailShahM/Cloudy-Ninja/discussions
+    about: For questions, ideas, or general feedback that isn't a bug or feature request

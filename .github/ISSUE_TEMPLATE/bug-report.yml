@@ -1,0 +1,101 @@
+name: Bug report
+description: Something doesn't work right
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for reporting! Please fill out as much as you can — even partial reports help."
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: One-line description of the problem.
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical
+        - High
+        - Normal
+        - Low
+      default: 2
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start the game and load slot 1
+        2. Enter level1
+        3. Wall-jump on the right wall near the checkpoint
+        4. …
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened?
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots/video
+      placeholder: Drag and drop images or video clips here.
+  - type: input
+    id: build
+    attributes:
+      label: Build version
+      placeholder: "v0.1.0 · 2026-05-12"
+      description: Shown in the bottom-right of the main menu.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Android
+        - Web
+    validations:
+      required: true
+  - type: dropdown
+    id: character
+    attributes:
+      label: Character active when bug occurred
+      options:
+        - Ebo
+        - Laya
+        - Zephyr
+        - N/A
+  - type: input
+    id: level
+    attributes:
+      label: Level ID
+      placeholder: "level1 / level0_3 / etc."
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output / crash log
+      description: Optional — paste any relevant log output here.
+      render: shell
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I've checked existing issues for duplicates
+          required: false
+        - label: I've tried with default keybindings
+          required: false

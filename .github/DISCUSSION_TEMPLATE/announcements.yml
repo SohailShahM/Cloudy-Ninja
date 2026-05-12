@@ -1,0 +1,26 @@
+title: "[Announcement] "
+labels: ["announcement"]
+body:
+  - type: markdown
+    attributes:
+      value: "Maintainer template for release notes, milestones, and community updates."
+  - type: textarea
+    id: body
+    attributes:
+      label: Announcement
+      description: Markdown is supported. Include version, highlights, and any action players should take.
+      value: |
+        ## What's new
+
+        -
+        -
+
+        ## How to get it
+
+        -
+
+        ## Known issues
+
+        -
+    validations:
+      required: true

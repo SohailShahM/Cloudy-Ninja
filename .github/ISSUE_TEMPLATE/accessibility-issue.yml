@@ -1,0 +1,50 @@
+name: Accessibility issue
+description: Report a barrier to playing Cloudy Ninja
+labels: ["accessibility", "a11y"]
+body:
+  - type: markdown
+    attributes:
+      value: "We take accessibility seriously. Thanks for telling us what's not working — it's the only way we'll know."
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: One-line description of the barrier.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Color
+        - Motion
+        - Audio
+        - Input
+        - Reading
+        - Cognitive
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: experienced
+    attributes:
+      label: What you experienced
+      description: Describe the barrier and when it happened.
+    validations:
+      required: true
+  - type: textarea
+    id: better
+    attributes:
+      label: What would work better for you
+      placeholder: "e.g. high-contrast mode, larger text, remappable inputs, reduced flashing, captioned audio cues, …"
+  - type: input
+    id: assistive-tech
+    attributes:
+      label: Assistive tech you use
+      placeholder: "NVDA / VoiceOver / switch / N/A"
+  - type: input
+    id: wcag
+    attributes:
+      label: WCAG criterion (if known)
+      placeholder: "e.g. 1.4.3 Contrast (Minimum)"
