@@ -192,20 +192,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** `marketing/press-outreach-list.md` exists with ≥30 contacts (target mix: 5–8 tier-S, 10–15 tier-M, 10+ tier-L), spanning YouTube/written/podcast/social. Every URL WebFetched + confirmed alive.
 - **Constraints:** Markdown only. Do NOT touch any file outside `marketing/`. Do NOT include private email addresses you can't verify are intended for outreach — only contact forms or publicly-posted addresses.
 
-### T-052 — Indie game festival + showcase eligibility research  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
-- **Tier:** S  *(research-only, no code; time-sensitive — deadlines decay)*
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-052-festival-research`
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (launch/visibility plan)
-- **Files:** `marketing/festival-eligibility.md` (new)
-- **Goal:** Catalog indie-game showcases, festivals, and curated events Cloudy Ninja could submit to. Cover: Steam Next Fest, IGF, A MAZE, Wholesome Direct, Day of the Devs, indie-game-showcase events, university student showcases, climate-game-specific events (e.g. Games for Change), regional indie scenes (East Asia, UK, Scandinavia). For each: name, next event date + recurring cadence, submission deadline (verified against the event's official site — many 3rd-party aggregators are stale), eligibility rules (release-status, team size, budget), submission fee, prize value, audience reach, fit-score for Cloudy Ninja 1–5 based on eco/climate angle + accessibility + pixel-art fit.
-- **Done when:** `marketing/festival-eligibility.md` exists with ≥15 events catalogued, sorted by submission deadline ascending. Top-of-file "Recommended next 5" prioritized list with one-line rationale each.
-- **Constraints:** Markdown only. Do NOT touch any file outside `marketing/`. Skip paywalled-only events ($500+ submission fee for a solo/student-tier project). Verify all deadlines against the event's *own* website.
-
 ### T-054 — Kotest specs for StormSentinel boss state machine  [P2]
 - **Status:** In Progress
 - **Tool:** `claude-code-sub-agent`
@@ -354,6 +340,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-052 — Indie game festival + showcase eligibility research  [P3]
+- **Status:** In Progress
+- **Tool:** `antigravity`
+- **Tier:** S  *(research-only, no code; time-sensitive — deadlines decay)*
+- **Autonomous-eligible:** yes
+- **Agent:** antigravity
+- **Branch:** `antigravity/T-052-festival-research`
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (launch/visibility plan)
+- **Files:** `marketing/festival-eligibility.md` (new)
+- **Goal:** Catalog indie-game showcases, festivals, and curated events Cloudy Ninja could submit to. Cover: Steam Next Fest, IGF, A MAZE, Wholesome Direct, Day of the Devs, indie-game-showcase events, university student showcases, climate-game-specific events (e.g. Games for Change), regional indie scenes (East Asia, UK, Scandinavia). For each: name, next event date + recurring cadence, submission deadline (verified against the event's official site — many 3rd-party aggregators are stale), eligibility rules (release-status, team size, budget), submission fee, prize value, audience reach, fit-score for Cloudy Ninja 1–5 based on eco/climate angle + accessibility + pixel-art fit.
+- **Done when:** `marketing/festival-eligibility.md` exists with ≥15 events catalogued, sorted by submission deadline ascending. Top-of-file "Recommended next 5" prioritized list with one-line rationale each.
+- **Constraints:** Markdown only. Do NOT touch any file outside `marketing/`. Skip paywalled-only events ($500+ submission fee for a solo/student-tier project). Verify all deadlines against the event's *own* website.
+
 
 ### T-XXX — <title>
 - **Status:** In Progress
