@@ -138,7 +138,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add `keybinds: Map<String, Int> = defaultKeybinds()` to `Settings` where keys are action names (`"left"`, `"right"`, `"jump"`, `"action"`, `"swap"`) and values are `Input.Keys.*` ints. Add a "Controls" section in `SettingsScreen` — for each action, show a VisTextButton displaying the current key name; clicking it enters "press a key" mode and records the next key press. `InputManager` reads keybinds from `SettingsManager.load().keybinds` on each poll instead of hardcoded constants.
 - **Done when:** Player can rebind all 5 actions in Settings, new bindings work in gameplay, persist across sessions. Compile clean.
 
-
 ### T-038 — Ghost replay in time trials  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`  *(determinism-sensitive — read DETERMINISM.md first; not autonomous)*
@@ -151,8 +150,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Files:** `persist/GhostRecording.kt` (new), `persist/SaveManager.kt`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`
 - **Goal:** During a time-trial run, `LevelRunState` records one `GhostFrame(x, y, facingRight, character)` every 3 rendered frames. On new best time, serialize to `saves/ghost_{levelId}.json` via a new `SaveManager.saveGhost/loadGhost` pair. On subsequent time-trial runs for the same level, load the ghost and advance a `ghostFrameIndex` each frame. `LevelRenderer` draws the ghost as a 35%-alpha tinted circle/sprite at the ghost position.
 - **Done when:** Setting a new best saves a ghost; next run shows the ghost moving through the level; ghost does not interfere with gameplay. Compile clean.
-
-
 
 ### T-046 — Full graphics overhaul: pixel-art sprites + tilesets  [P3]
 - **Status:** Todo
@@ -237,7 +234,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** `research/eco-game-design-study.md` exists with: (a) comparison table (one row per game, columns above), (b) per-game 1-paragraph deep dive citing 1–2 specific reviews/press articles with URLs, (c) final "Lessons for Cloudy Ninja" section with 3–5 actionable recommendations tied to our existing systems (water-cycle abilities, hub world, Cloud Atlas, character-switching).
 - **Constraints:** Markdown only. Do NOT touch any file outside `research/`. Cite sources for any claim — no unsourced editorializing.
 
-
 ---
 
 ## Backlog — AI testing v2 (planned, after MVP T-A1/T-A2 lands)
@@ -280,38 +276,6 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
-### T-049 — Climate-source compilation for NotebookLM  [P3]
-- **Status:** In Progress
-- **Tool:** `antigravity`
-- **Tier:** S  *(research only — no code)*
-- **Autonomous-eligible:** yes
-- **Agent:** antigravity
-- **Branch:** `antigravity/T-049-climate-sources`
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN §educational-goals; supports T-045 Cloud Atlas content
-- **Files:** `research/climate-sources/INDEX.md` (new), `research/climate-sources/*.pdf` (downloaded), `research/climate-sources/urls.txt` (new)
-- **Goal:** Compile a curated, verified-live set of climate science sources ready to feed into NotebookLM for the T-045 Cloud Atlas content generation. The previous T-045 prompt cited `climate.gov` URLs that have been **archived** — the new live host is `noaa.gov`. Antigravity should:
-  1. Find authoritative climate science sources covering the 12 Cloud Atlas topics: water_cycle, silver_iodide, temperature_inversion, albedo_effect, transpiration, groundwater_recharge, carbon_sequestration, storm_system, biodiversity_index, soil_microbiome, ocean_acidification, cloud_seeding.
-  2. Verify each URL is live (HTTP 200) and current (not redirected to "archive" pages).
-  3. Cast wider than the original prompt — search for university extension publications, NOAA fact sheets, NASA Earth Observatory, IPCC, EPA, USGS, university (.edu) climate centers, peer-reviewed open-access papers. Find supplementary sources NotebookLM might find useful even if they're tangentially related (e.g. "weather modification ethics", "groundwater recharge case studies"). Aim for **breadth**.
-  4. For PDF resources: download to `research/climate-sources/*.pdf` (don't link to wherever they live online; bake them in).
-  5. For URL-only resources (NotebookLM can fetch live): list in `research/climate-sources/urls.txt` (one URL per line, with a short comment about which topic it covers).
-  6. Write `research/climate-sources/INDEX.md` — table of all sources with: filename or URL, topic coverage (one or more of the 12), source type (PDF/URL), authority (gov/edu/nonprofit/peer-review), publication date.
-- **Done when:**
-  - `research/climate-sources/INDEX.md` exists with ≥3 sources per Cloud Atlas topic (36+ total).
-  - All PDF downloads succeed; no broken URLs in `urls.txt`.
-  - PR opens against `main` with the new folder; passes AI smoke test (trivial — no code).
-- **Constraints:**
-  - Antigravity must NOT touch any file outside `research/climate-sources/`.
-  - Total PDF download size kept under 100 MB — pick the most authoritative source per topic, don't grab everything.
-  - Skip CC-incompatible sources (no proprietary textbooks or paywalled journal articles).
-  - Verify each URL with a live fetch before listing.
-
-
-
-<!--
-Template for moving a task here:
-
 ### T-XXX — <title>
 - **Status:** In Progress
 - **Agent:** <your-identity-from-START_HERE.md-section-1>
@@ -330,6 +294,13 @@ Template for moving a task here:
 ---
 
 ## Done
+
+### T-049 — Climate-source compilation for NotebookLM
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Compiled 36 authoritative climate sources (PDFs and live URLs) across 12 topics; under 47MB total.
+- **Commit/PR:** PR #26
+- **Tool:** ntigravity
 
 ### T-037 — Achievement system + toast notifications
 - **Status:** Done
