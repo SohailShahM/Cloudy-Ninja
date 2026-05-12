@@ -3,7 +3,7 @@
 > Living roadmap. For task-level tracking see TASKS.md; for architecture see AGENTS.md;
 > for technical specs see GDD_ADDENDUM.md.
 
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 
 ---
 
@@ -24,9 +24,9 @@ Cloudy Ninja is a momentum-based 2D pixel-art platformer about restoring corrupt
 
 ---
 
-## Current state (Sprint C complete)
+## Current state (Sprint D in progress)
 
-Seven levels are playable end-to-end with a boss encounter, full audio, and persistence. The codebase is architecturally clean after the Sprint B/C refactors.
+Seven levels are playable end-to-end with a boss encounter, full audio, persistence, achievements, and stats tracking. Sprint D is underway — T-031 (tile renderer) is in progress; T-038, T-045, T-046b–T-049 are queued.
 
 **Shipped systems:**
 - **Levels:** Sky Sanctuary hub (Level0_0), tutorials Level0_1–0_4, campaign Level1 "First Rain" (Ebo), Level2 "Winds of Change" (Laya), Level3 "Stormy Heights" with boss arena
@@ -36,11 +36,15 @@ Seven levels are playable end-to-end with a boss encounter, full audio, and pers
 - **Audio:** 8 procedural SFX + 3 ambient music tracks with 1.5s crossfade between levels
 - **Cloud Atlas:** 6 entries collectible in-game (target 12 via T-045)
 - **Persistence:** 3 save slots, atomic writes, checkpoint autosave, time-trial best times
-- **Display:** 4K/HiDPI via `DisplayScale` singleton; fullscreen + resolution presets in Settings
+- **Achievements:** 12 achievements with in-game toast notifications (`AchievementRegistry` + `AchievementToast`) (T-037)
+- **Stats screen:** Per-save-slot stats (deaths, levels completed, achievements) on main menu (T-041)
+- **Display:** 4K/HiDPI via `DisplayScale` singleton; fullscreen + resolution presets in Settings (T-042)
+- **Tile rendering (in progress):** `TilesetPack` / `TilesetRegistry` abstraction for runtime art-style swapping, wired to Kenney `pixel-platformer` base pack — CC0 assets already in repo at `assets/tilesets/kenney_pixel_platformer/` (T-031 in progress)
+- **Pixel-art base assets:** Kenney `pixel-platformer` pack (~350 CC0 files: terrain, characters, enemies, pickups, hazards) committed to repo (T-046a)
 - **Accessibility:** Assist Mode (invincibility, infinite spirits, slow-speed slider)
 - **Controls:** Mobile two-thumb HUD (semi-transparent buttons) + keyboard, fully rebindable in Settings
 - **Engine internals:** Celeste-calibrated movement, asymmetric gravity, coyote time, jump buffer, corner correction, wall-jump, particle pool, screen shake, hitstop, deferred body destruction, fixed-timestep physics
-- **Testing:** 9 Kotest unit specs + AI smoke test workflow (T-A1 in progress)
+- **Testing:** 9 Kotest unit specs + AI smoke testing in CI (headless 8-level matrix via `xvfb-run`, gates `main` branch) (T-A1) + determinism audit with seeded RNG wrapper identified (T-A2)
 
 ---
 
@@ -50,16 +54,23 @@ Seven levels are playable end-to-end with a boss encounter, full audio, and pers
 
 No new tech. Finish what's in flight and get to a releasable alpha.
 
-- **T-031** — Tile-based terrain rendering (replace ShapeRenderer ground rects with tileset PNGs)
+- ~~**T-037** — Achievement system + toast notifications (12 achievements)~~ ✓ Done
+- ~~**T-041** — Stats screen on main menu~~ ✓ Done
+- ~~**T-A1 / T-A2** — AI smoke testing in CI + determinism audit~~ ✓ Done
+- ~~**T-046a** — Tileset research; Kenney pixel-platformer pack in repo~~ ✓ Done
+- **T-031** — Tile-based terrain rendering (in progress — `TilesetPack`/`TilesetRegistry` abstraction + Kenney wiring)
 - **T-035** — Audio bus sliders: Music / SFX / UI in Settings
-- **T-037** — Achievement system + toast notifications (12 achievements)
 - **T-038** — Ghost replay in time trials
-- **T-041** — Stats screen on main menu
-- **T-045** — Cloud Atlas expansion to 12 entries
-- **T-A1 / T-A2** — AI smoke testing in CI — validate green for 2 weeks straight
+- **T-045** — Cloud Atlas expansion to 12 entries (blocked on T-049 climate-source compilation)
 - **T-034 doc surgery** — This ticket (brings GAME_PLAN, GDD_ADDENDUM, PATH1 in sync)
-- **T-046 starts** — Commission/buy/draw pixel-art for 3 characters + 3 tilesets + boss (art production, not code)
+- **T-046 (long-term)** — Full graphics overhaul: pixel-art sprites + tilesets (blocked on T-031; art production)
 - **Alpha launch** — First public build to itch.io (private link, ~5 testers)
+
+**Antigravity research suite — queued for Antigravity execution:**
+- **T-046b** — Character sprite-sheet research (CC0 candidates for Ebo/Laya/Zephyr; markdown only)
+- **T-047** — Audio asset research: CC0 music + SFX supplements (OpenGameArt/FMA/Freesound candidates)
+- **T-048** — Marketing research: itch.io listing style guide (8–12 reference listings analysis)
+- **T-049** — Climate-source compilation for NotebookLM (verified-live NOAA/NASA/IPCC sources; unblocks T-045)
 
 ### Horizon 2 — Content (3–6 months)
 

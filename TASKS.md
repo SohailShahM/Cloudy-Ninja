@@ -89,38 +89,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** In `WorldContactListener.beginContact`, detect player landing on enemy from above (player `vy < -3 m/s`, contact normal pointing up). Mark enemy for defeat + bounce player upward (+5 m/s). `LevelRunState` processes defeat the same way as droplet-hit. Play `land` SFX + smoke burst particle. Stomp must NOT trigger player death even though the enemy fixture is normally lethal.
 - **Done when:** Jumping on a Smog Sprite defeats it and bounces player; lateral contact still kills player. Compile clean.
 
-### T-031 — Tile-based terrain rendering  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sonnet
-- **Branch:** claude/T-031-tile-renderer
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** §21 ("Tile Rendering Spec")
-- **Art decision (resolved 2026-05-12 via T-046a):**
-  - **Base pack:** Kenney `pixel-platformer` (CC0, ~350 files, side-scroller perspective) — provides terrain, characters, enemies, pickups, hazards. **Already in repo at `assets/tilesets/kenney_pixel_platformer/`** (Tiles/, Tilemap/, Tiled/ subdirs + sample images + license).
-  - **ECO accent:** [OpenGameArt Pixel Art Forest](https://opengameart.org/content/pixel-art-forest-tilesets) (CC0) for vines, foliage — fetch as a follow-up if needed; not required for v1 of T-031.
-  - **ARID/WIND:** use Kenney's sandy/sky tiles within the base pack (no separate tilesets needed for v1).
-- **Files:** `rendering/TilesetPack.kt` (new), `rendering/TilesetRegistry.kt` (new), `rendering/TileRenderer.kt` (new), `screens/LevelRenderer.kt`, `persist/Settings.kt` (add `tilesetPackId` field)
-- **Goal:**
-  1. **Art-style abstraction (must come first — design for future swap):**
-     - `TilesetPack` data class with: `id: String`, `displayName: String`, `basePath: String`, mapping from `ObstacleKind` (GROUND/WALL/HAZARD/etc.) to tile region(s), thematic variants per `ParallaxTheme`. Pure data; no I/O.
-     - `TilesetRegistry` singleton: `register(pack)`, `get(id)`, `current` (reads `Settings.tilesetPackId`). Default-registers the Kenney pack at startup.
-     - `Settings.tilesetPackId: String = "kenney_pixel_platformer"` — persisted. Foundation for a future Settings-screen art-style dropdown.
-     - **Why this layering:** the user wants the option to swap art styles later (custom-commissioned pixel art, asset-store packs, mod support). Centralizing tile paths + thematic variants behind `TilesetPack` means future packs slot in via one `register(...)` call — no renderer rewrites.
-  2. **Renderer wiring:**
-     - `TileRenderer.kt` uses `TilesetRegistry.current` to look up tile regions per `ObstacleKind` + `ParallaxTheme`. Tile-fills each `ObstacleRect` via `SpriteBatch`.
-     - `LevelRenderer` calls `TileRenderer.renderObstacles()` instead of the current ShapeRenderer rect pass.
-     - Remove the ShapeRenderer obstacle-rect draw loop after verifying tile coverage is complete (keep ShapeRenderer for debug/fallback if needed).
-- **Done when:**
-  - `TilesetPack` + `TilesetRegistry` + `Settings.tilesetPackId` all in place — proven by writing a unit test that registers a second mock pack and shows `TilesetRegistry.current` swaps cleanly.
-  - All three campaign levels show tiled terrain instead of solid grey/red rectangles when run locally.
-  - No visual gaps in tile coverage.
-  - AI smoke test passes.
-  - Compile clean.
-
 ### T-033 — Hub world: Sky Sanctuary (Level 0-0)  [P2]
 - **Status:** Done
 - **Completed:** 2026-05-11
@@ -311,22 +279,7 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
-### T-031 (moved from Todo — see Todo section above)
-
-### T-046b — Character sprite-sheet research  [P3]
-- **Status:** In Progress
-- **Tool:** `antigravity`
-- **Tier:** S  *(research only — no code)*
-- **Autonomous-eligible:** yes-with-review  *(visual-perspective verification required per LEARNINGS.md T-046a; review preview images before acting)*
-- **Agent:** antigravity
-- **Branch:** `antigravity/T-046b-character-sprites`
-- **Started:** 2026-05-12
-- **Depends on:** T-046a
-- **GDD ref:** _to be written in GDD_ADDENDUM_ (T-046 follow-up)
-- **Files:** `art-research/character-sprite-candidates.md` (new)
-- **Goal:** Find CC0 / CC-BY-licensed 32×32 character sprite sheets that visually match Kenney `pixel-platformer` (the chosen base from T-046a). Cloudy Ninja has 3 distinct characters: **Ebo** (earth / seed theme — brown/green palette), **Laya** (wind / storm theme — blue/grey palette), **Zephyr** (sky / air theme — purple/white palette). Each character needs idle, run (4 frames), jump, fall, wall-slide animations. Search Kenney.nl + OpenGameArt.org. For each candidate capture: name, source URL, license, frame count per state, palette match, **camera perspective (must be side-scrolling)**, art style 1-5 match vs Kenney pixel-platformer.
-- **Done when:** `art-research/character-sprite-candidates.md` exists with ≥2 candidates per character (6+ total). Each candidate has perspective verified as side-scrolling. PR opens against `main`. AI smoke test passes (trivial — no code).
-- **Constraints:** Same as T-046a — Antigravity must NOT touch any file outside `art-research/`. Must NOT download binary assets. Markdown research only. Verify side-scrolling perspective for each candidate (this is the LEARNINGS.md T-046a lesson).
+_(no tasks in progress)_
 
 
 <!--
@@ -569,12 +522,25 @@ Template for moving a task here:
 - **Outcome:** `.github/workflows/ci.yml` created; runs `:core:compileKotlin`, `:core:test`, and `android:lint` on push/PR to main; uploads lint and test reports as artifacts.
 - **Commit/PR:** this branch
 
+### T-031 — Tile-based terrain rendering
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Art-style abstraction layer (`TilesetPack` data class + `TilesetRegistry` singleton + `Settings.tilesetPackId`) lets future packs slot in via one `register(...)` call. `TileRenderer` lazy-loads the Kenney `pixel-platformer` atlas, slices 18×18 TextureRegions, and tile-fills `ObstacleRect`s at 0.32 m per tile. `LevelRenderer` runs a tile pass before the ShapeRenderer fallback (which handles unmapped kinds — CHECKPOINT/EXIT/cleaned-HAZARD). Kotest covers registry round-trips and the specific Kenney tile indices. Default `tilesetPackId = "kenney_pixel_platformer"` keeps saves backward-compatible. AI smoke green.
+- **Commit/PR:** PR #14 (squashed merge `79108a8`)
+- **Tool:** `claude-code-sonnet`
+
 ### T-046a — Tileset research: find pixel-art tilesets for 3 themes
 - **Status:** Done
 - **Completed:** 2026-05-12
 - **Outcome:** Antigravity (Gemini 3.1 Pro) researched 12 candidate tilesets (4 per theme: ARID/WIND/ECO) from OpenGameArt and Kenney.nl, compiled into `art-research/tileset-candidates.md` with name, source URL, license, file count, theme fit, art quality (1-5), and character-sprite notes. **Decision (post-visual-review):** Kenney `pixel-platformer` (CC0, ~350 files, side-scroller perspective) as base + OpenGameArt Pixel Art Forest (CC0) for ECO accents; ARID/WIND use Kenney's sandy/sky tiles within base pack. One Antigravity recommendation rejected post-review (Whispers of Avalon Desert — top-down RPG perspective; flagged in LEARNINGS.md as research-tool blindspot). **Antigravity time-to-output: ~5 min** for research; ~5 min of human visual review.
 - **Commit/PR:** PR #10 (merged) + decision recorded in `GAME_PLAN.md` and T-031 unblocked.
 - **Tool:** `antigravity`
+
+### T-046b — Character sprite-sheet research
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Created `art-research/character-sprite-candidates.md` with side-scrolling CC0/CC-BY sprite sheet candidates for Ebo, Laya, and Zephyr, prioritizing Kenney base palette variants and structurally compatible OpenGameArt sprites.
+- **Commit/PR:** branch `antigravity/T-046b-character-sprites` (PR opened via browser subagent)
 
 <!--
 Template for moving a task here:

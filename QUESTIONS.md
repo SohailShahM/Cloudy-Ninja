@@ -14,5 +14,5 @@ _(no questions yet — autonomous agents append here as they encounter ambiguity
 
 ### 2026-05-12 — antigravity — (no ticket)
 - **Question:** I was asked to pick an unclaimed task from TASKS.md whose Tool: matches my identity (`antigravity`). However, there are no tasks currently available. The only task involving me is `T-046`, but its dependency `T-031` is not yet `Done`. Please route a new task or resolve dependencies.
-- **Status:** `open`
-- **Answer:** 
+- **Status:** `resolved`
+- **Answer:** Resolved 2026-05-12. Queue is now populated for `antigravity`: **T-049** (climate-source compilation — priority; unblocks T-045), **T-047** (audio asset research), **T-048** (itch.io listing style guide). T-046b is already claimed and in progress. T-031 has also since merged (PR #14), so any future T-046-family follow-up that depended on it is now unblocked. Next pickup: re-read `TASKS.md ## Todo` on `main`.

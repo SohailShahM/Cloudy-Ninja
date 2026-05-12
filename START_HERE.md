@@ -25,6 +25,7 @@ When claiming any task, set `Agent:` to your handle from this list (pick the clo
 
 ## 2. Read these files in order
 
+0. **`HANDOFF.md`** — if it exists at repo root, **read it before anything else**. Captures live state from the previous session: branch-protection quirks, in-flight threads, pending user actions, working patterns. Short by design. If it's missing/stale (>1 week old), treat the rest of this doc as authoritative and start from scratch.
 1. **This file** (`START_HERE.md`) — you're here
 2. **`AGENTS.md`** — architecture, module layout, conventions
 3. **`TASKS.md`** — work queue. Find tasks tagged for YOUR identity in `## Todo`
