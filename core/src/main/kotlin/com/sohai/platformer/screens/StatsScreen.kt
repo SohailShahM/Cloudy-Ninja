@@ -84,13 +84,13 @@ class StatsScreen(private val game: Game) : Screen {
         card.pad(12f)
         card.left().top()
 
-        card.add(Label("Slot ${slotIndex + 1}", sectionStyle)).left().padBottom(8f).row()
+        card.add(Label(Strings.format(StringKey.SLOT_LABEL, slotIndex + 1), sectionStyle)).left().padBottom(8f).row()
         if (state == null) {
             card.add(Label(Strings.get(StringKey.STATS_EMPTY), mutedStyle)).left().row()
             return card
         }
 
-        card.add(Label("Total deaths: ${state.totalDeaths}", bodyStyle)).left().padBottom(4f).row()
+        card.add(Label(Strings.format(StringKey.TOTAL_DEATHS, state.totalDeaths), bodyStyle)).left().padBottom(4f).row()
 
         val completedOrdered = LevelManager.getAllLevels()
             .map { it.id }
@@ -98,7 +98,7 @@ class StatsScreen(private val game: Game) : Screen {
         val completedDisplay = if (completedOrdered.isEmpty()) Strings.get(StringKey.STATS_DASH) else completedOrdered.joinToString(", ") { id ->
             LevelManager.getLevel(id)?.name ?: id
         }
-        card.add(Label("Levels completed: ${state.completedLevels.size}", bodyStyle)).left().padBottom(2f).row()
+        card.add(Label(Strings.format(StringKey.LEVELS_COMPLETED, state.completedLevels.size), bodyStyle)).left().padBottom(2f).row()
         val completedLabel = Label(completedDisplay, bodyStyle)
         completedLabel.wrap = true
         card.add(completedLabel).left().width(STATS_CARD_CONTENT_WIDTH).padBottom(6f).row()
@@ -106,7 +106,7 @@ class StatsScreen(private val game: Game) : Screen {
         val ecoCollected = completedOrdered.sumOf { id ->
             LevelManager.getLevel(id)?.getEcoTokenPositions()?.size ?: 0
         }
-        card.add(Label("Eco-tokens collected: $ecoCollected", bodyStyle)).left().padBottom(6f).row()
+        card.add(Label(Strings.format(StringKey.ECO_TOKENS_COLLECTED, ecoCollected), bodyStyle)).left().padBottom(6f).row()
 
         if (state.bestTimes.isEmpty()) {
             card.add(Label(Strings.get(StringKey.STATS_BEST_TIMES_EMPTY), mutedStyle))
@@ -116,7 +116,7 @@ class StatsScreen(private val game: Game) : Screen {
             // Iterate levels in canonical LevelManager order; skip levels with no recorded time.
             for (level in LevelManager.getAllLevels()) {
                 val timeSec = state.bestTimes[level.id] ?: continue
-                val line = "${level.name}: ${formatBestTime(timeSec)}"
+                val line = Strings.format(StringKey.BEST_TIME_LINE, level.name, formatBestTime(timeSec))
                 card.add(Label(line, bodyStyle)).left().padBottom(2f).row()
             }
             // Spacer below the section
@@ -129,7 +129,7 @@ class StatsScreen(private val game: Game) : Screen {
             card.add(Label(Strings.get(StringKey.STATS_ACHIEVEMENTS_NONE), mutedStyle)).left().row()
         } else {
             val list = if (unlockedAchievements.isEmpty()) Strings.get(StringKey.STATS_DASH) else unlockedAchievements.sorted().joinToString(", ")
-            card.add(Label("Achievements unlocked: ${unlockedAchievements.size}/$TOTAL_ACHIEVEMENTS", bodyStyle)).left().padBottom(2f).row()
+            card.add(Label(Strings.format(StringKey.ACHIEVEMENTS_UNLOCKED, unlockedAchievements.size, TOTAL_ACHIEVEMENTS), bodyStyle)).left().padBottom(2f).row()
             val achievementsLabel = Label(list, bodyStyle)
             achievementsLabel.wrap = true
             card.add(achievementsLabel).left().width(STATS_CARD_CONTENT_WIDTH).row()

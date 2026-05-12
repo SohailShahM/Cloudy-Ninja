@@ -146,6 +146,44 @@ enum class StringKey {
     RUN_BOSS_DEFEATED,
     RUN_SPIRIT_EXHAUSTED,
     RUN_ECOSYSTEM_RESTORED,
+
+    // ── Compositional templates (T-091) ──────────────────────────────────────
+    // Used with Strings.format(key, *args). Placeholders {0}, {1}, … map to
+    // varargs by position. English word-order is encoded in the template, so
+    // future locales can reorder freely.
+    //
+    // Main menu / Stats: save-slot summaries
+    SLOT_LABEL,
+    ATLAS_PCT,
+    DEATHS_COUNT,
+    LAST_PLAYED,
+    TOTAL_DEATHS,
+    LEVELS_COMPLETED,
+    ECO_TOKENS_COLLECTED,
+    BEST_TIME_LINE,
+    ACHIEVEMENTS_UNLOCKED,
+    // HUD
+    COMBO_MULTIPLIER,
+    SCORE_VALUE,
+    SPIRIT_VALUE,
+    CHAR_ABILITY,
+    // Level complete / level select
+    ECO_FRACTION,
+    WORLD_PORTAL,
+    BEST_SCORE_VALUE,
+    COMPLETE_WORLD_FIRST,
+    // Cloud Atlas
+    ATLAS_OVERLAY_HEADER,
+    ATLAS_SNAPSHOTS_DISCOVERED,
+    ATLAS_DISCOVERED_BY,
+    // Gameplay run-state messages
+    CHARACTER_ABILITY_SWAP,
+    SPIRIT_DEATH,
+    // Pause
+    PAUSE_HINT,
+    // Victory
+    VICTORY_FINAL_SCORE,
+    VICTORY_TRIAL_TIME,
 }
 
 /**
@@ -291,8 +329,55 @@ object Strings {
         StringKey.RUN_BOSS_DEFEATED       to "Storm Sentinel defeated!",
         StringKey.RUN_SPIRIT_EXHAUSTED    to "Spirit Exhausted...",
         StringKey.RUN_ECOSYSTEM_RESTORED  to "Eco-System Restored!",
+
+        // Compositional templates (T-091). Args are substituted by {N} index.
+        StringKey.SLOT_LABEL                 to "Slot {0}",
+        StringKey.ATLAS_PCT                  to "Atlas: {0}%",
+        StringKey.DEATHS_COUNT               to "Deaths: {0}",
+        StringKey.LAST_PLAYED                to "Last: {0}",
+        StringKey.TOTAL_DEATHS               to "Total deaths: {0}",
+        StringKey.LEVELS_COMPLETED           to "Levels completed: {0}",
+        StringKey.ECO_TOKENS_COLLECTED       to "Eco-tokens collected: {0}",
+        StringKey.BEST_TIME_LINE             to "{0}: {1}",
+        StringKey.ACHIEVEMENTS_UNLOCKED      to "Achievements unlocked: {0}/{1}",
+        StringKey.COMBO_MULTIPLIER           to "x{0} COMBO!",
+        StringKey.SCORE_VALUE                to "Score: {0}",
+        StringKey.SPIRIT_VALUE               to "Spirit: {0}",
+        StringKey.CHAR_ABILITY               to "{0} — {1}",
+        StringKey.ECO_FRACTION               to "{0} / {1}",
+        StringKey.WORLD_PORTAL               to "{0} World {1}: {2}",
+        StringKey.BEST_SCORE_VALUE           to "Best score: {0}",
+        StringKey.COMPLETE_WORLD_FIRST       to "Complete World {0} first",
+        StringKey.ATLAS_OVERLAY_HEADER       to "CLOUD ATLAS  •  {0}",
+        StringKey.ATLAS_SNAPSHOTS_DISCOVERED to "{0} / {1} snapshots discovered",
+        StringKey.ATLAS_DISCOVERED_BY        to "Discovered by: {0}",
+        StringKey.CHARACTER_ABILITY_SWAP     to "{0}: {1}",
+        StringKey.SPIRIT_DEATH               to "{0} fell ({1} spirits left)",
+        StringKey.PAUSE_HINT                 to "Press {0} to resume",
+        StringKey.VICTORY_FINAL_SCORE        to "Final Score: {0}",
+        StringKey.VICTORY_TRIAL_TIME         to "Trial Time: {0}",
     )
 
     fun get(key: StringKey): String =
         english[key] ?: error("Missing English string for key: $key")
+
+    /**
+     * Compositional lookup: returns the template for [key] with `{N}` placeholders
+     * replaced by `args[N].toString()`. Unmatched placeholders are left intact.
+     *
+     * Example:
+     *   `format(SLOT_LABEL, 2)` → `"Slot 2"`
+     *   `format(WORLD_PORTAL, "[+] ", 3, "Cloud Forest")` → `"[+]  World 3: Cloud Forest"`
+     *
+     * Uses a simple `{N}` regex rather than `java.text.MessageFormat` to avoid
+     * `MessageFormat`'s locale-sensitive number/date quirks — every {N} resolves
+     * to a plain `toString()` no matter what.
+     */
+    fun format(key: StringKey, vararg args: Any): String {
+        val template = english[key] ?: error("Missing English string for key: $key")
+        return template.replace(Regex("\\{(\\d+)\\}")) { match ->
+            val idx = match.groupValues[1].toInt()
+            args.getOrNull(idx)?.toString() ?: match.value
+        }
+    }
 }

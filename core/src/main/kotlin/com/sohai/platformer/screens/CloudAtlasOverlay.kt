@@ -49,7 +49,7 @@ class CloudAtlasOverlay(entry: CloudAtlasEntry, private val onDismiss: () -> Uni
 
         // Header: "Cloud Atlas  •  #character"
         val headerStyle = Label.LabelStyle(subtitleFont, Color(0.4f, 0.8f, 0.5f, 1f))
-        table.add(Label("CLOUD ATLAS  •  ${entry.character.uppercase()}", headerStyle))
+        table.add(Label(Strings.format(StringKey.ATLAS_OVERLAY_HEADER, entry.character.uppercase()), headerStyle))
             .padBottom(16f).row()
 
         table.add(Label(entry.title, titleStyle)).padBottom(8f).row()

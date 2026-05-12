@@ -42,7 +42,7 @@ class LevelCompleteOverlay(
         val mins = (timeSeconds / 60).toInt()
         val secs = timeSeconds % 60f
         val timeStr = "%d:%05.2f".format(mins, secs)
-        val ecoStr  = "$ecoCollected / $ecoTotal"
+        val ecoStr  = Strings.format(StringKey.ECO_FRACTION, ecoCollected, ecoTotal)
 
         val table = VisTable()
         table.setFillParent(true)
