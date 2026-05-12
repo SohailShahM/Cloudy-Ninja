@@ -196,18 +196,19 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 
 - **Done when:** Fade-in visible at 60 FPS without input lag, hint visible, smoke CI passes.
 
-### T-066 — Achievement icons (16×16 pixel art)  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes-with-review  *(visual assets — review icons before commit)*
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-037
+### T-066 — Achievement icons wire-up  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
+- **Tier:** S  *(was M when icon generation was in-scope; now scoped down — icons exist from T-078)*
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-066-achievement-icons`
+- **Started:** 2026-05-12
+- **Depends on:** T-037, **T-078** (DONE — icons live at `assets/icons/achievements/*.png`)
 - **GDD ref:** §22 (achievements list)
-- **Files:** `assets/icons/achievements/*.png` (new), `progression/Achievement.kt` (add `iconPath: String` field), `screens/AchievementToast.kt` (render icon), `screens/AchievementsScreen.kt` (render icon in list)
-- **Goal:** Procedurally generate (via a one-off Kotlin tool in `tools/`) or hand-place 12 distinct 16×16 PNG icons — one per achievement. Each icon should be a simple iconic symbol (stomp = boot, time-trial = stopwatch, atlas_full = open book, etc.). Add `iconPath` to `Achievement`. Render at 2× scale (32×32) in toast + atlas list. Procedural-gen is fine for v1; replace with hand-art later.
-- **Done when:** All 12 icons visible in achievement toast + atlas screen; PNGs committed at 16×16; compile clean; smoke CI passes.
+- **Files:** `progression/Achievement.kt` (add `iconPath: String` field), `screens/AchievementToast.kt` (render icon), `screens/AchievementsScreen.kt` (render icon in list)
+- **Goal:** Wire the 12 PNG icons from T-078 (`assets/icons/achievements/<id>.png`) into the renderer. Add `iconPath` to `Achievement` data class, defaulting to `"icons/achievements/$id.png"`. Render at **2× scale (32×32)** in achievement toast + atlas list — use the existing `FontManager`-style scaling pattern or load the texture and `setSize(32f, 32f)`. Icon goes left of the achievement title in both surfaces.
+- **Done when:** All 12 icons visible in toast + atlas screen; compile clean; smoke CI passes.
 
 
 ### T-073 — User research: pixel-platformer default keyboard layouts  [P3]
@@ -265,21 +266,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** `marketing/presskit/index.html` opens locally and renders a complete press page. All placeholder images present at correct dimensions (PNGs can be simple solid-color placeholders for v1 — real screenshots come later). `data.xml` (or .json) validates against the presskit() schema.
 - **Constraints:** No third-party hosting required. Do NOT include private contact info anywhere. Generate placeholder PNGs via ImageMagick / Pillow — no need to source real screenshots.
 
-### T-078 — Procedural achievement icon generator (Kotlin tool)  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from `antigravity` — critical: unblocks T-066 achievement-icon wire-up)*
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-078-icon-generator`
-- **Started:** 2026-05-12
-- **Depends on:** T-037
-- **GDD ref:** T-066 (achievement icons — this ticket builds the *generator*; T-066 wires icons in)
-- **Files:** `tools/IconGenerator.kt` (new — standalone Kotlin script), `assets/icons/achievements/*.png` (generated outputs, 16×16, 12 files), `build.gradle.kts` (optional gradle task to invoke the generator).
-- **Goal:** Write a self-contained Kotlin tool (`tools/IconGenerator.kt`, runnable via `kotlinc -script` or as a `:tools:run` gradle task) that emits 12 distinct 16×16 PNG icons — one per achievement in `AchievementRegistry.ALL`. Each icon must be visually distinct (different shape silhouette + 2–3-color palette). Use simple primitives: stomp→boot, time-trial→stopwatch, atlas_full→open book, world_1_clear→shield, all_levels→trophy, etc. Stick to one shared palette across all icons (consistent visual language). Commit the generated PNGs alongside the generator so consumers don't have to re-run.
-- **Done when:** `tools/IconGenerator.kt` runs cleanly, produces 12 PNGs in `assets/icons/achievements/`, each 16×16, each distinct. Re-running is idempotent (same output bytes). T-066 can then wire `iconPath` to these without further work.
-- **Constraints:** Pure-Kotlin (use `java.awt.image.BufferedImage` + `ImageIO` from the JDK — no extra deps). No web fetches. No interactive prompts.
-
 ### T-079 — CI duration optimization (smoke matrix)  [P3]
 - **Status:** Todo
 - **Tool:** `antigravity`
@@ -293,21 +279,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Profile + optimize the current CI workflows. Investigate: (a) gradle cache hit rate (`actions/cache@v4` config), (b) JDK setup time (`actions/setup-java` caching), (c) whether the 9-level smoke matrix can be packed into fewer jobs (e.g. 3 jobs × 3 levels each, reusing the gradle daemon), (d) test parallelism in `:core:test`, (e) whether `xvfb-run` can be replaced or pre-warmed. Goal: cut total CI wall time by ≥30% without losing coverage. Document the optimization decisions in the workflow file's top comment.
 - **Done when:** Both workflows still green on a PR. Total CI wall time (longest job, measured across 3 consecutive PR runs) ≤ 0.7× the current baseline. Workflow file has a top-of-file comment summarizing what changed and why.
 - **Constraints:** Do NOT reduce smoke matrix coverage. Every level still tested per PR. Do NOT skip lint or compile. If an optimization requires losing coverage to hit the 30% target, surface in QUESTIONS.md instead of doing it.
-
-### T-080 — GitHub repo infrastructure (Issue templates + Discussions)  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from `antigravity` — critical: community readiness for itch.io alpha)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-080-repo-infra`
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (community readiness for itch.io alpha)
-- **Files:** `.github/ISSUE_TEMPLATE/bug-report.yml` (new), `.github/ISSUE_TEMPLATE/feature-request.yml` (new), `.github/ISSUE_TEMPLATE/accessibility-issue.yml` (new), `.github/ISSUE_TEMPLATE/config.yml` (new), `.github/PULL_REQUEST_TEMPLATE.md` (new), `.github/DISCUSSION_TEMPLATE/announcements.yml` (new), `.github/DISCUSSION_TEMPLATE/help.yml` (new).
-- **Goal:** Add the standard public-repo infrastructure: structured Issue templates (bug-report with reproduction steps + screenshots; feature-request with use-case-first; accessibility-issue with WCAG context), a PR template that mirrors current PR conventions (Summary + Test plan + Closes T-XXX), and Discussion templates for Announcements + Help. Reference Cloudy Ninja's existing AGENTS.md / LEARNINGS.md / START_HERE.md for reporter expectations. Issue forms (the YAML format) preferred over markdown templates.
-- **Done when:** Opening "New Issue" on github.com/SohailShahM/Cloudy-Ninja shows the 3 templates with proper form fields. PR template auto-populates on `gh pr create`. Discussion templates available if/when Discussions are enabled on the repo.
-- **Constraints:** Do NOT toggle GitHub features (Discussions, Wiki) — leave that to the user. Do NOT modify CODEOWNERS or branch protection. Only `.github/ISSUE_TEMPLATE/`, `.github/DISCUSSION_TEMPLATE/`, and `.github/PULL_REQUEST_TEMPLATE.md` are in scope.
 
 ### T-081 — Android build verification + smoke  [P3]
 - **Status:** Todo
@@ -323,21 +294,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Either: (A) Android APK builds locally + CI step passes + a one-line "Mobile build OK as of 2026-05-12" note in LEARNINGS.md. Or: (B) `BUILD-LOG.md` + `QUESTIONS.md` entry documents the blocker; ticket marked blocked. Either outcome is a success — clarity is the goal.
 - **Constraints:** Do NOT attempt risky toolchain bumps (AGP > 1 minor, Kotlin > 1 minor, Java target changes). Do NOT publish APK to anywhere. Do NOT change signing config.
 
-
-### T-097 — Death animation: player fade + zoom-out before respawn  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Branch:** `claude/T-097-death-animation`
-- **Started:** 2026-05-12
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-058  *(must respect reducedMotion flag)*
-- **GDD ref:** GAME_PLAN.md (juice + polish for itch.io alpha)
-- **Files:** `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`
-- **Goal:** On player death, play a 0.5s animation before respawn: (a) player sprite alpha fades 1.0 → 0.0 ease-out, (b) camera zooms out by 1.2× over the same duration. Then respawn at checkpoint with a 0.2s screen-flash. **Guard behind `if (!settings.reducedMotion)`** — when reduced-motion is on, snap to respawn instantly (preserves current behavior; T-058 contract).
-- **Done when:** Death pauses for 0.5s with the visual transition; `reducedMotion=true` is byte-identical to current; smoke CI passes.
 
 ### T-098 — Enemy hit-flash on takeDamage (200ms white tint)  [P3]
 - **Status:** Todo
@@ -682,6 +638,27 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Outcome:** Quirk 1 (behavior): `setMusicVolume()` now applies the new master volume during crossfade and fade-in, scaled by each track's current fade weight (`volMusic * (1-t)` outgoing, `volMusic * t` incoming) — slider drags between levels are heard immediately rather than dropped for 1.5s. Quirk 2 (doc only): rewrote `stop()` KDoc to match its synchronous-stop implementation. Updated the `setMusicVolume is called mid-crossfade` case in `MusicManagerTest` (which under T-094 pinned the silent-skip bug) to assert the new immediate-apply semantics; added a parallel mid-fade-in case.
 - **Commit/PR:** PR #54 (squashed merge `3c6dcd6`)
 - **Tool:** `claude-code-opus`
+
+### T-078 — Procedural achievement icon generator (Kotlin tool)
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** `tools/IconGenerator.kt` (standalone `fun main()`, package `com.sohai.platformer.tools`) + 12 16×16 PNGs at `assets/icons/achievements/*.png`. Wired via `core/build.gradle.kts` test source set + `:core:generateAchievementIcons` JavaExec task. Pure-Kotlin + JDK std lib (`BufferedImage`, `Graphics2D`, `ImageIO`); no new deps. **JDK-portable** — digits drawn pixel-by-pixel in knock-out style instead of `drawString` (font rasterization varies by JDK). Companion `IconGeneratorCoverageTest` asserts: (1) 12 IDs match `AchievementRegistry.ALL` in order, (2) every render is 16×16, (3) two renders byte-identical (idempotence). Palette: dark-blue-grey BG, off-white silhouette, gold accent for special achievements, red for X-eyes/gems, green for seeds. Re-routed from `antigravity` (critical for unblocking T-066).
+- **Commit/PR:** PR #57 (squashed merge `85ac2e7`)
+- **Tool:** `claude-code-sub-agent` (re-routed from `antigravity`)
+
+### T-080 — GitHub repo infrastructure (Issue/PR/Discussion templates)
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** 7 files under `.github/`: 3 Issue Forms (`bug-report.yml` 13 fields incl. required Severity + Platform; `feature-request.yml` 6 fields incl. required user story; `accessibility-issue.yml` 7 fields incl. required Area + WCAG criterion), `config.yml` (blank-issues off, contact link to Discussions), `PULL_REQUEST_TEMPLATE.md` (Summary + Closes + Test plan with Claude-footer delete-if-human note), and 2 Discussion templates (`announcements.yml` with pre-seeded "What's new / How to get it / Known issues" skeleton; `help.yml` with required "Where are you stuck?" dropdown). All YAML validated via `python yaml.safe_load`. Re-routed from `antigravity` (critical for public-alpha community readiness). Did NOT toggle GitHub features or modify CODEOWNERS/branch protection per scope.
+- **Commit/PR:** PR #55 (squashed merge `5277fb9`)
+- **Tool:** `claude-code-sub-agent` (re-routed from `antigravity`)
+
+### T-097 — Death animation (alpha fade + camera zoom-out + screen-flash)
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** 0.5s animation on death. `LevelRunState` owns the timer (`deathAnimT`, `deathAnimActive` + companion constants); `LevelRenderer` exposes `var playerAlpha: Float` that `renderPlayer` multiplies into the sprite tint (renderer stays stateless about timing). Camera zoom driven on the already-injected `OrthographicCamera`. Cubic ease-out `1 - (1-t)³` drives both fade and zoom. 0.2s black flash via `ScreenFade.fadeOut(speed=5f)` on completion. Two guards: `!settings.reducedMotion` (T-058 invariant — snap instantly when on) AND `!Constants.SMOKE_MODE` (preserves smoke-test `deltaX`/`frameP99` determinism). `player.respawn()` restores `gravityScale = 1f` after the freeze. Both `reducedMotion=true` and `smokeMode=true` are byte-identical to pre-change behavior.
+- **Commit/PR:** PR #56 (squashed merge `e622135`)
+- **Tool:** `claude-code-sub-agent`
 
 ### T-095 — Kotest specs for SoundManager (per-bus volume)
 - **Status:** Done
