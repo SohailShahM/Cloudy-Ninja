@@ -196,20 +196,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 
 - **Done when:** Fade-in visible at 60 FPS without input lag, hint visible, smoke CI passes.
 
-### T-066 — Achievement icons wire-up  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S  *(was M when icon generation was in-scope; now scoped down — icons exist from T-078)*
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-066-achievement-icons`
-- **Started:** 2026-05-12
-- **Depends on:** T-037, **T-078** (DONE — icons live at `assets/icons/achievements/*.png`)
-- **GDD ref:** §22 (achievements list)
-- **Files:** `progression/Achievement.kt` (add `iconPath: String` field), `screens/AchievementToast.kt` (render icon), `screens/AchievementsScreen.kt` (render icon in list)
-- **Goal:** Wire the 12 PNG icons from T-078 (`assets/icons/achievements/<id>.png`) into the renderer. Add `iconPath` to `Achievement` data class, defaulting to `"icons/achievements/$id.png"`. Render at **2× scale (32×32)** in achievement toast + atlas list — use the existing `FontManager`-style scaling pattern or load the texture and `setSize(32f, 32f)`. Icon goes left of the achievement title in both surfaces.
-- **Done when:** All 12 icons visible in toast + atlas screen; compile clean; smoke CI passes.
-
 
 ### T-073 — User research: pixel-platformer default keyboard layouts  [P3]
 - **Status:** Todo
@@ -250,21 +236,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Read T-051's `research/dependency-audit.md` and execute every upgrade tagged **upgrade-risk: LOW** (and only LOW). For each upgrade, open it as a **separate PR** so failures can be reverted independently. For each PR: (1) bump the version in the right gradle file, (2) fix any compilation errors the bump introduces, (3) run `./gradlew :core:test` locally + ensure CI passes, (4) include a one-paragraph PR description citing the audit entry. **Do not do MEDIUM or HIGH risk upgrades** — those need a separate decision.
 - **Done when:** All LOW-risk upgrades from the audit are merged as individual PRs, each with green CI. If any LOW upgrade unexpectedly breaks something, halt that PR and post to QUESTIONS.md — do not chain into a multi-version cascade.
 - **Constraints:** One upgrade = one PR. Don't combine. If the audit lists 5 LOW upgrades, that's 5 PRs. Don't bypass CI. Don't touch source code beyond what each version bump strictly requires.
-
-### T-077 — presskit() scaffold for Cloudy Ninja  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from `antigravity` — critical for Sprint D launch prep; AGV has been quiet)*
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-077-presskit`
-- **Started:** 2026-05-12
-- **Depends on:** T-050, T-048
-- **GDD ref:** GAME_PLAN.md (launch/marketing)
-- **Files:** `marketing/presskit/` (new directory — full scaffold)
-- **Goal:** Build a real [presskit()](https://dopresskit.com/) compatible folder structure under `marketing/presskit/`. Generate `data.xml` (or the modern JSON equivalent), `presskit.css`, `index.html` from current game info (project name, tagline derived from T-048 style guide, description, key features list, system requirements stub, accessibility section, eco/climate angle). Drop placeholder images at the correct dimensions (cover.png 1920×1080, screenshot-01..06.png 1920×1080, logo.png with transparency). Populate `team.xml`-style author metadata using public info only (Sohail Shah, public GitHub). Pre-fill outreach contact info from the T-050 list as a CSV the user can mail-merge. Should be deployable to itch.io/GitHub Pages with zero further edits to the structure.
-- **Done when:** `marketing/presskit/index.html` opens locally and renders a complete press page. All placeholder images present at correct dimensions (PNGs can be simple solid-color placeholders for v1 — real screenshots come later). `data.xml` (or .json) validates against the presskit() schema.
-- **Constraints:** No third-party hosting required. Do NOT include private contact info anywhere. Generate placeholder PNGs via ImageMagick / Pillow — no need to source real screenshots.
 
 ### T-079 — CI duration optimization (smoke matrix)  [P3]
 - **Status:** Todo
@@ -658,6 +629,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Completed:** 2026-05-12
 - **Outcome:** 0.5s animation on death. `LevelRunState` owns the timer (`deathAnimT`, `deathAnimActive` + companion constants); `LevelRenderer` exposes `var playerAlpha: Float` that `renderPlayer` multiplies into the sprite tint (renderer stays stateless about timing). Camera zoom driven on the already-injected `OrthographicCamera`. Cubic ease-out `1 - (1-t)³` drives both fade and zoom. 0.2s black flash via `ScreenFade.fadeOut(speed=5f)` on completion. Two guards: `!settings.reducedMotion` (T-058 invariant — snap instantly when on) AND `!Constants.SMOKE_MODE` (preserves smoke-test `deltaX`/`frameP99` determinism). `player.respawn()` restores `gravityScale = 1f` after the freeze. Both `reducedMotion=true` and `smokeMode=true` are byte-identical to pre-change behavior.
 - **Commit/PR:** PR #56 (squashed merge `e622135`)
+- **Tool:** `claude-code-sub-agent`
+
+### T-077 — presskit() scaffold for Cloudy Ninja
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** 14 files under `marketing/presskit/`: `index.html` (hero / about / 8 features / 6-image grid / trailer placeholder / awards placeholder / GitHub-only contact / factsheet / footer), `presskit.css` (60 lines, system fonts, 960px container, 768px mobile breakpoint, muted-green `#2e7d4a` accent), `data.xml` (presskit() schema — title, tagline, description, history, genre, platforms, releaseDate=TBA, price, features×8, trailers, images, logo/icon, awards, quotes, credits, contact, social, projects), `contacts.csv` (UTF-8 with BOM, **30 contacts parsed from T-050's outreach list**, public channels only), `_gen_placeholders.kt` (Kotlin script for placeholder regeneration), 6 screenshots (1920×1080), `cover.png` (1920×1080), `logo.png` (512×512 transparent), `icon.png` (256×256). Pure-Kotlin placeholder generation via JDK awt/imageio — no Pillow/ImageMagick. **Deployable to itch.io or GitHub Pages with zero further structural edits.** Re-routed from `antigravity` (critical for Sprint D launch outreach).
+- **Commit/PR:** PR #58 (squashed merge `0445012`)
+- **Tool:** `claude-code-sub-agent` (re-routed from `antigravity`)
+
+### T-066 — Achievement icons wire-up
+- **Status:** Done (toast surface; atlas-list surface flagged as follow-up)
+- **Completed:** 2026-05-12
+- **Outcome:** `Achievement.kt` gets new `iconPath: String = "icons/achievements/$id.png"` field — default uses `id` interpolation so `AchievementRegistry`'s 12 existing entries pick it up unchanged. `AchievementToast.kt` lazy-loads icons via `HashMap<String, Texture>` keyed by id, populates from `applyIcon()` when a toast promotes off `IDLE`. Missing files tolerated (warning log, no crash). Rendered via `VisImage` + `TextureRegionDrawable` at 32×32 with 8px right-pad before title/desc column. Cached textures disposed in `dispose()`. T-056's `AchievementTest` continues to pass via the default. **Scope deviation:** the brief listed `screens/AchievementsScreen.kt` as a second surface, but that file doesn't exist — achievements live as a comma-joined string in `StatsScreen`. Spawn-task chip generated for building the proper `AchievementsScreen`.
+- **Commit/PR:** PR #59 (squashed merge `8ed30f2`)
 - **Tool:** `claude-code-sub-agent`
 
 ### T-095 — Kotest specs for SoundManager (per-bus volume)
