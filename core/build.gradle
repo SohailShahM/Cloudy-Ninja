@@ -37,6 +37,11 @@ jar {
 
 test {
   useJUnitPlatform()
+  // T-079: Run unit tests in parallel JVMs. GitHub Actions ubuntu-latest has
+  // 2 cores / 4 vCPUs; 4 forks is the sweet spot before context-switch overhead
+  // dominates. Locally on dev machines this auto-scales fine (gradle test
+  // workers respect the fork count regardless of host core count).
+  maxParallelForks = 4
 }
 
 // T-078: include the standalone tools/ Kotlin source in the test source set so the

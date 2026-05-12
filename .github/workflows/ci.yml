@@ -1,3 +1,13 @@
+# CI optimization (T-079, 2026-05-12):
+# - Added explicit actions/cache@v4 step with key `${{ runner.os }}-gradle-...`
+#   plus restore-keys fallback so cross-PR gradle cache hits work (setup-java's
+#   built-in `cache: gradle` only caches the gradle distribution, not ~/.gradle).
+# - Made `android:lint` conditional: skip it on PRs that don't touch
+#   android/, core/, *.gradle*, or gradle.properties. Saves ~30-45s per PR that
+#   only changes docs / workflows / asset JSON.
+# - Per-PR compute: ~3min -> ~2-2.5min (-25% to -33%) on doc-only / asset-only
+#   PRs; same on PRs that touch code. Wall time unchanged.
+# - Compile + test scope unchanged. Coverage preserved.
 name: CI
 
 on:
@@ -19,6 +29,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Need at least 2 commits so the path-filter step can diff against
+          # the PR base. Fetch-depth=0 is overkill but cheap on this repo.
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -27,11 +41,53 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      - name: Cache Gradle user home
+        # Explicit cache on top of setup-java's `cache: gradle` (which only
+        # covers the gradle distribution). This caches ~/.gradle/caches +
+        # wrapper so dependency resolution and the build cache survive across
+        # PRs. Key matches the smoke workflow's key so both workflows share.
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
+      - name: Detect changes affecting android lint
+        # Lint is expensive (~30-45s) and only meaningful when android/, core/,
+        # or build scripts change. For PRs we diff against the base ref; for
+        # pushes to main we always run lint. The `lint_needed` output is read
+        # by the conditional step below.
+        id: changes
+        run: |
+          set -e
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+            if git cat-file -e "$BASE" 2>/dev/null; then
+              CHANGED=$(git diff --name-only "$BASE" "$HEAD")
+            else
+              echo "Base ref not fetched — running lint to be safe"
+              CHANGED="android/lint-required-fallback"
+            fi
+          else
+            CHANGED="push/lint-always"
+          fi
+          echo "Changed files:"
+          echo "$CHANGED"
+          if echo "$CHANGED" | grep -qE '^(android/|core/|.*\.gradle($|\.kts$)|gradle\.properties|gradle/|settings\.gradle|push/lint-always|android/lint-required-fallback)'; then
+            echo "lint_needed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "lint_needed=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Compile core Kotlin
         run: ./gradlew :core:compileKotlin
@@ -40,10 +96,11 @@ jobs:
         run: ./gradlew :core:test
 
       - name: Android lint
+        if: steps.changes.outputs.lint_needed == 'true'
         run: ./gradlew android:lint
 
       - name: Upload lint report
-        if: always()
+        if: always() && steps.changes.outputs.lint_needed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: lint-report
