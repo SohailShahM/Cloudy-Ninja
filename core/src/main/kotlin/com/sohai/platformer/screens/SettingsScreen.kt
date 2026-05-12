@@ -23,6 +23,7 @@ import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
+import com.sohai.platformer.audio.MusicManager
 import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.input.InputManager
 import com.sohai.platformer.persist.GameState
@@ -119,17 +120,18 @@ class SettingsScreen(
         // ── Audio ──────────────────────────────────────────────────────────
         inner.add(Label("Audio", sectionStyle)).left().padBottom(8f).row()
 
-        inner.add(Label("Music Volume", bodyStyle)).left().padRight(16f)
+        inner.add(Label("Music", bodyStyle)).left().padRight(16f)
         val sliderMusic = Slider(0f, 1f, 0.05f, false, skin)
         sliderMusic.value = settings.volMusic
         sliderMusic.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
                 settings = SettingsManager.update { it.copy(volMusic = sliderMusic.value) }
+                MusicManager.setMusicVolume(sliderMusic.value)
             }
         })
         inner.add(sliderMusic).width(260f).row()
 
-        inner.add(Label("SFX Volume", bodyStyle)).left().padRight(16f)
+        inner.add(Label("SFX", bodyStyle)).left().padRight(16f)
         val sliderSfx = Slider(0f, 1f, 0.05f, false, skin)
         sliderSfx.value = settings.volSfx
         sliderSfx.addListener(object : ChangeListener() {
@@ -138,7 +140,18 @@ class SettingsScreen(
                 SoundManager.setVolume(sliderSfx.value)
             }
         })
-        inner.add(sliderSfx).width(260f).padBottom(16f).row()
+        inner.add(sliderSfx).width(260f).row()
+
+        inner.add(Label("UI", bodyStyle)).left().padRight(16f)
+        val sliderUi = Slider(0f, 1f, 0.05f, false, skin)
+        sliderUi.value = settings.volUi
+        sliderUi.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(volUi = sliderUi.value) }
+                SoundManager.setUiVolume(sliderUi.value)
+            }
+        })
+        inner.add(sliderUi).width(260f).padBottom(16f).row()
 
         // ── Visual / Feel ─────────────────────────────────────────────────
         inner.add(Label("Visual / Feel", sectionStyle)).left().padBottom(8f).row()

@@ -159,7 +159,10 @@ class GameScreen(
         playerLight = PointLight(rayHandler, 128, Color(0.9f, 0.95f, 1f, 0.85f), 4f, 0f, 0f)
         playerLight.attachToBody(player.body)
 
-        SoundManager.setVolume(SettingsManager.load().volSfx)
+        val settings = SettingsManager.load()
+        MusicManager.setMusicVolume(settings.volMusic)
+        SoundManager.setVolume(settings.volSfx)
+        SoundManager.setUiVolume(settings.volUi)
 
         ecoTokens.addAll(level.getEcoTokenPositions().map { EcoToken(world, it.x, it.y) })
         snapshotPickups.addAll(level.getSnapshotPickups(world))
