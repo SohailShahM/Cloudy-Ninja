@@ -166,3 +166,12 @@ Personal GitHub Pro (via Edu) gives 3000 minutes/month on private repos. We hit 
 **Cost:** ~12 PRs over the session sat in `BLOCKED` for minutes to hours when they should have merged in seconds. Each round of merges required manual intervention. Annoying but not catastrophic — caught by user feedback.
 
 **Lesson:** Audit branch-protection rules early for workflow fit. Rules designed for human-review teams (conversation resolution, approving review counts) create silent latency in solo+AI workflows. Strip them down to what actually adds value: CI status checks + linear history. Skip the rest.
+
+### 2026-05-12 — Repo went public → private → public during T-079 v2 work
+
+Quick session-end record:
+- Visibility flipped to private at end of session (privacy concern).
+- Discovered: Actions runs failed at workflow-startup with zero steps + `Agent: failure` meta-check. Pattern matches "$0 default spending limit blocks private-repo Actions even within free tier."
+- Education Pack provides Pro = 3,000 min/mo for private, but the user had already burned the full 3,000 this cycle via this session's ~30 PRs of CI activity.
+- Resolution: added proprietary LICENSE + NOTICE.md (acknowledging Kenney CC0), flipped back to public. Public repos have unlimited Actions, so the wall is gone.
+- `docs/SELF_HOSTED_RUNNER.md` setup guide is on main as reference for future privacy moves — if going private again, set up self-hosted before flipping.
