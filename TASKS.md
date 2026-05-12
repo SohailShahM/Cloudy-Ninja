@@ -384,6 +384,20 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add 1 visually-distinct "hidden" eco-token to each of level1/2/3, placed in an out-of-the-way spot (e.g. behind a wall jump, in a ceiling alcove). Collecting all 3 across runs unlocks a new `collector` achievement. Hidden tokens render with a slight golden tint to distinguish from regular ones.
 - **Done when:** Each campaign level has 1 hidden token; collecting all 3 unlocks `collector`; smoke CI passes (autopilot is unlikely to find them — that's fine, they're hidden).
 
+### T-108 — AchievementsScreen with per-row icon layout  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-108-achievements-screen`
+- **Started:** 2026-05-12
+- **Depends on:** T-066, T-078
+- **GDD ref:** §22 (achievements list) — completes the surface T-066 deferred
+- **Files:** `screens/AchievementsScreen.kt` (new), `screens/MainMenuScreen.kt` (Achievements button), `screens/StatsScreen.kt` (drop comma-joined string → count + link), `i18n/Strings.kt` (new keys)
+- **Goal:** Build the proper per-row achievement list. Each row: 32×32 icon + bold title + italic description + locked/unlocked indicator (50% alpha or grayscale tint for locked). Sort unlocked-first, then by registration order within each group. Reuse T-066's lazy-cache texture pattern. Add a Main-menu button between Atlas and Stats. Refactor `StatsScreen` achievement display to a count + link.
+- **Done when:** New screen reachable from MainMenu and StatsScreen; all 12 icons visible; locked styling clearly distinguishable from unlocked; compile clean; smoke CI passes.
+
 
 ---
 
