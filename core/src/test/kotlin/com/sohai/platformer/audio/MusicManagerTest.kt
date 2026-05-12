@@ -377,23 +377,34 @@ class MusicManagerTest : BehaviorSpec({
             MusicManager.play("ambient_humid")
             val b = musicByTrack["ambient_humid"]!!
             MusicManager.update(0.75f)  // 50/50 midpoint
-            val aMid = a.volume
-            val bMid = b.volume
 
             MusicManager.setMusicVolume(0.2f)
 
-            then("the live volumes are NOT clobbered (crossfade keeps control until done)") {
-                // Source code only applies immediately when next == null && !isFadingIn,
-                // so during a crossfade the volumes stay at their fade-driven values
-                // until the next update() multiplies by the new volMusic.
-                a.volume shouldBe aMid
-                b.volume shouldBe bMid
-            }
-            then("the next update() uses the new master volume") {
-                MusicManager.update(0f)
-                // t is still ~0.5, so b ~ 0.2 * 0.5 = 0.1, a ~ 0.2 * 0.5 = 0.1
-                abs(b.volume - 0.1f) shouldBeLessThan EPS
+            then("both live volumes update immediately, scaled by fade weight") {
+                // T-103: setMusicVolume applies during crossfade so a slider drag is
+                // heard right away rather than waiting for the fade to settle.
+                // t ~ 0.5 → outgoing = 0.2 * (1 - 0.5) = 0.1, incoming = 0.2 * 0.5 = 0.1.
                 abs(a.volume - 0.1f) shouldBeLessThan EPS
+                abs(b.volume - 0.1f) shouldBeLessThan EPS
+            }
+            then("a subsequent update() keeps the fade running at the new master volume") {
+                MusicManager.update(0f)
+                abs(a.volume - 0.1f) shouldBeLessThan EPS
+                abs(b.volume - 0.1f) shouldBeLessThan EPS
+            }
+        }
+
+        `when`("setMusicVolume is called mid-fade-in (no outgoing track)") {
+            resetWorld()
+            MusicManager.play("ambient_arid", fadeIn = true)
+            val m = musicByTrack["ambient_arid"]!!
+            MusicManager.update(0.75f)  // halfway through 1.5s fade-in
+
+            MusicManager.setMusicVolume(0.4f)
+
+            then("the fading-in track immediately reflects the new master volume scaled by progress") {
+                // t ~ 0.5 → 0.4 * 0.5 = 0.2
+                abs(m.volume - 0.2f) shouldBeLessThan EPS
             }
         }
     }
