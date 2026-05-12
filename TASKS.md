@@ -355,21 +355,6 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
-### T-053 — Eco-themed games design comparison study  [P3]
-- **Status:** In Progress
-- **Tool:** `antigravity`
-- **Tier:** S  *(research-only, no code)*
-- **Autonomous-eligible:** yes
-- **Agent:** antigravity
-- **Branch:** `antigravity/T-053-eco-design-study`
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (game design + differentiation)
-- **Files:** `research/eco-game-design-study.md` (new)
-- **Goal:** Comparison study of 6–10 eco/restoration/climate-themed games (e.g. Terra Nil, Sable, Beyond Blue, ABZÛ, Endling — Extinction is Forever, Flower, Journey, A Short Hike, Alba: A Wildlife Adventure, Birth, Cloud Gardens). Mix big-budget-indie with smaller indies for breadth. For each document: core gameplay loop, climate/eco message framing (didactic vs experiential), how restoration is rewarded (visual, mechanical, narrative), critic + audience reception, what they got right, what they got wrong. Synthesize into 3–5 actionable lessons for Cloudy Ninja.
-- **Done when:** `research/eco-game-design-study.md` exists with: (a) comparison table (one row per game, columns above), (b) per-game 1-paragraph deep dive citing 1–2 specific reviews/press articles with URLs, (c) final "Lessons for Cloudy Ninja" section with 3–5 actionable recommendations tied to our existing systems (water-cycle abilities, hub world, Cloud Atlas, character-switching).
-- **Constraints:** Markdown only. Do NOT touch any file outside `research/`. Cite sources for any claim — no unsourced editorializing.
-
-
 ### T-XXX — <title>
 - **Status:** In Progress
 - **Agent:** <your-identity-from-START_HERE.md-section-1>
@@ -388,6 +373,13 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## Done
+
+### T-053 — Eco-themed games design comparison study
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Generated comparison of 6 eco-themed games (Terra Nil, ABZU, Endling, Alba, Flower, Sable) with 4 actionable mechanical recommendations for Cloudy Ninja.
+- **Commit/PR:** PR #28
+- **Tool:** ntigravity
 
 ### T-051 — Dependency upgrade audit
 - **Status:** Done
