@@ -37,6 +37,10 @@ jar {
 
 test {
   useJUnitPlatform()
+  // T-079 v2: parallelize test execution across 4 forks. CI runners are 2-core
+  // so 4 forks oversubscribes slightly but works well for IO-bound + GC-bound
+  // Kotest suites. Locally devs have 8+ cores so this is also a speedup there.
+  maxParallelForks = 4
 }
 
 // T-078: include the standalone tools/ Kotlin source in the test source set so the

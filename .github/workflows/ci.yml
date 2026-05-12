@@ -7,8 +7,9 @@ on:
     branches: [ main ]
 
 # Auto-cancel in-flight runs when a newer commit lands on the same branch.
+# T-079 v2: aligned grouping with ai-smoke (`${{ github.workflow }}-${{ github.ref }}`).
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -19,6 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -39,7 +42,33 @@ jobs:
       - name: Run core unit tests
         run: ./gradlew :core:test
 
+      # T-079 v2: skip android:lint when no android-affecting files changed.
+      # Lint is the slowest step in this workflow (~30-45s) and is moot on PRs
+      # that only touch core/, docs, or workflows. Skip if no android/** or
+      # core/** files differ from main (lint inspects both).
+      - name: Check if android lint should run
+        id: android_lint_check
+        run: |
+          set -e
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
+          echo "Changed files:"
+          echo "$CHANGED"
+          # Lint covers android/ source, but it also pulls in core/ via the
+          # android module dependency. Build files can change lint config.
+          if echo "$CHANGED" | grep -E '^(android/|core/|.*\.gradle($|\.kts$)|gradle\.properties$)' > /dev/null; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Android lint
+        if: steps.android_lint_check.outputs.should_run == 'true'
         run: ./gradlew android:lint
 
       - name: Upload lint report
