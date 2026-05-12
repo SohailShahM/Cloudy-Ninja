@@ -393,20 +393,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Implement libGDX's `ApplicationListener.pause()` in `Main` (or the active `Game` subclass) to forward to the active screen if it's a `GameScreen`. `GameScreen.pause()` activates the existing pause overlay (T-063). On `resume()`, the overlay stays up — player must explicitly resume. Respect `SMOKE_MODE` — skip auto-pause in smoke.
 - **Done when:** Alt-tab while in-game triggers the pause overlay; resume keeps overlay up until input; smoke CI passes (no auto-pause in smoke mode).
 
-### T-113 — Save format version field + migration scaffold  [P2]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (alpha launch — once players have saves, schema changes must be migration-safe)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/SaveManager.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/SaveMigrations.kt` (new), `core/src/test/kotlin/com/sohai/platformer/persist/SaveMigrationsTest.kt` (new)
-- **Goal:** Add `saveFormatVersion: Int = 1` to `GameState`. In `SaveManager.loadGame()`, route the deserialized JSON through `SaveMigrations.migrate(json): GameState` before returning. `SaveMigrations` is a chain of `(version, JsonValue) -> JsonValue` steps; v1 is an identity no-op. Existing saves without a version field are treated as v1. Persist writes always use the current version.
-- **Done when:** Saves carry a version field; loads route through the migration chain; existing saves remain loadable; new test covers the migration scaffold with a fake v0→v1 step; smoke CI passes.
-- **Constraints:** Don't change the save schema beyond adding the version field. The scaffold is what matters, not migrations themselves.
-
 ### T-114 — itch.io deploy workflow (butler)  [P2]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -572,6 +558,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Files:** `screens/CreditsScreen.kt` (new), `screens/SettingsScreen.kt` (add a "Credits" button in the footer row), `i18n/Strings.kt` (credit-related keys)
 - **Goal:** Scrollable Credits screen reachable from Settings. Sections: **Game** (Sohail Shah, design + code, 2026); **Code assistants** (Claude Code/Anthropic, GitHub Copilot, Antigravity/Gemini/Google, NotebookLM); **Art** (Kenney pixel-platformer, CC0, kenney.nl + entries from `art-research/tileset-candidates.md`); **Audio** (procedural via T-013/T-030 + candidates in `art-research/audio-candidates.md`); **Engine** (libGDX, Box2D, Kotlin, VisUI, Kotest); **Climate sources** (NOAA, NASA Earth Observatory, IPCC etc. — see `research/climate-sources/INDEX.md`). Section header `FontManager.getShared(22)`, body `getShared(14)`. Back button bottom-center.
 - **Done when:** Screen reachable, all sections render, no asset URLs hardcoded (in `Strings.kt`), smoke CI passes.
+
+### T-113 — Save format version field + migration scaffold  [P2]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-113-save-format-version
+- **Started:** 2026-05-12
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (alpha launch — once players have saves, schema changes must be migration-safe)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/SaveManager.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/SaveMigrations.kt` (new), `core/src/test/kotlin/com/sohai/platformer/persist/SaveMigrationsTest.kt` (new)
+- **Goal:** Add `saveFormatVersion: Int = 1` to `GameState`. In `SaveManager.loadGame()`, route the deserialized JSON through `SaveMigrations.migrate(json): GameState` before returning. `SaveMigrations` is a chain of `(version, JsonValue) -> JsonValue` steps; v1 is an identity no-op. Existing saves without a version field are treated as v1. Persist writes always use the current version.
+- **Done when:** Saves carry a version field; loads route through the migration chain; existing saves remain loadable; new test covers the migration scaffold with a fake v0→v1 step; smoke CI passes.
+- **Constraints:** Don't change the save schema beyond adding the version field. The scaffold is what matters, not migrations themselves.
 
 ### T-104 — Splash / asset-preload progress bar  [P3]
 - **Status:** In Progress
