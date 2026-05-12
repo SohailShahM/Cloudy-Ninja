@@ -178,20 +178,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** 12 entries in registry, all reachable in gameplay, atlas screen displays all 12 cards with correct text. Compile clean.
 - **Updated dependency (2026-05-12):** T-045 now depends on **T-049** (climate-source compilation). The climate.gov URLs in the original prompt are dead (site archived to noaa.gov). T-049 produces a `research/climate-sources/` folder with verified-live URLs + downloaded PDFs, ready to feed NotebookLM in one step.
 
-### T-050 — Press/journalist outreach list  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
-- **Tier:** S  *(research-only, no code)*
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-050-press-outreach`
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (launch/marketing decisions)
-- **Files:** `marketing/press-outreach-list.md` (new)
-- **Goal:** Compile a curated list of indie-game journalists, blogs, YouTubers, podcasters, and Mastodon/Bluesky accounts who cover 2D pixel-art platformers, eco/climate-themed games, or accessibility-first indie titles. For each contact capture: name, outlet, beat (what they cover), contact channel + verified URL (form, public email, DM-open social), 2–3 recent coverage examples with dates, tier (S = 1M+ audience, M = 100k–1M, L = <100k but high engagement), notes on what hooks them (character-switching, climate, accessibility, etc.).
-- **Done when:** `marketing/press-outreach-list.md` exists with ≥30 contacts (target mix: 5–8 tier-S, 10–15 tier-M, 10+ tier-L), spanning YouTube/written/podcast/social. Every URL WebFetched + confirmed alive.
-- **Constraints:** Markdown only. Do NOT touch any file outside `marketing/`. Do NOT include private email addresses you can't verify are intended for outreach — only contact forms or publicly-posted addresses.
-
 ### T-054 — Kotest specs for StormSentinel boss state machine  [P2]
 - **Status:** In Progress
 - **Tool:** `claude-code-sub-agent`
@@ -340,6 +326,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-050 — Press/journalist outreach list  [P3]
+- **Status:** In Progress
+- **Tool:** `antigravity`
+- **Tier:** S  *(research-only, no code)*
+- **Autonomous-eligible:** yes
+- **Agent:** antigravity
+- **Branch:** `antigravity/T-050-press-outreach`
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (launch/marketing decisions)
+- **Files:** `marketing/press-outreach-list.md` (new)
+- **Goal:** Compile a curated list of indie-game journalists, blogs, YouTubers, podcasters, and Mastodon/Bluesky accounts who cover 2D pixel-art platformers, eco/climate-themed games, or accessibility-first indie titles. For each contact capture: name, outlet, beat (what they cover), contact channel + verified URL (form, public email, DM-open social), 2–3 recent coverage examples with dates, tier (S = 1M+ audience, M = 100k–1M, L = <100k but high engagement), notes on what hooks them (character-switching, climate, accessibility, etc.).
+- **Done when:** `marketing/press-outreach-list.md` exists with ≥30 contacts (target mix: 5–8 tier-S, 10–15 tier-M, 10+ tier-L), spanning YouTube/written/podcast/social. Every URL WebFetched + confirmed alive.
+- **Constraints:** Markdown only. Do NOT touch any file outside `marketing/`. Do NOT include private email addresses you can't verify are intended for outreach — only contact forms or publicly-posted addresses.
+
 
 ### T-XXX — <title>
 - **Status:** In Progress
