@@ -178,48 +178,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** 12 entries in registry, all reachable in gameplay, atlas screen displays all 12 cards with correct text. Compile clean.
 - **Updated dependency (2026-05-12):** T-045 now depends on **T-049** (climate-source compilation). The climate.gov URLs in the original prompt are dead (site archived to noaa.gov). T-049 produces a `research/climate-sources/` folder with verified-live URLs + downloaded PDFs, ready to feed NotebookLM in one step.
 
-### T-054 — Kotest specs for StormSentinel boss state machine  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-054-stormsentinel-tests`
-- **Started:** 2026-05-12
-- **Depends on:** T-034
-- **GDD ref:** §20 ("Boss Design Spec")
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/entities/StormSentinelTest.kt` (new)
-- **Goal:** Add Kotest coverage for the boss state machine (REST → LIGHTNING_TELEGRAPH → LIGHTNING → SWEEP_TELEGRAPH → SWEEP → REST cycle). Cover: phase transitions on timer tick, HP decrement on Seed-Slam hit, defeat at HP=0, projectile spawn count in LIGHTNING phase, sweep direction alternation across cycles. Use the seeded `GameRandom` wrapper (commit `c408e02`) for determinism. Mirror style of existing pure-math tests (`MapLevelLoaderCoordTest.kt`, `ParticleSystemTest.kt`) — no live Box2D required.
-- **Done when:** ≥10 deterministic tests passing across all 5 phase transitions + HP/defeat + ≥2 randomization sites; flake-free across 5 consecutive runs; compiles clean.
-
-### T-055 — Kotest specs for Enemy + SmogSprite + Projectile  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-055-enemy-tests`
-- **Started:** 2026-05-12
-- **Depends on:** T-029, T-040
-- **GDD ref:** §17 ("Enemy Design Spec"), §17.3 ("Projectile entity")
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/entities/SmogSpriteTest.kt` (new), `core/src/test/kotlin/com/sohai/platformer/entities/ProjectileTest.kt` (new), `core/src/test/kotlin/com/sohai/platformer/entities/EnemyTest.kt` (new — optional if Enemy is sufficiently abstract that SmogSprite tests cover it)
-- **Goal:** Cover the newer entity layer: SmogSprite patrol direction reversal at waypoints, takeDamage HP decrement, defeat at HP=0; Projectile lifetime tick-down + expiry on wall-hit (mocked) + kinematic velocity invariant; Enemy abstract contract (update/draw/takeDamage). Mirror pure-math test style.
-- **Done when:** ≥15 tests total across the files passing; no Box2D runtime required; compiles clean.
-
-### T-056 — Kotest specs for AchievementRegistry + unlock conditions  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-056-achievement-tests`
-- **Started:** 2026-05-12
-- **Depends on:** T-037
-- **GDD ref:** §22 ("atlas_full achievement + unlock spec")
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/progression/AchievementTest.kt` (new)
-- **Goal:** Verify all 12 achievements have unique IDs and non-blank metadata (id, name, description). Test each unlock-condition predicate fires correctly against representative `GameState` snapshots (e.g. `totalStomps >= 10` unlocks `stomp_master`; `completedLevels.size == 8` unlocks `all_levels`; `unlockedAchievements.size == 11` does NOT prematurely unlock `atlas_full`). Mirror `CloudAtlasLibraryTest.kt` style.
-- **Done when:** ≥15 tests covering all 12 achievements + the uniqueness + non-blank invariants; compiles clean.
-
 ### T-057 — Color-blind palette toggle  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -373,6 +331,27 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Outcome:** Completed upgrade audit for libGDX, Kotlin, VisUI, Kotest, and kotlinx.serialization; identified Vulkan backend additions and font-scaling breaking changes.
 - **Commit/PR:** PR #27
 - **Tool:** ntigravity
+
+### T-054 — Kotest specs for StormSentinel boss state machine
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** `core/src/test/kotlin/com/sohai/platformer/entities/StormSentinelTest.kt` — Kotest BehaviorSpec, 24 tests, 0.317s. Covers all 5 phase transitions (REST → LIGHTNING_TELEGRAPH → LIGHTNING → REST → SWEEP_TELEGRAPH → SWEEP → REST), HP decrement 3→2→1→0 via `takeDamage`, `isDead` flag, `onDefeated` callback firing exactly once, post-death idempotency, `update` no-op when dead, projectile spawn count + trajectory for both attacks, seeded `GameRandom` determinism. Box2D natives bypassed via `ObjenesisStd` + private-field reflection — pattern reusable for future entity tests.
+- **Commit/PR:** PR #32 (squashed merge `e13cc09`)
+- **Tool:** `claude-code-sub-agent`
+
+### T-055 — Kotest specs for Enemy + SmogSprite + Projectile
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Two new files (`SmogSpriteTest.kt`, `ProjectileTest.kt`) — 34 tests total. SmogSprite (18): patrol reversal at both waypoints, mid-band motion, equal-waypoint degenerate ctor, two-hit Seed-Slam defeat (HP 2→1→0), overkill clamping, post-death idempotency + velocity zeroing, `wasStomped` flag. Projectile (16): `isExpired ≡ age ≥ lifetime ∨ hitWall` contract, per-frame age, lifetime-boundary inclusivity, wall-hit short-circuit, multi-projectile independence, `RADIUS` invariant, sub-frame precision. `EnemyTest` skipped — all abstract-base behavior covered transitively. MockK + Objenesis reflection (same pattern as T-054).
+- **Commit/PR:** PR #33 (squashed merge `053e152`)
+- **Tool:** `claude-code-sub-agent`
+
+### T-056 — Kotest specs for AchievementRegistry + unlock conditions
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** `core/src/test/kotlin/com/sohai/platformer/progression/AchievementTest.kt` — Kotest BehaviorSpec, 23 tests, 0.26s. Covers `AchievementRegistry.get()` (known/unknown/empty/idempotent for 5 ids), `ALL`-list invariants (size 12, non-blank id/title/desc, unique ids + titles, canonical id set, round-trip), threshold-string drift checks (`stomp_10`→"10", `atlas_half`→"6", `atlas_full`→"12" not "11"). **Predicate-firing tests skipped** — unlock logic is inlined in screen code, not pure functions; flagged as follow-up via spawn_task chip.
+- **Commit/PR:** PR #30 (squashed merge `9e5a4a9`)
+- **Tool:** `claude-code-sub-agent`
 
 ### T-049 — Climate-source compilation for NotebookLM
 - **Status:** Done
