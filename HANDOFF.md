@@ -2,7 +2,7 @@
 
 > Read this **before** anything else if you are picking up where a previous Claude Code session left off. Then read `START_HERE.md` for the normal onboarding. Update this file at the end of your session to capture state the next agent will need. Keep it short — under 200 lines.
 
-**Last updated:** 2026-05-12 by Claude Opus session that ran roughly 2026-05-11 evening → 2026-05-12 morning. ~7 hours of session work, ~20 PRs merged, ~12 LEARNINGS entries added. Context was getting full → handoff.
+**Last updated:** 2026-05-12 by Claude Opus follow-up session. Tiny housekeeping pass after the long Sprint D run: T-031 moved to Done, T-046b shipped and moved to Done, stale Antigravity question resolved. Two PRs (#21 housekeeping + one direct push for T-046b) since the original handoff at `fc905bf`.
 
 ---
 
@@ -35,7 +35,7 @@ Long-term fix: drop the rule. The user hasn't decided to yet. See `LEARNINGS.md`
 
 ## Live state of the project
 
-**Main HEAD at handoff:** `7de71d8` "docs(AGENTS): refresh module layout"
+**Main HEAD at handoff:** `4f021ef` "housekeeping: T-031 → Done, resolve stale antigravity question (#21)"
 
 **What's actually playable / built:**
 - 8 levels (Sky Sanctuary hub + 4 tutorials + 3 campaign with Storm Sentinel boss)
@@ -56,16 +56,15 @@ Long-term fix: drop the rule. The user hasn't decided to yet. See `LEARNINGS.md`
 
 ## In-flight threads (not yet started or pending user action)
 
-### 1. Antigravity research suite (4 tickets queued)
+### 1. Antigravity research suite (3 tickets queued)
 
 Visible in `TASKS.md ## Todo`, all tagged `Tool: antigravity`. User needs to launch each one in Antigravity (paste prompt from `prompts/T-XXX-antigravity.md`):
 
 - **T-049** Climate-source compilation for NotebookLM — **launch first**, it unblocks T-045
-- **T-046b** Character sprite-sheet research
 - **T-047** Audio asset research (CC0 music + SFX)
 - **T-048** itch.io listing style-guide research
 
-Antigravity complained earlier "no available tasks" — was because branches hadn't merged yet. They've all merged now; next time the user opens Antigravity it should find these. If the user says "Antigravity is stuck," the answer is "tell it to re-read TASKS.md ## Todo on main."
+T-046b (character sprite-sheet research) shipped 2026-05-12; output at `art-research/character-sprite-candidates.md` on main. The previously-stale `QUESTIONS.md` entry from Antigravity ("no available tasks") is now `resolved`. Antigravity's environment was hitting stale env vars earlier in the session (which is why T-046b landed via a direct push to main instead of a PR — the commit message blames missing `gh` CLI); env vars are fixed now, so future Antigravity work should open PRs the normal way.
 
 ### 2. T-045 Cloud Atlas content (blocked on T-049)
 
