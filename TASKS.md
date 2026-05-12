@@ -237,21 +237,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** All LOW-risk upgrades from the audit are merged as individual PRs, each with green CI. If any LOW upgrade unexpectedly breaks something, halt that PR and post to QUESTIONS.md — do not chain into a multi-version cascade.
 - **Constraints:** One upgrade = one PR. Don't combine. If the audit lists 5 LOW upgrades, that's 5 PRs. Don't bypass CI. Don't touch source code beyond what each version bump strictly requires.
 
-### T-079 — CI duration optimization (smoke matrix)  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from `antigravity` — pre-condition for flipping repo to private; user wants cheaper CI in place before going private)*
-- **Tier:** M
-- **Autonomous-eligible:** yes-with-review  *(touches CI workflow — let a human eyeball the workflow diff before admin-merge)*
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-079-ci-optimization`
-- **Started:** 2026-05-12
-- **Depends on:** T-A1
-- **GDD ref:** `.github/workflows/ai-smoke.yml` (current 9-job matrix; ~4.5 min per job)
-- **Files:** `.github/workflows/ai-smoke.yml`, `.github/workflows/ci.yml`
-- **Goal:** Profile + optimize the current CI workflows. Investigate: (a) gradle cache hit rate (`actions/cache@v4` config), (b) JDK setup time (`actions/setup-java` caching), (c) whether the 9-level smoke matrix can be packed into fewer jobs (e.g. 3 jobs × 3 levels each, reusing the gradle daemon), (d) test parallelism in `:core:test`, (e) whether `xvfb-run` can be replaced or pre-warmed. Goal: cut total CI wall time by ≥30% without losing coverage. Document the optimization decisions in the workflow file's top comment.
-- **Done when:** Both workflows still green on a PR. Total CI wall time (longest job, measured across 3 consecutive PR runs) ≤ 0.7× the current baseline. Workflow file has a top-of-file comment summarizing what changed and why.
-- **Constraints:** Do NOT reduce smoke matrix coverage. Every level still tested per PR. Do NOT skip lint or compile. If an optimization requires losing coverage to hit the 30% target, surface in QUESTIONS.md instead of doing it.
-
 ### T-081 — Android build verification + smoke  [P3]
 - **Status:** Todo
 - **Tool:** `antigravity`
@@ -588,6 +573,14 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Outcome:** Closes the i18n gap T-059 deliberately left. Added `Strings.format(key, vararg args: Any)` using a simple `{N}` regex substitution (chose this over `java.text.MessageFormat` to avoid locale-sensitive number/date quirks). **26 new keys**, **28 interpolation sites** swept across **10 screens** (`CloudAtlasOverlay`, `CloudAtlasScreen`, `Hud`, `LevelCompleteOverlay`, `LevelRunState`, `LevelSelectScreen`, `MainMenuScreen`, `PauseOverlay`, `StatsScreen`, `VictoryScreen`). New keys include `SLOT_LABEL`, `WORLD_PORTAL`, `SPIRIT_DEATH`, `COMBO_MULTIPLIER`, `ATLAS_PCT`, etc. **Byte-identical English output.** Deliberately left as literal: bare `"$score"` Labels (no surrounding copy), data values like `"${entry.title}"`, `Gdx.app.log` strings, printf templates using Kotlin's `.format()`.
 - **Commit/PR:** PR #48 (squashed merge `8c6486b`)
 - **Tool:** `claude-code-sub-agent`
+
+### T-079 — CI duration optimization (smoke matrix)
+- **Status:** Done (v2 — v1 reverted via PR #61)
+- **Completed:** 2026-05-12
+- **Outcome:** **v1** (PR #61) tried matrix-packing 8 jobs → 3 jobs; real CI data showed projected savings didn't materialize (warm gradle daemon only saved ~30s/level, not ~3min/level as projected) AND wall time doubled (~5min → ~12min). Closed without merging. **v2** (PR #62) re-applied just the wins that actually paid: gradle cache key rename (`gradle-${os}-…` → `${os}-gradle-…`) + `setup-java cache: gradle` on ai-smoke + conditional `android:lint` via git-diff path filter + `maxParallelForks = 4` on `:core:test` + **`concurrency: cancel-in-progress`** on both workflows. The big win: **gate job + doc-PR skip filter** — PRs that only touch `*.md`, `prompts/`, `marketing/`, `research/`, `.github/ISSUE_TEMPLATE/`, etc. skip the entire 8-job smoke matrix. Validated empirically by PR #63 (doc-only): gate ran 6s, all 8 smoke jobs reported as `skipped`, total wall ~2m31s vs ~5min code-PR baseline. Code PRs unchanged (~5min wall, 8 parallel jobs). Re-routed from `antigravity` to `claude-code-sub-agent` (AGV was quiet; pre-condition for going private).
+- **Commit/PR:** PR #62 (squashed merge `fe307de`), validated by PR #63 (squashed merge `9a1342d`)
+- **Tool:** `claude-code-sub-agent` (re-routed from `antigravity`)
+- **Lesson learned:** sub-agent projections can be optimistic — verify with real CI data before merging. The v1 → v2 iteration was the right move.
 
 ### T-093 — Kotest specs for FontManager (scaling + shared cache)
 - **Status:** Done
