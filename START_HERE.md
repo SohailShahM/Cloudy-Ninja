@@ -45,7 +45,7 @@ Hard rules. The user routes tickets to specific tools. If your identity isn't on
 | `copilot-agent` | **Tier S only.** Single-file or single-screen scope. If a ticket needs multi-file refactor, abort and post to `QUESTIONS.md`. You run on github.com from issues; no local IDE access. |
 | `copilot-android-studio` | Tier S–M. Single subsystem. User supervises — not autonomous. Don't run terminal commands without confirmation. |
 | `copilot-vscode` | Same as Copilot in Android Studio. |
-| `antigravity` | Tier S, M, L — **peer agent**, equal in capability to `claude-code-sonnet` for code work (Gemini 3.x backbone, MCP, sub-agents, opens PRs). Coordinate with Claude Code via the [cc-agv-bridge](https://github.com/SohailShahM/cc-agv-bridge) MCP server when working on the same branch or trading reviews. Strong fit for long-running autonomous loops (content generation, dep upgrades, CI flake debugging, asset pipelines). Report PR-comment status every 30 min if running >1 hour. |
+| `antigravity` | Tier S, M, L — capability per token is high (Gemini 3.x, MCP, sub-agents, opens PRs), but **capacity is the bottleneck** — quotas refresh every 5h and burn fast. Best leveraged as a consultant + limited executor: planning input, second-opinion reviews, blocking Q&A, and small surgical tasks sized to remaining quota. **Bulk mechanical work — multi-file refactors, dep upgrades, asset pipelines — goes to `copilot-agent` or `claude-code-sonnet`, not AGV.** Coordinate with Claude Code via [cc-agv-bridge](https://github.com/SohailShahM/cc-agv-bridge). Report PR-comment status every 30 min if running >1 hour. |
 | `gemini-code-assist` | Tier S. IDE-driven, user supervises. |
 | `notebooklm` | **Content generation only — no code, no commits.** Output is markdown delivered to the user or pasted into a ticket spec. |
 | `human` | You're the user. Do the work manually. |
@@ -107,9 +107,13 @@ You operate from GitHub Issues. The user (or a sync script) copies a TASKS.md ti
 You cannot read TASKS.md directly during your run — work only from the issue text. Stay within the issue's described scope.
 
 ### `antigravity` — Google Antigravity
-Peer agent to Claude Code, not a junior research helper. You can run for hours. Post PR-comment status updates every 30 minutes if running >1 hour. If you get stuck on a Box2D native lib issue or any platform-specific build error, abort and post to QUESTIONS.md — don't burn cycles debugging environment problems.
+Capacity-limited peer. Not a junior research helper, but also not the workhorse — bulk mechanical work belongs with `copilot-agent` or `claude-code-sonnet`. AGV's value is high-quality input on a smaller volume of work.
 
-**Coordinating with Claude Code on the same work:** the [cc-agv-bridge](https://github.com/SohailShahM/cc-agv-bridge) MCP server is wired into both AGV (`~/.gemini/antigravity/mcp_config.json`) and Claude Code (`~/.claude.json`). At session start, paste the AGV starter prompt from [the bridge's docs/starter-prompts.md](https://github.com/SohailShahM/cc-agv-bridge/blob/main/docs/starter-prompts.md) — it calls `bridge_diagnose` first, drains any pending asks/handoffs/reviews from CC, and only then proceeds with your task. Use `bridge_handoff` to transfer work mid-flight, `bridge_request_review` to ask CC's eyes on a branch, and `bridge_ask` for blocking questions. The bridge is optional — TASKS.md still works for serial handoffs — but it's the right tool when you and CC are mid-collaboration on the same ticket.
+**Coordinating with Claude Code on the same work:** the [cc-agv-bridge](https://github.com/SohailShahM/cc-agv-bridge) MCP server is wired into both AGV (`~/.gemini/antigravity/mcp_config.json`) and Claude Code (`~/.claude.json`). At session start, paste the AGV starter prompt from [the bridge's docs/starter-prompts.md](https://github.com/SohailShahM/cc-agv-bridge/blob/main/docs/starter-prompts.md) — it calls `bridge_diagnose`, drains pending work, and **calls `bridge_set_status` with your remaining Gemini quota** in the format `"quota: <input>/<output> tokens left, refreshes <time>"`, so CC can size future asks appropriately.
+
+**Primary tools:** `bridge_ask` (you give a second opinion on CC's plan), `bridge_request_review` (you review a branch CC built), `bridge_send` (share an insight or question). `bridge_handoff` is for accepting small surgical tasks — **decline handoffs that don't fit your remaining capacity** (`bridge_decline(handoff_id, reason="quota: X tokens left, this needs ~Y")`) rather than silently failing partway through.
+
+Post PR-comment status updates every 30 minutes if running >1 hour. If you get stuck on a Box2D native lib issue or any platform-specific build error, abort and post to QUESTIONS.md — don't burn cycles debugging environment problems.
 
 ### `claude-code-*` — Claude Code sessions
 You have access to the `Agent` tool to dispatch Sonnet sub-agents for parallel work. Use this for embarrassingly-parallel work (multiple test files, multiple level definitions). Brief each sub-agent fully — they don't have your context.
@@ -126,7 +130,8 @@ Other AIs: skip this section. The planner uses it to assign `Tool:` tags.
 | Architecture / planning / ambiguous | `claude-code-opus` | Reserved high-leverage use |
 | Content generation (text, lore, educational) | `notebooklm-then-copilot-agent` | Chain |
 | Long-running autonomous loops (deps, CI flake, assets) | `antigravity` | Designed for it |
-| Multi-file code work that benefits from second opinions / mid-flight handoff | `antigravity` ↔ `claude-code-*` | Peers — coordinate via [cc-agv-bridge](https://github.com/SohailShahM/cc-agv-bridge) (`bridge_handoff` / `bridge_request_review`) |
+| Code work where a second opinion / fresh-eyes review adds value | implementer = `claude-code-*` or `copilot-agent`; reviewer = `antigravity` | Reviewer pulled in via [cc-agv-bridge](https://github.com/SohailShahM/cc-agv-bridge) `bridge_request_review` — capacity-light for AGV |
+| Mid-flight ambiguity that needs the other agent's judgement | originator calls `bridge_ask` | Either direction; AGV's quota cost is one round-trip |
 | Determinism-sensitive (see DETERMINISM.md) | `claude-code-sonnet` | Not autonomous |
 | Anything touching `git config`, branch protection, secrets | `human` | Never delegate |
 

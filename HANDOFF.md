@@ -39,14 +39,15 @@ The collaboration channel between Claude Code and Antigravity that `prompts/buil
 - AGV side: `~/.gemini/antigravity/mcp_config.json` ditto
 - Shared SQLite state: `C:\Users\Radmin\cc-agv-bridge\state.sqlite` (deliberately not under `%APPDATA%` — Claude Code's MSIX package virtualizes APPDATA per app)
 
-**What it gives you that TASKS.md doesn't:**
-- `bridge_handoff` — transfer ownership of a unit of work mid-flight, with branch + ticket + what's-done + what's-left + blocking
-- `bridge_ask` — ask the other agent a blocking question (5 min default timeout)
-- `bridge_request_review` / `bridge_submit_review` — peer review of a branch or PR
-- `bridge_send` / `bridge_receive` — async messaging
-- `bridge_diagnose` — first thing to call at session start; surfaces path-collision and stale-state failures in one call
+**What it gives you that TASKS.md doesn't** (in rough order of how often you'll reach for them, given AGV's capacity profile):
+- `bridge_ask` — ask AGV a blocking question mid-flight (5 min default timeout). One round-trip, low quota cost. The most-used tool.
+- `bridge_request_review` / `bridge_submit_review` — pull AGV in as a reviewer on a branch CC built. Capacity-light.
+- `bridge_send` / `bridge_receive` — async messages, share insights, drop a plan for the other side to glance at.
+- `bridge_handoff` — transfer ownership of work. Reserve for **small surgical tasks** sized to AGV's remaining quota; AGV should `bridge_decline` rather than half-execute.
+- `bridge_diagnose` — first thing to call at session start; surfaces path-collision and stale-state failures in one call.
+- `bridge_status` — AGV reports remaining Gemini quota here at session start so CC can size requests.
 
-**When to use it:** when AGV and CC are working on the same branch or ticket and need to coordinate faster than TASKS.md allows. Not a replacement for TASKS.md — TASKS.md is still the durable queue. The bridge is for in-flight collaboration on a single piece of work.
+**When to use it:** when CC wants AGV's perspective on the same ticket without going through TASKS.md. Bulk workhorse work still goes to `copilot-agent` or `claude-code-sonnet` — the bridge is not a queue for shipping AGV more work, it's a channel for getting AGV's input on work CC is already doing.
 
 **Starter prompts** (paste at session start on either side) live at https://github.com/SohailShahM/cc-agv-bridge/blob/main/docs/starter-prompts.md — they handle the diagnose + drain-pending-work handshake automatically.
 
