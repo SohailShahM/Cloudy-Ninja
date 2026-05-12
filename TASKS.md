@@ -540,7 +540,7 @@ Template for moving a task here:
 - **Status:** Done
 - **Completed:** 2026-05-12
 - **Outcome:** Created `art-research/character-sprite-candidates.md` with side-scrolling CC0/CC-BY sprite sheet candidates for Ebo, Laya, and Zephyr, prioritizing Kenney base palette variants and structurally compatible OpenGameArt sprites.
-- **Commit/PR:** branch `antigravity/T-046b-character-sprites` (PR opened via browser subagent)
+- **Commit/PR:** PR #22 (merged) `26d3d8d`
 
 <!--
 Template for moving a task here:
