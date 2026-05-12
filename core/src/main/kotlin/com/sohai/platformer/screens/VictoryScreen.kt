@@ -20,7 +20,8 @@ class VictoryScreen(
     private val game: Game,
     private val finalScore: Int,
     private val bestTrialTime: Float? = null,
-    private val isNewTimeBest: Boolean = false
+    private val isNewTimeBest: Boolean = false,
+    private val priorBestTime: Float? = null
 ) : Screen {
 
     private val viewport = FitViewport(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
@@ -51,6 +52,17 @@ class VictoryScreen(
             val timeColor = if (isNewTimeBest) Color(0.1f, 0.95f, 0.85f, 1f) else Color(0.75f, 0.75f, 1f, 1f)
             table.add(Label("Trial Time: $timeStr", Label.LabelStyle(bodyFont, timeColor)))
                 .padBottom(8f).row()
+            if (priorBestTime != null) {
+                val delta = bestTrialTime - priorBestTime
+                if (delta != 0f) {
+                    val absDelta = if (delta < 0f) -delta else delta
+                    val deltaStr = if (delta < 0f) "−%.2fs under best".format(absDelta)
+                                   else "+%.2fs slower".format(absDelta)
+                    val deltaColor = if (delta < 0f) Color(0.3f, 1f, 0.5f, 1f) else Color(0.75f, 0.75f, 0.75f, 1f)
+                    table.add(Label(deltaStr, Label.LabelStyle(bodyFont, deltaColor)))
+                        .padBottom(8f).row()
+                }
+            }
             if (isNewTimeBest) {
                 val bestStyle = Label.LabelStyle(bodyFont, Color(1f, 0.85f, 0.1f, 1f))
                 table.add(Label("★ NEW BEST! ★", bestStyle)).padBottom(32f).row()

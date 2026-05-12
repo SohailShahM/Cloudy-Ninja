@@ -33,6 +33,7 @@ class LevelTransitionController(
 
     private var lastTrialTime = 0f
     private var trialIsNewBest = false
+    private var lastPrevTime: Float? = null
 
     /**
      * Unlock an achievement by ID.  No-ops if already unlocked.
@@ -79,6 +80,7 @@ class LevelTransitionController(
         if (isTimeTrial) {
             lastTrialTime  = levelTimer
             val prevTime   = existing.bestTimes[level.id]
+            lastPrevTime   = prevTime
             trialIsNewBest = prevTime == null || levelTimer < prevTime
             val newBestTimes = if (trialIsNewBest) existing.bestTimes + (level.id to levelTimer)
                                else existing.bestTimes
@@ -117,7 +119,8 @@ class LevelTransitionController(
             game.screen = VictoryScreen(
                 game, score,
                 bestTrialTime  = if (isTimeTrial) lastTrialTime else null,
-                isNewTimeBest  = trialIsNewBest
+                isNewTimeBest  = trialIsNewBest,
+                priorBestTime  = if (isTimeTrial) lastPrevTime else null
             )
         }
         onDispose()
