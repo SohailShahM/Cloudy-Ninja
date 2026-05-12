@@ -2,7 +2,7 @@
 
 > Read this **before** anything else if you are picking up where a previous Claude Code session left off. Then read `START_HERE.md` for the normal onboarding. Update this file at the end of your session to capture state the next agent will need. Keep it short — under 200 lines.
 
-**Last updated:** 2026-05-12 by Claude Opus — a long high-throughput session that shipped **~16 tickets** (T-054 through T-064 + T-069 + a wave of Antigravity research). Main HEAD `d1ddd11`. T-059 (i18n strings sweep) is the only Sonnet ticket currently in flight. The Antigravity queue is deep (8 tickets).
+**Last updated:** 2026-05-12 by Claude Opus — a long high-throughput session that shipped **~16 tickets** (T-054 through T-064 + T-069 + a wave of Antigravity research), then a follow-up that shipped the cc-agv-bridge (separate repo: https://github.com/SohailShahM/cc-agv-bridge). Main HEAD `d1ddd11`. T-059 (i18n strings sweep) is the only Sonnet ticket currently in flight. The Antigravity queue is deep (8 tickets).
 
 ---
 
@@ -28,9 +28,29 @@ For tiny TASKS.md claim commits, direct-push to main works via admin bypass (`gi
 
 ### The Antigravity peer-framing correction (important — read)
 
-Earlier handoffs framed Antigravity as a "research-only" tool. That was **conservative warm-up bias, not Antigravity's actual ceiling**. AGV is a Gemini-3-backed peer agentic platform comparable to Claude Code itself — supports MCP, opens PRs, runs CI, refactors code. The router in `START_HERE.md` still encodes the old framing; the bridge prompt at `prompts/build-antigravity-api.md` documents the corrected framing and is the source-of-truth for how to think about AGV.
+Earlier handoffs framed Antigravity as a "research-only" tool. That was **conservative warm-up bias, not Antigravity's actual ceiling**. AGV is a Gemini-3-backed peer agentic platform comparable to Claude Code itself — supports MCP, opens PRs, runs CI, refactors code.
 
 **Implication:** when adding tickets, give AGV real implementation work, not just markdown. The current queue (`T-076` dep upgrade execution, `T-077` presskit scaffold, `T-078` icon generator, `T-079` CI optimization, `T-080` repo infra, `T-081` Android build) follows this corrected framing.
+
+### cc-agv-bridge has shipped (2026-05-12)
+
+The collaboration channel between Claude Code and Antigravity that `prompts/build-antigravity-api.md` specced is now live at https://github.com/SohailShahM/cc-agv-bridge. Both agents are wired locally:
+- CC side: `~/.claude.json` has `cc-agv-bridge` registered as an MCP server
+- AGV side: `~/.gemini/antigravity/mcp_config.json` ditto
+- Shared SQLite state: `C:\Users\Radmin\cc-agv-bridge\state.sqlite` (deliberately not under `%APPDATA%` — Claude Code's MSIX package virtualizes APPDATA per app)
+
+**What it gives you that TASKS.md doesn't:**
+- `bridge_handoff` — transfer ownership of a unit of work mid-flight, with branch + ticket + what's-done + what's-left + blocking
+- `bridge_ask` — ask the other agent a blocking question (5 min default timeout)
+- `bridge_request_review` / `bridge_submit_review` — peer review of a branch or PR
+- `bridge_send` / `bridge_receive` — async messaging
+- `bridge_diagnose` — first thing to call at session start; surfaces path-collision and stale-state failures in one call
+
+**When to use it:** when AGV and CC are working on the same branch or ticket and need to coordinate faster than TASKS.md allows. Not a replacement for TASKS.md — TASKS.md is still the durable queue. The bridge is for in-flight collaboration on a single piece of work.
+
+**Starter prompts** (paste at session start on either side) live at https://github.com/SohailShahM/cc-agv-bridge/blob/main/docs/starter-prompts.md — they handle the diagnose + drain-pending-work handshake automatically.
+
+**Status:** wired, smoke-tested end-to-end (CC ↔ AGV ping-pong + ask/answer + handoff + review all green), CI on the bridge repo passes 3.11/3.12/3.13. Hasn't been used on a real Cloudy-Ninja ticket yet — first dogfood opportunity is whichever next ticket would naturally split between the two agents.
 
 ### Sub-agent dispatch patterns that work
 
