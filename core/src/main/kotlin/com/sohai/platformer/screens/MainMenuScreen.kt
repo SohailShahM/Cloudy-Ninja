@@ -20,7 +20,7 @@ import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
 
 /** Filenames for the three save slots (index 0-2). */
-private val SLOT_FILES = arrayOf("save_0.json", "save_1.json", "save_2.json")
+private val SLOT_FILES = arrayOf("save_slot_0.json", "save_slot_1.json", "save_slot_2.json")
 
 /**
  * Total number of Cloud Atlas entries — used for atlas % calculation.

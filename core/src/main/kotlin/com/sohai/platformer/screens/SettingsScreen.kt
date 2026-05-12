@@ -50,7 +50,7 @@ class SettingsScreen(
     private var toastTimer = 0f
 
     companion object {
-        private const val SAVE_SLOT = "save_0.json"
+        private const val SAVE_SLOT = "save_slot_0.json"
         private const val TOAST_DURATION = 2f
     }
 

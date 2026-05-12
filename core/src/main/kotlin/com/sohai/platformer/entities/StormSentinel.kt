@@ -2,9 +2,9 @@ package com.sohai.platformer.entities
 
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer
-import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.physics.box2d.*
 import com.sohai.platformer.Constants
+import com.sohai.platformer.util.GameRandom
 
 /**
  * Storm Sentinel — the Level 3 boss.
@@ -180,14 +180,14 @@ class StormSentinel(
         _lightningWarnings.clear()
         val margin = 0.8f
         repeat(LIGHTNING_COUNT) {
-            _lightningWarnings.add(MathUtils.random(arenaLeft + margin, arenaRight - margin))
+            _lightningWarnings.add(GameRandom.range(arenaLeft + margin, arenaRight - margin))
         }
     }
 
     private fun startSweepTelegraph() {
         phase          = Phase.SWEEP_TELEGRAPH
         phaseTimer     = SWEEP_TELEGRAPH_DURATION
-        sweepGoesRight = MathUtils.randomBoolean()
+        sweepGoesRight = GameRandom.bool()
         sweepWarningDir = if (sweepGoesRight) 1 else -1
         sweepWarningX   = if (sweepGoesRight) arenaLeft else arenaRight
     }
