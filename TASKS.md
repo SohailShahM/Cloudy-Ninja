@@ -321,12 +321,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Constraints:** Do NOT attempt risky toolchain bumps (AGP > 1 minor, Kotlin > 1 minor, Java target changes). Do NOT publish APK to anywhere. Do NOT change signing config.
 
 ### T-093 — Kotest specs for FontManager (scaling + shared cache)  [P2]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`  *(Flash-tier AGV is also a fine candidate per cc-agv-bridge 6-model docs)*
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-093-fontmanager-tests`
+- **Started:** 2026-05-12
 - **Depends on:** T-042
 - **GDD ref:** T-042 (4K/HiDPI scaling — `fontScale` × requested size = effective px)
 - **Files:** `core/src/test/kotlin/com/sohai/platformer/FontManagerTest.kt` (new)
@@ -334,12 +335,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** ≥10 tests pass; no live libGDX renderer required.
 
 ### T-094 — Kotest specs for MusicManager (crossfade timing + volume)  [P2]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`  *(Flash-tier AGV viable)*
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-094-musicmanager-tests`
+- **Started:** 2026-05-12
 - **Depends on:** T-030
 - **GDD ref:** §18 ("Music System Spec")
 - **Files:** `core/src/test/kotlin/com/sohai/platformer/audio/MusicManagerTest.kt` (new)
@@ -347,12 +349,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** ≥10 tests pass.
 
 ### T-095 — Kotest specs for SoundManager (per-bus volume)  [P2]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`  *(Flash-tier AGV viable)*
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-095-soundmanager-tests`
+- **Started:** 2026-05-12
 - **Depends on:** T-013, T-014, T-035
 - **GDD ref:** §18.4 (audio bus sliders)
 - **Files:** `core/src/test/kotlin/com/sohai/platformer/audio/SoundManagerTest.kt` (new)
@@ -360,12 +363,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** ≥8 tests pass.
 
 ### T-096 — Kotest specs for ScreenFade state machine  [P2]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`  *(Flash-tier AGV viable)*
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-096-screenfade-tests`
+- **Started:** 2026-05-12
 - **Depends on:** _none_
 - **GDD ref:** ScreenFade used in level transitions + pause flow
 - **Files:** `core/src/test/kotlin/com/sohai/platformer/rendering/ScreenFadeTest.kt` (new)
