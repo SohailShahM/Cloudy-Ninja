@@ -179,19 +179,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Updated dependency (2026-05-12):** T-045 now depends on **T-049** (climate-source compilation). The climate.gov URLs in the original prompt are dead (site archived to noaa.gov). T-049 produces a `research/climate-sources/` folder with verified-live URLs + downloaded PDFs, ready to feed NotebookLM in one step.
 
 
-### T-059 — String extraction scaffolding (i18n prep)  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-059-i18n-strings`
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (localization future-proofing)
-- **Files:** `i18n/Strings.kt` (new), all `screens/*.kt` files that contain hardcoded user-facing strings
-- **Goal:** Create `i18n/Strings.kt` with `enum class StringKey` covering every hardcoded user-facing string in the project. Add `object Strings { fun get(key: StringKey): String }` returning English defaults (locale support comes later). Sweep every `screens/*.kt` and replace string literals with `Strings.get(StringKey.X)`. **No new translations** — just centralization. Keep English text byte-identical so visual diff is zero.
-- **Done when:** All user-facing string literals in `screens/` route through `Strings.get(...)`. ≥40 keys defined. AI smoke CI passes (verifies no visual regressions).
 
 
 ### T-061 — AI smoke: per-character autopilot matrix  [P3]
@@ -491,6 +478,14 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Outcome:** `screens/PauseOverlay.kt` + `screens/GameScreen.kt`: 0.2s fade-in driven by manual smoothstep lerp (`t²(3-2t)`, matches `Interpolation.fade` feel) — one `fadeT` variable drives both ShapeRenderer backdrop alpha and `stage.root.color.a` in lockstep. 55% black backdrop dim (`Color(0, 0, 0, 0.55)`) filled rect across viewport. "Press Esc to resume" hint at bottom-right (`FontManager.getShared(14)`, light grey `(0.6, 0.6, 0.6, 0.8)`, 12px padded). Hint reads `SettingsManager.load().keybinds["pause"]` for the display name, falls back to `"Esc"`. **Follow-up flagged:** no `"pause"` default in `Settings.keybinds` today (ESC hardcoded in `GameScreen`); sub-agent left a code comment for a future ticket to add it. No fade-out on un-pause — instant snap-back matches expected responsiveness.
 - **Commit/PR:** PR #41 (squashed merge `483fc95`)
 - **Tool:** `claude-code-sub-agent`
+
+### T-059 — String extraction scaffolding (i18n prep)
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** New `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt` (catalog of **104 keys** + `Strings.get(key)` resolver, English defaults only). Sweep across **13 screen files** replacing every static user-facing literal with `Strings.get(StringKey.X)`. Grouped by area: `MAIN_*`, `SETTINGS_*` (subgrouped), `ATLAS_*`, `GAME_OVER_*`, `HUD_*`, `LEVEL_COMPLETE_*`, `LEVEL_SELECT_*`, `PAUSE_*`, `STATS_*`, `VICTORY_*`, `RUN_*`. **Deliberately skipped**: `$`-interpolated literals (would freeze English word order for future locales — needs a `Strings.format(key, *args)` API as a follow-up), all `Gdx.app.log(...)` (developer-facing), printf-style format placeholders. No file outside `screens/` + `i18n/` touched. English byte-identical to pre-change (smoke CI verifies).
+- **Commit/PR:** PR #42 (squashed merge `87f5097`)
+- **Tool:** `claude-code-sub-agent`
+- **Follow-up:** `Strings.format(key, *args)` API for interpolated/compositional strings.
 
 ### T-049 — Climate-source compilation for NotebookLM
 - **Status:** Done
