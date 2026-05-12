@@ -15,6 +15,8 @@ import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.sohai.platformer.atlas.CloudAtlasLibrary
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.levels.LevelManager
 import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
@@ -59,7 +61,7 @@ class MainMenuScreen(private val game: Game) : Screen {
         root.center()
 
         // Title
-        val title = VisLabel("Cloudy Ninja")
+        val title = VisLabel(Strings.get(StringKey.MAIN_TITLE))
         root.add(title).padBottom(40f).row()
 
         // --- Three slot cards ---
@@ -99,14 +101,14 @@ class MainMenuScreen(private val game: Game) : Screen {
         if (state != null) {
             addSaveInfo(card, state)
         } else {
-            val emptyLabel = VisLabel("-- Empty --")
+            val emptyLabel = VisLabel(Strings.get(StringKey.MAIN_SLOT_EMPTY))
             card.add(emptyLabel).padBottom(10f).row()
         }
 
         // --- Action buttons ---
         if (state != null) {
             // Load button
-            val loadBtn = VisTextButton("Load")
+            val loadBtn = VisTextButton(Strings.get(StringKey.MAIN_BTN_LOAD))
             loadBtn.addListener(object : ClickListener() {
                 override fun clicked(event: InputEvent?, x: Float, y: Float) {
                     loadSlot(slotIndex, state)
@@ -115,7 +117,7 @@ class MainMenuScreen(private val game: Game) : Screen {
             card.add(loadBtn).width(160f).height(40f).padBottom(8f).row()
 
             // Delete button (two-click confirm)
-            val deleteBtn = VisTextButton("Delete")
+            val deleteBtn = VisTextButton(Strings.get(StringKey.MAIN_BTN_DELETE))
             deleteButtons[slotIndex] = deleteBtn
             deleteBtn.addListener(object : ClickListener() {
                 override fun clicked(event: InputEvent?, x: Float, y: Float) {
@@ -125,7 +127,7 @@ class MainMenuScreen(private val game: Game) : Screen {
             card.add(deleteBtn).width(160f).height(40f).row()
         } else {
             // New Game button for empty slot
-            val newBtn = VisTextButton("New Game")
+            val newBtn = VisTextButton(Strings.get(StringKey.MAIN_BTN_NEW_GAME))
             newBtn.addListener(object : ClickListener() {
                 override fun clicked(event: InputEvent?, x: Float, y: Float) {
                     startNewGameInSlot(slotIndex)
@@ -167,7 +169,7 @@ class MainMenuScreen(private val game: Game) : Screen {
         val nav = VisTable()
         nav.defaults().width(200f).height(50f).padLeft(8f).padRight(8f)
 
-        val levelSelectButton = VisTextButton("Level Select")
+        val levelSelectButton = VisTextButton(Strings.get(StringKey.MAIN_BTN_LEVEL_SELECT))
         levelSelectButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 game.screen = LevelSelectScreen(game)
@@ -176,7 +178,7 @@ class MainMenuScreen(private val game: Game) : Screen {
         })
         nav.add(levelSelectButton)
 
-        val atlasButton = VisTextButton("Cloud Atlas")
+        val atlasButton = VisTextButton(Strings.get(StringKey.MAIN_BTN_CLOUD_ATLAS))
         atlasButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 game.screen = CloudAtlasScreen(game)
@@ -185,7 +187,7 @@ class MainMenuScreen(private val game: Game) : Screen {
         })
         nav.add(atlasButton)
 
-        val statsButton = VisTextButton("Stats")
+        val statsButton = VisTextButton(Strings.get(StringKey.MAIN_BTN_STATS))
         statsButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 game.screen = StatsScreen(game)
@@ -194,7 +196,7 @@ class MainMenuScreen(private val game: Game) : Screen {
         })
         nav.add(statsButton)
 
-        val settingsButton = VisTextButton("Settings")
+        val settingsButton = VisTextButton(Strings.get(StringKey.MAIN_BTN_SETTINGS))
         settingsButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 game.screen = SettingsScreen(game)
@@ -203,7 +205,7 @@ class MainMenuScreen(private val game: Game) : Screen {
         })
         nav.add(settingsButton)
 
-        val quitButton = VisTextButton("Quit")
+        val quitButton = VisTextButton(Strings.get(StringKey.MAIN_BTN_QUIT))
         quitButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
                 Gdx.app.exit()
@@ -254,10 +256,10 @@ class MainMenuScreen(private val game: Game) : Screen {
             // First click — ask for confirmation
             // Reset any previously pending slot
             if (pendingDeleteSlot != -1) {
-                deleteButtons[pendingDeleteSlot]?.setText("Delete")
+                deleteButtons[pendingDeleteSlot]?.setText(Strings.get(StringKey.MAIN_BTN_DELETE))
             }
             pendingDeleteSlot = slotIndex
-            deleteButtons[slotIndex]?.setText("Confirm?")
+            deleteButtons[slotIndex]?.setText(Strings.get(StringKey.MAIN_BTN_DELETE_CONFIRM))
         }
     }
 

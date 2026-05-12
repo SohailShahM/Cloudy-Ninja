@@ -14,6 +14,8 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 
 class GameOverOverlay(
     private val onRestart: () -> Unit,
@@ -35,16 +37,16 @@ class GameOverOverlay(
         table.setFillParent(true)
         table.center()
 
-        table.add(Label("SPIRIT EXHAUSTED", titleStyle)).padBottom(10f).row()
-        table.add(Label("All spirit charges depleted", subStyle)).padBottom(36f).row()
+        table.add(Label(Strings.get(StringKey.GAME_OVER_TITLE), titleStyle)).padBottom(10f).row()
+        table.add(Label(Strings.get(StringKey.GAME_OVER_SUBTITLE), subStyle)).padBottom(36f).row()
 
-        val btnRestart = VisTextButton("Try Again")
+        val btnRestart = VisTextButton(Strings.get(StringKey.GAME_OVER_TRY_AGAIN))
         btnRestart.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) { onRestart() }
         })
         table.add(btnRestart).size(240f, 60f).padBottom(16f).row()
 
-        val btnMenu = VisTextButton("Main Menu")
+        val btnMenu = VisTextButton(Strings.get(StringKey.GAME_OVER_MAIN_MENU))
         btnMenu.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) { onMainMenu() }
         })

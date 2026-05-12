@@ -30,6 +30,8 @@ import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.SmogSprite
 import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.entities.StormSentinel
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.levels.Level
 import com.sohai.platformer.levels.LevelManager
 import com.sohai.platformer.levels.TmxLevel
@@ -299,7 +301,7 @@ class GameScreen(
             sentinel!!.onDefeated = {
                 Gdx.app.log("GameScreen", "Storm Sentinel defeated — level complete")
                 runState.levelCompleted = true
-                hud.showTransientMessage("Storm Sentinel defeated!", 2.5f)
+                hud.showTransientMessage(Strings.get(StringKey.RUN_BOSS_DEFEATED), 2.5f)
                 runState.tryUnlock("boss_defeated")
             }
         }

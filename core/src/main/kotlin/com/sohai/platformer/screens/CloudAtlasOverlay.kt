@@ -16,6 +16,8 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.atlas.CloudAtlasEntry
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 
 /**
  * Full-screen educational card shown when a Cloud Atlas Snapshot is collected.
@@ -57,13 +59,13 @@ class CloudAtlasOverlay(entry: CloudAtlasEntry, private val onDismiss: () -> Uni
         bodyLabel.wrap = true
         table.add(bodyLabel).width(700f).padBottom(40f).row()
 
-        val btnDismiss = VisTextButton("Got it!")
+        val btnDismiss = VisTextButton(Strings.get(StringKey.ATLAS_OVERLAY_GOT_IT))
         btnDismiss.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) { dismiss() }
         })
         table.add(btnDismiss).size(180f, 55f).padBottom(10f).row()
 
-        table.add(Label("[ESC / tap to close]", hintStyle))
+        table.add(Label(Strings.get(StringKey.ATLAS_OVERLAY_CLOSE_HINT), hintStyle))
 
         stage.addActor(table)
     }

@@ -26,6 +26,8 @@ import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.audio.MusicManager
 import com.sohai.platformer.audio.SoundManager
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.input.InputManager
 import com.sohai.platformer.persist.ColorBlindMode
 import com.sohai.platformer.persist.GameState
@@ -68,7 +70,7 @@ class SettingsScreen(
         root.setFillParent(true)
         root.top().padTop(40f)
 
-        root.add(Label("SETTINGS", titleStyle)).padBottom(24f).row()
+        root.add(Label(Strings.get(StringKey.SETTINGS_TITLE), titleStyle)).padBottom(24f).row()
 
         val inner = VisTable()
         inner.top().left().pad(10f)
@@ -83,20 +85,20 @@ class SettingsScreen(
         // ══════════════════════════════════════════════════════════════════
         // SECTION 1 — DISPLAY
         // ══════════════════════════════════════════════════════════════════
-        sectionHeader("Display")
+        sectionHeader(Strings.get(StringKey.SETTINGS_DISPLAY))
 
         // Resolution presets  (width × height — physical pixels)
         data class ResPreset(val label: String, val w: Int, val h: Int) {
             override fun toString() = label
         }
         val resPresets = listOf(
-            ResPreset("1280 × 720  (HD)",          1280,  720),
-            ResPreset("1920 × 1080  (Full HD)",     1920, 1080),
-            ResPreset("2560 × 1440  (2K / QHD)",   2560, 1440),
-            ResPreset("3840 × 2160  (4K / UHD)",   3840, 2160)
+            ResPreset(Strings.get(StringKey.SETTINGS_RES_720),  1280,  720),
+            ResPreset(Strings.get(StringKey.SETTINGS_RES_1080), 1920, 1080),
+            ResPreset(Strings.get(StringKey.SETTINGS_RES_1440), 2560, 1440),
+            ResPreset(Strings.get(StringKey.SETTINGS_RES_2160), 3840, 2160)
         )
 
-        inner.add(Label("Resolution", bodyStyle)).left().padRight(16f)
+        inner.add(Label(Strings.get(StringKey.SETTINGS_RESOLUTION), bodyStyle)).left().padRight(16f)
         val resBox = SelectBox<ResPreset>(skin)
         val resItems = GdxArray<ResPreset>()
         resPresets.forEach { resItems.add(it) }
@@ -115,7 +117,7 @@ class SettingsScreen(
         })
         inner.add(resBox).width(300f).row()
 
-        val chkFullscreen = CheckBox(" Fullscreen", skin)
+        val chkFullscreen = CheckBox(Strings.get(StringKey.SETTINGS_FULLSCREEN), skin)
         chkFullscreen.isChecked = settings.fullscreen
         chkFullscreen.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
@@ -125,10 +127,10 @@ class SettingsScreen(
         })
         inner.add(chkFullscreen).left().padBottom(4f).row()
 
-        inner.add(Label("Sprites sharpen fully at next launch.", bodyStyle)).left()
+        inner.add(Label(Strings.get(StringKey.SETTINGS_SPRITES_HINT), bodyStyle)).left()
             .padBottom(8f).row()
 
-        val chkFps = CheckBox(" Show FPS (console)", skin)
+        val chkFps = CheckBox(Strings.get(StringKey.SETTINGS_SHOW_FPS), skin)
         chkFps.isChecked = settings.showFps
         chkFps.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
@@ -140,9 +142,9 @@ class SettingsScreen(
         // ══════════════════════════════════════════════════════════════════
         // SECTION 2 — AUDIO
         // ══════════════════════════════════════════════════════════════════
-        sectionHeader("Audio", topPad = 12f)
+        sectionHeader(Strings.get(StringKey.SETTINGS_AUDIO), topPad = 12f)
 
-        inner.add(Label("Music", bodyStyle)).left().padRight(16f)
+        inner.add(Label(Strings.get(StringKey.SETTINGS_MUSIC), bodyStyle)).left().padRight(16f)
         val sliderMusic = Slider(0f, 1f, 0.05f, false, skin)
         sliderMusic.value = settings.volMusic
         sliderMusic.addListener(object : ChangeListener() {
@@ -153,7 +155,7 @@ class SettingsScreen(
         })
         inner.add(sliderMusic).width(260f).row()
 
-        inner.add(Label("SFX", bodyStyle)).left().padRight(16f)
+        inner.add(Label(Strings.get(StringKey.SETTINGS_SFX), bodyStyle)).left().padRight(16f)
         val sliderSfx = Slider(0f, 1f, 0.05f, false, skin)
         sliderSfx.value = settings.volSfx
         sliderSfx.addListener(object : ChangeListener() {
@@ -164,7 +166,7 @@ class SettingsScreen(
         })
         inner.add(sliderSfx).width(260f).row()
 
-        inner.add(Label("UI", bodyStyle)).left().padRight(16f)
+        inner.add(Label(Strings.get(StringKey.SETTINGS_UI_VOLUME), bodyStyle)).left().padRight(16f)
         val sliderUi = Slider(0f, 1f, 0.05f, false, skin)
         sliderUi.value = settings.volUi
         sliderUi.addListener(object : ChangeListener() {
@@ -178,15 +180,15 @@ class SettingsScreen(
         // ══════════════════════════════════════════════════════════════════
         // SECTION 3 — CONTROLS
         // ══════════════════════════════════════════════════════════════════
-        sectionHeader("Controls", topPad = 12f)
+        sectionHeader(Strings.get(StringKey.SETTINGS_CONTROLS), topPad = 12f)
 
         val actionNames = listOf("left", "right", "jump", "action", "swap")
         val displayNames = mapOf(
-            "left" to "Move Left",
-            "right" to "Move Right",
-            "jump" to "Jump",
-            "action" to "Action",
-            "swap" to "Swap Character"
+            "left" to Strings.get(StringKey.SETTINGS_MOVE_LEFT),
+            "right" to Strings.get(StringKey.SETTINGS_MOVE_RIGHT),
+            "jump" to Strings.get(StringKey.SETTINGS_JUMP),
+            "action" to Strings.get(StringKey.SETTINGS_ACTION),
+            "swap" to Strings.get(StringKey.SETTINGS_SWAP_CHARACTER)
         )
 
         // Track buttons so we can update their text after rebind
@@ -203,7 +205,7 @@ class SettingsScreen(
             btn.addListener(object : ChangeListener() {
                 override fun changed(event: ChangeEvent?, actor: Actor?) {
                     // Enter capture mode: change button text and listen for next key
-                    btn.setText("Press a key...")
+                    btn.setText(Strings.get(StringKey.SETTINGS_PRESS_KEY))
 
                     // Add a stage listener that captures the next keyDown
                     stage.addListener(object : InputListener() {
@@ -230,7 +232,7 @@ class SettingsScreen(
         }
 
         // "Reset to Defaults" button
-        val btnResetKeys = VisTextButton("Reset to Defaults")
+        val btnResetKeys = VisTextButton(Strings.get(StringKey.SETTINGS_RESET_DEFAULTS))
         btnResetKeys.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
                 settings = SettingsManager.update { it.copy(keybinds = defaultKeybinds()) }
@@ -240,7 +242,7 @@ class SettingsScreen(
                     val keycode = settings.keybinds[action] ?: -1
                     keybindButtons[action]?.setText(Input.Keys.toString(keycode))
                 }
-                showToast("Controls reset!")
+                showToast(Strings.get(StringKey.SETTINGS_CONTROLS_RESET))
             }
         })
         inner.add(btnResetKeys).left().padTop(8f).padBottom(20f).row()
@@ -248,9 +250,9 @@ class SettingsScreen(
         // ══════════════════════════════════════════════════════════════════
         // SECTION 4 — ACCESSIBILITY
         // ══════════════════════════════════════════════════════════════════
-        sectionHeader("Accessibility", topPad = 12f)
+        sectionHeader(Strings.get(StringKey.SETTINGS_ACCESSIBILITY), topPad = 12f)
 
-        inner.add(Label("Color-blind mode", bodyStyle)).left().padRight(16f)
+        inner.add(Label(Strings.get(StringKey.SETTINGS_COLORBLIND_MODE), bodyStyle)).left().padRight(16f)
         val cbBox = SelectBox<ColorBlindMode>(skin)
         val cbItems = GdxArray<ColorBlindMode>()
         ColorBlindMode.values().forEach { cbItems.add(it) }
@@ -264,7 +266,7 @@ class SettingsScreen(
         })
         inner.add(cbBox).width(300f).padBottom(8f).row()
 
-        val chkReducedMotion = CheckBox(" Reduce motion (disable shake, limit particles, freeze background)", skin)
+        val chkReducedMotion = CheckBox(Strings.get(StringKey.SETTINGS_REDUCED_MOTION), skin)
         chkReducedMotion.isChecked = settings.reducedMotion
         chkReducedMotion.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
@@ -273,7 +275,7 @@ class SettingsScreen(
         })
         inner.add(chkReducedMotion).left().padBottom(8f).row()
 
-        val chkShake = CheckBox(" Screen Shake", skin)
+        val chkShake = CheckBox(Strings.get(StringKey.SETTINGS_SCREEN_SHAKE), skin)
         chkShake.isChecked = settings.screenShake
         chkShake.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
@@ -282,7 +284,7 @@ class SettingsScreen(
         })
         inner.add(chkShake).left().row()
 
-        val chkFlash = CheckBox(" Death Flash", skin)
+        val chkFlash = CheckBox(Strings.get(StringKey.SETTINGS_DEATH_FLASH), skin)
         chkFlash.isChecked = settings.deathFlash
         chkFlash.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
@@ -292,9 +294,9 @@ class SettingsScreen(
         inner.add(chkFlash).left().padBottom(12f).row()
 
         // Assist Mode lives inside Accessibility — relaxes the challenge.
-        inner.add(Label("Assist Mode — relax the challenge as needed.", bodyStyle)).left().padBottom(6f).row()
+        inner.add(Label(Strings.get(StringKey.SETTINGS_ASSIST_MODE_HINT), bodyStyle)).left().padBottom(6f).row()
 
-        val chkInfiniteSpirits = CheckBox(" Infinite Spirits (no game over)", skin)
+        val chkInfiniteSpirits = CheckBox(Strings.get(StringKey.SETTINGS_ASSIST_INFINITE_SPIRITS), skin)
         chkInfiniteSpirits.isChecked = settings.assistInfiniteSpirits
         chkInfiniteSpirits.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
@@ -303,7 +305,7 @@ class SettingsScreen(
         })
         inner.add(chkInfiniteSpirits).left().row()
 
-        val chkInvincible = CheckBox(" Invincible (no damage)", skin)
+        val chkInvincible = CheckBox(Strings.get(StringKey.SETTINGS_ASSIST_INVINCIBLE), skin)
         chkInvincible.isChecked = settings.assistInvincible
         chkInvincible.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
@@ -312,7 +314,7 @@ class SettingsScreen(
         })
         inner.add(chkInvincible).left().padBottom(16f).row()
 
-        inner.add(Label("Slow Speed", bodyStyle)).left().padRight(16f)
+        inner.add(Label(Strings.get(StringKey.SETTINGS_ASSIST_SLOW_SPEED), bodyStyle)).left().padRight(16f)
         val sliderSpeed = Slider(0.25f, 1f, 0.05f, false, skin)
         sliderSpeed.value = settings.assistSlowSpeed
         sliderSpeed.addListener(object : ChangeListener() {
@@ -326,25 +328,25 @@ class SettingsScreen(
         // Per the categorized-layout brief, save controls sit at the bottom
         // without their own section header — they're a footer action group.
         val saveRow = VisTable()
-        val btnSave = VisTextButton("Save")
+        val btnSave = VisTextButton(Strings.get(StringKey.SETTINGS_SAVE))
         btnSave.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
                 SaveManager.saveGame(currentState, SAVE_SLOT)
-                showToast("Saved!")
+                showToast(Strings.get(StringKey.SETTINGS_TOAST_SAVED))
             }
         })
-        val btnLoad = VisTextButton("Load")
+        val btnLoad = VisTextButton(Strings.get(StringKey.SETTINGS_LOAD))
         btnLoad.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
                 SaveManager.loadGame(SAVE_SLOT)
-                showToast("Loaded!")
+                showToast(Strings.get(StringKey.SETTINGS_TOAST_LOADED))
             }
         })
-        val btnDelete = VisTextButton("Delete")
+        val btnDelete = VisTextButton(Strings.get(StringKey.SETTINGS_DELETE))
         btnDelete.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
                 SaveManager.deleteSave(SAVE_SLOT)
-                showToast("Deleted!")
+                showToast(Strings.get(StringKey.SETTINGS_TOAST_DELETED))
             }
         })
         saveRow.add(btnSave).size(120f, 48f).padRight(12f)
@@ -359,7 +361,7 @@ class SettingsScreen(
         root.add(scroll).expand().fill().padTop(10f).padBottom(10f).row()
 
         // Back button
-        val btnBack = VisTextButton("Back")
+        val btnBack = VisTextButton(Strings.get(StringKey.SETTINGS_BACK))
         btnBack.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
                 game.screen = MainMenuScreen(game)
@@ -390,7 +392,7 @@ class SettingsScreen(
         // Fonts must be regenerated at the new physical scale
         DisplayScale.init()
         FontManager.clearSharedCache()
-        showToast("Display updated — sprites sharpen at next launch")
+        showToast(Strings.get(StringKey.SETTINGS_TOAST_DISPLAY_UPDATED))
     }
 
     private fun showToast(message: String) {

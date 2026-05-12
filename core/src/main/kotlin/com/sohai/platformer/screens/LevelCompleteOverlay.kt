@@ -14,6 +14,8 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 
 class LevelCompleteOverlay(
     private val levelName: String,
@@ -46,20 +48,20 @@ class LevelCompleteOverlay(
         table.setFillParent(true)
         table.center()
 
-        table.add(Label("LEVEL COMPLETE", titleStyle)).padBottom(8f).row()
+        table.add(Label(Strings.get(StringKey.LEVEL_COMPLETE_TITLE), titleStyle)).padBottom(8f).row()
         table.add(Label(levelName, subStyle)).padBottom(32f).row()
 
         val statsTable = VisTable()
-        statsTable.add(Label("Time",    statStyle)).left().padRight(40f)
+        statsTable.add(Label(Strings.get(StringKey.LEVEL_COMPLETE_TIME), statStyle)).left().padRight(40f)
         statsTable.add(Label(timeStr,   statStyle)).right().row()
-        statsTable.add(Label("Score",   statStyle)).left().padRight(40f)
+        statsTable.add(Label(Strings.get(StringKey.LEVEL_COMPLETE_SCORE), statStyle)).left().padRight(40f)
         statsTable.add(Label("$score",  statStyle)).right().row()
-        statsTable.add(Label("Eco-Tokens", statStyle)).left().padRight(40f)
+        statsTable.add(Label(Strings.get(StringKey.LEVEL_COMPLETE_ECO_TOKENS), statStyle)).left().padRight(40f)
         statsTable.add(Label(ecoStr,    statStyle)).right().row()
 
         table.add(statsTable).padBottom(36f).row()
 
-        val btnContinue = VisTextButton("Continue")
+        val btnContinue = VisTextButton(Strings.get(StringKey.LEVEL_COMPLETE_CONTINUE))
         btnContinue.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) { onContinue() }
         })
