@@ -182,36 +182,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Updated dependency (2026-05-12):** T-045 now depends on **T-049** (climate-source compilation). The climate.gov URLs in the original prompt are dead (site archived to noaa.gov). T-049 produces a `research/climate-sources/` folder with verified-live URLs + downloaded PDFs, ready to feed NotebookLM in one step.
 
 
-### T-047 — Audio asset research: CC0 music + SFX supplements  [P3]
-- **Status:** In Progress
-- **Tool:** `antigravity` *(re-routed 2026-05-12 → `claude-code-sub-agent` while Antigravity works T-049 in parallel; research-only ticket, no production code)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-047-audio-research`
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** GDD_ADDENDUM §5 ("Audio Architecture")
-- **Files:** `art-research/audio-candidates.md` (new)
-- **Goal:** Find CC0 / CC-BY ambient music tracks + supplementary SFX suitable for a 2D pixel-art platformer. Currently the game uses 3 procedurally-generated ambient tracks (`ambient_arid`, `ambient_wind`, `ambient_eco`) — these are functional but not shipping quality. Find replacement candidates from **OpenGameArt.org**, **Free Music Archive**, and **Freesound.org**. For each candidate capture: name, source URL, license, length (s), file format, theme fit (arid/wind/eco/menu/boss/ambient), mood tags (calm/tense/triumphant), looping suitability.
-- **Done when:** `art-research/audio-candidates.md` exists with ≥3 candidates per theme (arid/wind/eco/menu/boss = 15+ total) plus ≥10 supplementary SFX candidates (footsteps, UI clicks, ambient loops). All with license + URL verified. PR opens against `main`.
-- **Constraints:** Markdown research only — do NOT download audio files. Antigravity must NOT touch any file outside `art-research/`.
-
-### T-048 — Marketing research: itch.io listing style guide  [P3]
-- **Status:** In Progress
-- **Tool:** `antigravity` *(re-routed 2026-05-12 → `claude-code-sub-agent` while Antigravity works T-049 in parallel; research-only ticket, no production code)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-048-marketing-research`
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (monetization + platforms decision)
-- **Files:** `marketing/itch-listing-style-guide.md` (new)
-- **Goal:** Research 8–12 highly-rated indie 2D pixel-art platformers on itch.io (Celeste-likes, Hollow Knight-likes, eco-themed platformers). For each: capture title, listing URL, ratings, screenshot composition (4-up grid? hero shot?), headline-copy pattern, trailer length + structure, key conversion elements (price anchoring, demo offering, dev-update cadence). Synthesize into a style guide for Cloudy Ninja's eventual itch.io listing — what should our headline say, screenshot composition, trailer length, what differentiates the page.
-- **Done when:** `marketing/itch-listing-style-guide.md` exists with: (a) comparison table of 8–12 reference listings, (b) recommended headline-copy patterns, (c) screenshot composition rules with examples, (d) trailer structure recommendation (length, beats, music), (e) 3 recommended differentiators specific to Cloudy Ninja's pitch (climate/eco angle, multi-character switching, accessibility-first design). PR opens against `main`.
-- **Constraints:** Antigravity must NOT touch any file outside `marketing/`. Markdown research only. Do NOT scrape itch.io aggressively — limit to ~12 listings.
-
 ---
 
 ## Backlog — AI testing v2 (planned, after MVP T-A1/T-A2 lands)
@@ -542,6 +512,20 @@ Template for moving a task here:
 - **Completed:** 2026-05-12
 - **Outcome:** Created `art-research/character-sprite-candidates.md` with side-scrolling CC0/CC-BY sprite sheet candidates for Ebo, Laya, and Zephyr, prioritizing Kenney base palette variants and structurally compatible OpenGameArt sprites.
 - **Commit/PR:** PR #22 (merged) `26d3d8d`
+
+### T-047 — Audio asset research: CC0 music + SFX supplements
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** `art-research/audio-candidates.md` with 32 verified candidates — 19 music tracks across 5 themes (ARID 6, WIND 6, ECO 7, MENU 6, BOSS 7) + 13 SFX entries (footsteps, UI, jumps, pickups, Kenney Interface Sounds 100-clip pack). Every URL WebFetched + license confirmed CC0/CC-BY. All BOSS tracks CC0 (no attribution at climactic moments); three ECO entries have seamless-loop guarantees; menu reaches into Free Music Archive (HoliznaCC0, John Bartmann). Recommended-picks block names a top track per theme + three top SFX, justified for libGDX + existing procedural ambient context. Re-routed from `antigravity` → `claude-code-sub-agent` (parallel with T-049).
+- **Commit/PR:** PR #24 (squashed merge `aba3a75`)
+- **Tool:** `claude-code-sub-agent` (re-routed from `antigravity`)
+
+### T-048 — Marketing research: itch.io listing style guide
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** `marketing/itch-listing-style-guide.md` analyzing 12 itch.io listings across three buckets — precision platformers (Celeste, Sheepy, Frogfall, SELF, Öoo), Metroidvanias (Pseudoregalia, Lone Fungus, Alwa's Awakening, Vapor Trails, Anodyne), eco/nature (A Short Hike, Terra Nil). Synthesis: 5 headline patterns, screenshot rules (lead with GIF; protagonist in hero shot; 5–7 gallery assets), 60–75s trailer beat sheet, 3 differentiator surfaces for Cloudy Ninja (split-frame corrupted/restored cover, mid-air character-switch GIF, accessibility callout above sysreqs). **Notable finding:** trailer embeds are nearly absent from top-rated indie pages — autoplaying GIFs dominate; influences our launch asset priorities. Re-routed from `antigravity` → `claude-code-sub-agent` (parallel with T-049).
+- **Commit/PR:** PR #25 (squashed merge `d60d2f4`)
+- **Tool:** `claude-code-sub-agent` (re-routed from `antigravity`)
 
 <!--
 Template for moving a task here:
