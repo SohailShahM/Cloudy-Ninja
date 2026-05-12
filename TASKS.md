@@ -320,19 +320,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Either: (A) Android APK builds locally + CI step passes + a one-line "Mobile build OK as of 2026-05-12" note in LEARNINGS.md. Or: (B) `BUILD-LOG.md` + `QUESTIONS.md` entry documents the blocker; ticket marked blocked. Either outcome is a success — clarity is the goal.
 - **Constraints:** Do NOT attempt risky toolchain bumps (AGP > 1 minor, Kotlin > 1 minor, Java target changes). Do NOT publish APK to anywhere. Do NOT change signing config.
 
-### T-091 — `Strings.format(key, *args)` API for compositional strings  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-091-strings-format`
-- **Started:** 2026-05-12
-- **Depends on:** T-059
-- **GDD ref:** GAME_PLAN.md (localization future-proofing — T-059 follow-up)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`, all `screens/*.kt` with `${...}` interpolation
-- **Goal:** Add `fun format(key: StringKey, vararg args: Any): String` to `Strings` using `{0}`/`{1}` substitution (or `java.text.MessageFormat` if pluralization is needed). Add new `StringKey` entries for every interpolated literal T-059 deliberately skipped: `SLOT_N` ("Slot {0}"), `ATLAS_PCT` ("Atlas: {0}%"), `BEST_SCORE` ("Best score: {0}"), `SPIRIT_DEATH` ("{0} fell ({1} spirits left)"), `WORLD_PORTAL` ("{0} World {1}: {2}"), etc. Sweep every `${...}` site in `screens/*.kt` and replace with `Strings.format(StringKey.X, ...)`. English templates byte-identical to current rendered output.
-- **Done when:** Every `${...}` interpolation in screens routes through `Strings.format(...)`; ≥10 new keys; compile clean; smoke CI passes (visual diff zero).
 
 ---
 
@@ -528,6 +515,13 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Outcome:** 17 tests covering `Level0_0.portalUnlockRequirement(portalId)` and `Level0_0.portalTargetLevel(portalId)`. Spawned via `mcp__ccd_session__spawn_task` chip after T-090's sub-agent flagged this as a discrete follow-up.
 - **Commit/PR:** PR #46 (squashed merge `faaf1a3`)
 - **Tool:** `claude-code-sub-agent` (spawned-task chip from session)
+
+### T-091 — `Strings.format(key, *args)` API for compositional strings
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Closes the i18n gap T-059 deliberately left. Added `Strings.format(key, vararg args: Any)` using a simple `{N}` regex substitution (chose this over `java.text.MessageFormat` to avoid locale-sensitive number/date quirks). **26 new keys**, **28 interpolation sites** swept across **10 screens** (`CloudAtlasOverlay`, `CloudAtlasScreen`, `Hud`, `LevelCompleteOverlay`, `LevelRunState`, `LevelSelectScreen`, `MainMenuScreen`, `PauseOverlay`, `StatsScreen`, `VictoryScreen`). New keys include `SLOT_LABEL`, `WORLD_PORTAL`, `SPIRIT_DEATH`, `COMBO_MULTIPLIER`, `ATLAS_PCT`, etc. **Byte-identical English output.** Deliberately left as literal: bare `"$score"` Labels (no surrounding copy), data values like `"${entry.title}"`, `Gdx.app.log` strings, printf templates using Kotlin's `.format()`.
+- **Commit/PR:** PR #48 (squashed merge `8c6486b`)
+- **Tool:** `claude-code-sub-agent`
 
 ### T-049 — Climate-source compilation for NotebookLM
 - **Status:** Done
