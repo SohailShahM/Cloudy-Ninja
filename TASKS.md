@@ -178,19 +178,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** 12 entries in registry, all reachable in gameplay, atlas screen displays all 12 cards with correct text. Compile clean.
 - **Updated dependency (2026-05-12):** T-045 now depends on **T-049** (climate-source compilation). The climate.gov URLs in the original prompt are dead (site archived to noaa.gov). T-049 produces a `research/climate-sources/` folder with verified-live URLs + downloaded PDFs, ready to feed NotebookLM in one step.
 
-### T-058 — Reduced-motion mode toggle  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-058-reduced-motion`
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (accessibility-first design)
-- **Files:** `persist/Settings.kt`, `screens/SettingsScreen.kt`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `rendering/ParallaxBackground.kt`
-- **Goal:** Add `reducedMotion: Boolean = false` to `Settings`. When enabled: disable screen shake on damage/boss-stomp, cap particle bursts to 1 (vs 6–10), set `ParallaxBackground` scrollFactor to 0 (background stays still). UI toggle in SettingsScreen accessibility section (same section as T-057).
-- **Done when:** Toggle works, all three effect dampenings visible in runtime, persists, smoke CI passes.
 
 ### T-059 — String extraction scaffolding (i18n prep)  [P3]
 - **Status:** Todo
@@ -220,12 +207,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** All 27 smoke jobs pass on a PR; CI duration acceptable (parallel jobs, should still finish under 6 min).
 
 ### T-062 — Second enemy type: "Drift Husk" (drop-from-above)  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** M
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-062-drift-husk`
+- **Started:** 2026-05-12
 - **Depends on:** T-029
 - **GDD ref:** §17 ("Enemy Design Spec") — second concrete subclass of `Enemy`
 - **Files:** `entities/DriftHusk.kt` (new), `entities/Enemy.kt` (no changes expected — just a new subclass), `levels/TmxLevelDefinition.kt` (add `DriftHuskDef`), `levels/LevelRegistry.kt` (place 2 in Level 2), `screens/LevelRenderer.kt` (render as floating purple oval with trailing wisp)
@@ -245,20 +233,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add a 0.2s fade-in to the pause overlay (alpha 0 → 0.7 on Esc-press), darken the backdrop behind the menu (~55% black overlay over gameplay), and right-align a tiny "press Esc to resume" hint at the bottom. Keep input handling identical.
 - **Done when:** Fade-in visible at 60 FPS without input lag, hint visible, smoke CI passes.
 
-### T-064 — Victory screen best-time delta indicator  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-064-victory-delta`
-- **Started:** 2026-05-12
-- **Depends on:** T-024
-- **GDD ref:** §23 (time-trial spec)
-- **Files:** `screens/VictoryScreen.kt`
-- **Goal:** When the run completes a time-trial AND there's a prior best, display the delta below the current time: `−2.31s under best` (green) or `+0.42s slower` (grey). Use `GameState.bestTimes[levelId]` for the comparison. No delta shown if no prior best. **Note:** `bestTimes` is `Map<String, Float>` (seconds), per T-060 discovery.
-- **Done when:** Delta displays correctly on the second+ time-trial completion of a level; formatting matches existing screen typography.
-
 ### T-066 — Achievement icons (16×16 pixel art)  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -273,12 +247,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** All 12 icons visible in achievement toast + atlas screen; PNGs committed at 16×16; compile clean; smoke CI passes.
 
 ### T-069 — Settings screen: categorized layout  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-069-settings-categorized`
+- **Started:** 2026-05-12
 - **Depends on:** T-035, T-036
 - **GDD ref:** GAME_PLAN.md (UX polish)
 - **Files:** `screens/SettingsScreen.kt`
@@ -518,6 +493,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Outcome:** Per-slot best-times section in `StatsScreen` — header + one `MM:SS.mmm` line per recorded level in canonical level order (via `LevelManager.getAllLevels()`, which covers full sequence including tutorial rooms — `LevelRegistry.ALL` would have missed those). Empty state renders a muted "(no times recorded)". `Label` + `FontManager.getShared` per the T-044 lesson. Sub-agent caught spec drift: `bestTimes` is actually `Map<String, Float>` (seconds, written by `LevelTransitionController`), not `Map<String, Long>` (ms) as the brief claimed — matched the codebase rather than fabricate.
 - **Commit/PR:** PR #34 (squashed merge `f6e34a8`)
 - **Tool:** `claude-code-sub-agent`
+
+### T-058 — Reduced-motion mode toggle
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** `reducedMotion: Boolean = false` added to Settings + checkbox in the existing Accessibility section. Three dampenings: (1) `LevelRunState.triggerShake()` early-returns when flag is set (covers landing-thud + death-burst sites); (2) new private `LevelRenderer.clampBurstCount(default)` invoked at every particle-spawn site (`spawnJumpPuff`, `spawnLandingDust`, `spawnCleanseBurst`, `spawnCollectSparkle`, `spawnTokenSparkle`, `spawnSnapshotSparkle`, `spawnStompSmokeBurst`) — returns 1 when flag set, else default; (3) `ParallaxBackground.render()` forces `effectiveScroll = 1f` per layer, so the background tracks camera 1:1 and appears static. Flag = false is byte-identical to pre-change.
+- **Commit/PR:** PR #38 (squashed merge `4493baf`)
+- **Tool:** `claude-code-sub-agent`
+
+### T-064 — Victory screen best-time delta indicator
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** New `priorBestTime: Float?` param on `VictoryScreen`. When non-null and delta ≠ 0, renders one line between Trial Time and the NEW BEST banner: `−2.31s under best` (green) or `+0.42s slower` (light grey). Scope expanded by 4 lines in `LevelTransitionController` to capture `prevTime` before SaveManager overwrites it — caught by sub-agent's BLOCKER analysis (original ticket forbade caller-side changes, which made the work impossible). Orchestrator did the small plumbing inline rather than re-dispatch. Default `null` preserves all existing callers.
+- **Commit/PR:** PR #36 (squashed merge `246191e`)
+- **Tool:** `claude-code-opus` (inline after sub-agent flagged scope blocker)
 
 ### T-049 — Climate-source compilation for NotebookLM
 - **Status:** Done
