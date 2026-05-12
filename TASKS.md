@@ -619,6 +619,13 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Tool:** `claude-code-sub-agent`
 - **Source quirks pinned:** (1) `setMusicVolume()` silently skips during crossfades — silent UX failure if user drags slider mid-fade. (2) `stop()` is immediate despite doc claiming a fade. Spawn-task chip generated for fixing.
 
+### T-103 — MusicManager: fix two quirks flagged by T-094 (silent-skip volume mid-crossfade; stop() doc)
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Quirk 1 (behavior): `setMusicVolume()` now applies the new master volume during crossfade and fade-in, scaled by each track's current fade weight (`volMusic * (1-t)` outgoing, `volMusic * t` incoming) — slider drags between levels are heard immediately rather than dropped for 1.5s. Quirk 2 (doc only): rewrote `stop()` KDoc to match its synchronous-stop implementation. Updated the `setMusicVolume is called mid-crossfade` case in `MusicManagerTest` (which under T-094 pinned the silent-skip bug) to assert the new immediate-apply semantics; added a parallel mid-fade-in case.
+- **Commit/PR:** PR #54 (squashed merge `3c6dcd6`)
+- **Tool:** `claude-code-opus`
+
 ### T-095 — Kotest specs for SoundManager (per-bus volume)
 - **Status:** Done
 - **Completed:** 2026-05-12
