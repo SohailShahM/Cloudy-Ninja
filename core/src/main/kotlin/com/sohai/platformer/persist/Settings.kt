@@ -6,6 +6,14 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+/**
+ * Color-blind palette modes. Selecting any non-OFF value swaps a curated set of
+ * gameplay colors (hazards, eco-tokens, snapshot pickups, portals) for shades
+ * that remain distinguishable under the most common forms of color-vision
+ * deficiency. OFF keeps the original look exactly.
+ */
+enum class ColorBlindMode { OFF, DEUTERANOPIA, PROTANOPIA, TRITANOPIA }
+
 /** Returns the default keyboard bindings: action-name → Input.Keys keycode. */
 fun defaultKeybinds(): Map<String, Int> = mapOf(
     "left" to Input.Keys.A,
@@ -50,7 +58,12 @@ data class Settings(
     // Art style: id of the active TilesetPack (see TilesetRegistry).
     // Default keeps existing saves backward-compatible (kotlinx-serialization
     // returns this value when loading older settings.json files that lack the field).
-    val tilesetPackId: String = "kenney_pixel_platformer"
+    val tilesetPackId: String = "kenney_pixel_platformer",
+
+    // Accessibility: color-blind palette. Default OFF keeps existing saves
+    // backward-compatible — older settings.json files without this field will
+    // deserialize with OFF and render exactly as before.
+    val colorBlindMode: ColorBlindMode = ColorBlindMode.OFF
 )
 
 /**
