@@ -63,7 +63,12 @@ data class Settings(
     // Accessibility: color-blind palette. Default OFF keeps existing saves
     // backward-compatible — older settings.json files without this field will
     // deserialize with OFF and render exactly as before.
-    val colorBlindMode: ColorBlindMode = ColorBlindMode.OFF
+    val colorBlindMode: ColorBlindMode = ColorBlindMode.OFF,
+
+    // Accessibility: reduced-motion mode. When true, disables screen shake,
+    // clamps particle bursts to a single particle, and freezes the parallax
+    // background scroll. Default false keeps existing saves byte-identical.
+    val reducedMotion: Boolean = false
 )
 
 /**

@@ -198,7 +198,8 @@ class LevelRunState(
     // ── Public API ────────────────────────────────────────────────────────────
 
     fun triggerShake(intensityMeters: Float, durationSec: Float) {
-        if (!SettingsManager.load().screenShake) return
+        val s = SettingsManager.load()
+        if (!s.screenShake || s.reducedMotion) return
         shakeIntensity = maxOf(shakeIntensity, intensityMeters)
         shakeDuration  = maxOf(shakeDuration, durationSec)
     }
