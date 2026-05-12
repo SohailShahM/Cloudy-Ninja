@@ -1,0 +1,66 @@
+Cloudy Ninja
+Copyright (c) 2026 Sohail Shah / MashxLabz. All rights reserved.
+
+This source code repository ("the Work") is published with the source publicly
+visible for transparency, educational reference, and potential future
+open-source release. It is NOT released under an open-source license, and the
+copyright holder reserves all rights not explicitly granted below.
+
+PERMITTED (no permission required):
+- Viewing the source code on GitHub.
+- Cloning the repository for personal study, code review, or learning.
+- Forking the repository for the sole purpose of submitting Pull Requests
+  back to this repository. Forks must not be published as competing
+  distributions, releases, or derivative products.
+- Reporting bugs, security issues, or feature requests via GitHub Issues.
+- Quoting short excerpts of source code (under ~30 lines) in articles, talks,
+  blog posts, or social media, provided the excerpt is clearly attributed to
+  "Cloudy Ninja by Sohail Shah" with a link back to this repository.
+
+NOT PERMITTED (requires prior written permission from the copyright holder):
+- Redistribution of the Work or any substantial portion of it, in source or
+  compiled form, by any medium, including but not limited to GitHub forks
+  published as standalone products, package registries, asset stores, or
+  third-party platforms.
+- Modification of the Work and distribution of the modified version, whether
+  for free or for sale ("derivative works").
+- Commercial use of any kind. This includes (without limitation): selling
+  builds, including the Work in a paid product, monetizing the Work through
+  ads or subscriptions, or using the Work as a basis for any product offered
+  for direct or indirect compensation.
+- Use of the "Cloudy Ninja" name, the project's branding, or any associated
+  trademark in any other product, service, or promotion.
+- Reverse-engineering, decompiling, or extracting compiled assets from
+  shipped binaries (separate from the source-code rights addressed above)
+  for the purpose of producing a competing product.
+- Removal, alteration, or obscuring of this LICENSE file, the NOTICE.md
+  file, copyright headers in source files, or any attribution to the
+  copyright holder.
+
+THIRD-PARTY ASSETS:
+This repository includes third-party assets distributed under permissive
+licenses that explicitly grant rights this LICENSE could not otherwise grant.
+Those assets retain their original licenses regardless of the terms above.
+See NOTICE.md for the full list of third-party assets bundled in this
+repository, their original sources, and their original license terms.
+
+CONTRIBUTIONS:
+By submitting a Pull Request to this repository, you grant the copyright
+holder a perpetual, worldwide, non-exclusive, royalty-free, irrevocable
+license to use, reproduce, modify, prepare derivative works of, publicly
+display, publicly perform, sublicense, and distribute your contribution as
+part of the Work, under the terms of this LICENSE.
+
+NO WARRANTY:
+THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHOR OR COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING
+FROM, OUT OF, OR IN CONNECTION WITH THE WORK OR THE USE OR OTHER DEALINGS
+IN THE WORK.
+
+LICENSING INQUIRIES:
+For commercial licensing, distribution rights, or any use not explicitly
+permitted above, contact the copyright holder via the GitHub profile
+linked from this repository: https://github.com/SohailShahM
