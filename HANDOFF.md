@@ -45,7 +45,7 @@ The collaboration channel between Claude Code and Antigravity that `prompts/buil
 - `bridge_send` / `bridge_receive` — async messages, share insights, drop a plan for the other side to glance at.
 - `bridge_handoff` — transfer ownership of work. Reserve for **small surgical tasks** sized to AGV's remaining quota; AGV should `bridge_decline` rather than half-execute.
 - `bridge_diagnose` — first thing to call at session start; surfaces path-collision and stale-state failures in one call.
-- `bridge_status` — AGV reports remaining Gemini quota here at session start so CC can size requests.
+- `bridge_status` — AGV self-rates remaining capacity here at session start as `green` / `yellow` / `red` (verified live: Gemini has no quota-introspection tool, so coarse buckets are the honest answer; CC reads this and routes accordingly).
 
 **When to use it:** when CC wants AGV's perspective on the same ticket without going through TASKS.md. Bulk workhorse work still goes to `copilot-agent` or `claude-code-sonnet` — the bridge is not a queue for shipping AGV more work, it's a channel for getting AGV's input on work CC is already doing.
 
