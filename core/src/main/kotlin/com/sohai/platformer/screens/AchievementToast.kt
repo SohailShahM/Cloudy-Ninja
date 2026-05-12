@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Table
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 import com.badlogic.gdx.utils.Disposable
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.kotcrab.vis.ui.widget.VisImage
@@ -36,6 +37,8 @@ class AchievementToast(
         private const val TOAST_HEIGHT   = 64f
         private const val PAD_RIGHT      = 16f     // gap from right edge (virtual px)
         private const val PAD_TOP        = 16f     // gap from top edge (virtual px)
+        private const val ICON_SIZE      = 32f     // 2× the 16×16 source PNG (T-078)
+        private const val ICON_TEXT_GAP  = 8f      // gap between icon and text column
         private const val TOTAL_DURATION = SLIDE_DURATION + HOLD_DURATION + FADE_DURATION
     }
 
@@ -68,6 +71,11 @@ class AchievementToast(
     // Container table — moved off-screen initially
     private val toastTable: VisTable
 
+    // Icon support (T-066): lazy-loaded textures keyed by achievement id; rendered
+    // left of the title at 32×32 (2× the 16×16 PNG source from T-078).
+    private val iconCache: MutableMap<String, Texture> = HashMap()
+    private val iconImage: VisImage = VisImage()
+
     init {
         // Create a 1x1 dark semi-transparent texture for the background panel
         val pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
@@ -91,10 +99,17 @@ class AchievementToast(
 
         bgImage.setSize(TOAST_WIDTH, TOAST_HEIGHT)
 
+        // Inner column for text (title + desc), placed right of the icon.
+        val textColumn = VisTable()
+        textColumn.add(titleLabel).left().expandX().fillX().row()
+        textColumn.add(descLabel).left().expandX().fillX()
+
+        // Foreground content: [ICON 32×32] [GAP] [text column]
         val textTable = VisTable()
         textTable.pad(8f)
-        textTable.add(titleLabel).left().expandX().fillX().row()
-        textTable.add(descLabel).left().expandX().fillX()
+        textTable.left()
+        textTable.add(iconImage).size(ICON_SIZE, ICON_SIZE).padRight(ICON_TEXT_GAP)
+        textTable.add(textColumn).left().expandX().fillX()
 
         stack.add(bgImage)
         stack.add(textTable)
@@ -126,6 +141,7 @@ class AchievementToast(
             currentAchievement = next.achievement
             titleLabel.setText(next.achievement.title)
             descLabel.setText(next.achievement.desc)
+            applyIcon(next.achievement)
             toastTable.color.a = 1f
             phase = Phase.SLIDE_IN
             phaseTimer = 0f
@@ -192,8 +208,33 @@ class AchievementToast(
         viewport.update(width, height, false)
     }
 
+    /**
+     * Lazy-load the icon texture for the given achievement and wire it into
+     * [iconImage]. Cached by achievement id so we don't re-decode each toast.
+     * Missing files are tolerated: the icon slot simply renders blank.
+     */
+    private fun applyIcon(achievement: Achievement) {
+        val cached = iconCache[achievement.id]
+        val tex: Texture? = if (cached != null) {
+            cached
+        } else {
+            val handle = Gdx.files.internal(achievement.iconPath)
+            if (handle.exists()) {
+                val t = Texture(handle)
+                iconCache[achievement.id] = t
+                t
+            } else {
+                Gdx.app.log("AchievementToast", "Icon not found: ${achievement.iconPath}")
+                null
+            }
+        }
+        iconImage.drawable = tex?.let { TextureRegionDrawable(it) }
+    }
+
     override fun dispose() {
         bgTexture.dispose()
+        iconCache.values.forEach { it.dispose() }
+        iconCache.clear()
         stage.dispose()
         // titleFont/descFont are shared — do NOT dispose them
     }
