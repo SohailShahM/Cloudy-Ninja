@@ -459,22 +459,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Tapping Delete on a save slot now opens a modal: `Delete slot {N}? This cannot be undone.` with `Cancel` / `Delete`. Default-focus is `Cancel`. `Esc` cancels. Only `Delete` fires `SaveManager.deleteSlot()`. Empty slots hide (or disable) the delete affordance to match existing slot-card style.
 - **Done when:** No path deletes a slot without the confirm modal; Cancel preserves the slot; smoke CI passes (verify autopilot doesn't open the modal — that path stays unaffected).
 
-### T-120 — Localization coverage audit  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`  *(Flash workhorse — pure mechanical scan)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-120-i18n-coverage-audit`
-- **Depends on:** T-091  *(i18n format API)*
-- **GDD ref:** HANDOFF.md ("i18n scaffolding (T-059) + Strings.format API (T-091); 130+ keys") — verify nothing leaked
-- **Files:** `research/i18n-coverage.md` (new), entries in `QUESTIONS.md` if hardcoded user-facing strings found
-- **Goal:** Scan all `*.kt` files under `core/src/main/kotlin/com/sohai/platformer/screens/`, `entities/`, and other UI-adjacent paths for string literals that look user-facing (`Label("...")`, `TextButton("...")`, `setText("...")`; log messages excluded). For each hit record: file, line, literal, recommended `StringKey` name. Group by category (settings/menu/gameplay/achievements). Produce a punch-list — **do NOT modify code**. If high-confidence cases are found, file ONE summary QUESTIONS.md entry asking whether to wire each as a follow-up Copilot ticket.
-- **Done when:** `research/i18n-coverage.md` exists with a table of all candidate strings + recommended keys; QUESTIONS.md gets one summary entry if any are found; no source-code changes in this PR.
-- **Constraints:** Research-only. Do NOT add new `StringKey` entries. Do NOT modify Kotlin source files. Do NOT auto-fix.
-
-
-
 ---
 
 ## Backlog — AI testing v2 (planned, after MVP T-A1/T-A2 lands)
@@ -574,6 +558,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Goal:** Add `saveFormatVersion: Int = 1` to `GameState`. In `SaveManager.loadGame()`, route the deserialized JSON through `SaveMigrations.migrate(json): GameState` before returning. `SaveMigrations` is a chain of `(version, JsonValue) -> JsonValue` steps; v1 is an identity no-op. Existing saves without a version field are treated as v1. Persist writes always use the current version.
 - **Done when:** Saves carry a version field; loads route through the migration chain; existing saves remain loadable; new test covers the migration scaffold with a fake v0→v1 step; smoke CI passes.
 - **Constraints:** Don't change the save schema beyond adding the version field. The scaffold is what matters, not migrations themselves.
+
+### T-120 — Localization coverage audit  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from antigravity — autonomous-run velocity)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-120-i18n-coverage-audit
+- **Started:** 2026-05-12
+- **Depends on:** T-091  *(i18n format API)*
+- **GDD ref:** HANDOFF.md ("i18n scaffolding (T-059) + Strings.format API (T-091); 130+ keys") — verify nothing leaked
+- **Files:** `research/i18n-coverage.md` (new), entries in `QUESTIONS.md` if hardcoded user-facing strings found
+- **Goal:** Scan all `*.kt` files under `core/src/main/kotlin/com/sohai/platformer/screens/`, `entities/`, and other UI-adjacent paths for string literals that look user-facing (`Label("...")`, `TextButton("...")`, `setText("...")`; log messages excluded). For each hit record: file, line, literal, recommended `StringKey` name. Group by category (settings/menu/gameplay/achievements). Produce a punch-list — **do NOT modify code**. If high-confidence cases are found, file ONE summary QUESTIONS.md entry asking whether to wire each as a follow-up Copilot ticket.
+- **Done when:** `research/i18n-coverage.md` exists with a table of all candidate strings + recommended keys; QUESTIONS.md gets one summary entry if any are found; no source-code changes in this PR.
+- **Constraints:** Research-only. Do NOT add new `StringKey` entries. Do NOT modify Kotlin source files. Do NOT auto-fix.
 
 ### T-104 — Splash / asset-preload progress bar  [P3]
 - **Status:** In Progress
