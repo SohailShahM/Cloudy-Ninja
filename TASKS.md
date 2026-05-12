@@ -206,27 +206,14 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Extend smoke matrix from 9 (level × default-character) to 27 (level × {ebo, laya, zephyr}). Add `cloudy.smokeCharacter` system property to `Main.kt` that pre-selects the starting character before `GameScreen` init. Update workflow to include a `character` axis.
 - **Done when:** All 27 smoke jobs pass on a PR; CI duration acceptable (parallel jobs, should still finish under 6 min).
 
-### T-062 — Second enemy type: "Drift Husk" (drop-from-above)  [P3]
+### T-063 — Pause menu visual polish + fade-in  [P3]
 - **Status:** In Progress
 - **Tool:** `claude-code-sub-agent`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-062-drift-husk`
-- **Started:** 2026-05-12
-- **Depends on:** T-029
-- **GDD ref:** §17 ("Enemy Design Spec") — second concrete subclass of `Enemy`
-- **Files:** `entities/DriftHusk.kt` (new), `entities/Enemy.kt` (no changes expected — just a new subclass), `levels/TmxLevelDefinition.kt` (add `DriftHuskDef`), `levels/LevelRegistry.kt` (place 2 in Level 2), `screens/LevelRenderer.kt` (render as floating purple oval with trailing wisp)
-- **Goal:** Add a second enemy archetype to widen combat variety. DriftHusk floats stationary above its `triggerX` (horizontal patrol band), drops vertically (gravity-driven kinematic body) when player crosses the trigger, and respawns 4s after impact-or-defeat. 2 Seed-Slam hits to defeat. Mirror SmogSprite's class structure. Add Kotest specs alongside (≥10 tests in `entities/DriftHuskTest.kt`).
-- **Done when:** Level 2 contains 2 Drift Husks, they drop on player passage, can be stomped or Seed-Slammed, respawn after 4s, compile clean, smoke CI passes, tests pass.
-
-### T-063 — Pause menu visual polish + fade-in  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-063-pause-polish`
+- **Started:** 2026-05-12
 - **Depends on:** _none_
 - **GDD ref:** GAME_PLAN.md (polish for itch.io alpha)
 - **Files:** `screens/PauseScreen.kt` (or wherever the pause overlay lives), `screens/LevelRenderer.kt` (backdrop dim)
@@ -246,19 +233,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Procedurally generate (via a one-off Kotlin tool in `tools/`) or hand-place 12 distinct 16×16 PNG icons — one per achievement. Each icon should be a simple iconic symbol (stomp = boot, time-trial = stopwatch, atlas_full = open book, etc.). Add `iconPath` to `Achievement`. Render at 2× scale (32×32) in toast + atlas list. Procedural-gen is fine for v1; replace with hand-art later.
 - **Done when:** All 12 icons visible in achievement toast + atlas screen; PNGs committed at 16×16; compile clean; smoke CI passes.
 
-### T-069 — Settings screen: categorized layout  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-069-settings-categorized`
-- **Started:** 2026-05-12
-- **Depends on:** T-035, T-036
-- **GDD ref:** GAME_PLAN.md (UX polish)
-- **Files:** `screens/SettingsScreen.kt`
-- **Goal:** Restructure SettingsScreen into 4 collapsible/tabbed sections: **Display** (resolution, fullscreen, font scaling), **Audio** (music/sfx/ui sliders), **Controls** (key rebinding), **Accessibility** (color-blind mode, reduced motion, assist mode). Keep all existing widgets — just reorganize.
-- **Done when:** Settings screen has 4 visually-distinct sections, all existing controls functional, no widget removed, smoke CI passes.
 
 ### T-073 — User research: pixel-platformer default keyboard layouts  [P3]
 - **Status:** Todo
@@ -507,6 +481,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Outcome:** New `priorBestTime: Float?` param on `VictoryScreen`. When non-null and delta ≠ 0, renders one line between Trial Time and the NEW BEST banner: `−2.31s under best` (green) or `+0.42s slower` (light grey). Scope expanded by 4 lines in `LevelTransitionController` to capture `prevTime` before SaveManager overwrites it — caught by sub-agent's BLOCKER analysis (original ticket forbade caller-side changes, which made the work impossible). Orchestrator did the small plumbing inline rather than re-dispatch. Default `null` preserves all existing callers.
 - **Commit/PR:** PR #36 (squashed merge `246191e`)
 - **Tool:** `claude-code-opus` (inline after sub-agent flagged scope blocker)
+
+### T-062 — Second enemy type: Drift Husk (drop-from-above)
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** New `entities/DriftHusk.kt` (168 lines) — kinematic-body enemy with state machine `FLOATING → DROPPING → COOLDOWN → FLOATING`. Trigger band 0.6m, 4s respawn, 2-hit Seed-Slam defeat, stomp-from-above sets `wasStomped`. Two placed in Level 2 at (820, 600) and (1620, 600). Renderer adds floating-purple-oval block with trailing wisp. `entities/DriftHuskTest.kt` (245 lines, **25 tests**) covers full state machine via reflection (same pattern as SmogSpriteTest). Sub-agent correctly flagged that `GameScreen.kt` wiring was out of file scope; orchestrator added it inline in a follow-up commit (3-line parallel block + named-arg passthrough). All defaults preserve behavior on non-Level-2 levels.
+- **Commit/PR:** PR #40 (squashed merge `c752577`)
+- **Tool:** `claude-code-sub-agent` + `claude-code-opus` (follow-up wiring)
+
+### T-069 — Settings screen: categorized layout
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** `screens/SettingsScreen.kt` reorganized into 4 sections: Display (resolution, fullscreen, FPS) / Audio (music/SFX/UI sliders) / Controls (5 keybinds + reset) / Accessibility (color-blind mode, reduced motion, screen shake, death flash, assist mode group). Pattern: section headers + `Separator` divider (rejected `VisTabbedPane` since it isn't used elsewhere). Save/Load/Delete moved to footer below sections (no header, per pattern). No widget added/removed/renamed/rewired; `Settings.kt` not touched. Judgment calls: "Show FPS" → Display (output toggle, not comfort); screen shake + death flash → Accessibility (gates same comfort-vs-juice trade-off as Reduce Motion).
+- **Commit/PR:** PR #39 (squashed merge `6707ca5`)
+- **Tool:** `claude-code-sub-agent`
 
 ### T-049 — Climate-source compilation for NotebookLM
 - **Status:** Done
