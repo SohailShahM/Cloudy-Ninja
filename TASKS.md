@@ -320,6 +320,61 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Either: (A) Android APK builds locally + CI step passes + a one-line "Mobile build OK as of 2026-05-12" note in LEARNINGS.md. Or: (B) `BUILD-LOG.md` + `QUESTIONS.md` entry documents the blocker; ticket marked blocked. Either outcome is a success — clarity is the goal.
 - **Constraints:** Do NOT attempt risky toolchain bumps (AGP > 1 minor, Kotlin > 1 minor, Java target changes). Do NOT publish APK to anywhere. Do NOT change signing config.
 
+### T-088 — Kotest specs for SaveManager round-trip + back-compat  [P2]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-088-savemanager-tests`
+- **Started:** 2026-05-12
+- **Depends on:** _none_
+- **GDD ref:** save-data integrity (T-004 lineage)
+- **Files:** `core/src/test/kotlin/com/sohai/platformer/persist/SaveManagerTest.kt` (new)
+- **Goal:** Verify save→load round-trips return an equal `GameState`. Cover every field on `GameState` (completedLevels, bestScores, bestTimes, totalStomps, unlockedAchievements, etc.). Test backwards-compat: a JSON file with missing fields (e.g. legacy save without `unlockedAchievements`, without `colorBlindMode`, without `reducedMotion`) deserializes with the default values. Use a temporary file in `Gdx.files.local()` or a stubbable path so tests don't write to the real save slots. Mirror `CloudAtlasLibraryTest` style.
+- **Done when:** ≥12 tests pass — at least one round-trip per major field group, ≥3 back-compat scenarios.
+
+### T-089 — Kotest specs for ParallaxBackground theme + reducedMotion  [P2]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-089-parallax-tests`
+- **Started:** 2026-05-12
+- **Depends on:** T-026, T-058
+- **GDD ref:** T-026 (per-level theming) + T-058 (reduced-motion outcome)
+- **Files:** `core/src/test/kotlin/com/sohai/platformer/rendering/ParallaxBackgroundTest.kt` (new)
+- **Goal:** Pure-logic tests for `ParallaxBackground`. Cover: (a) `ParallaxTheme` enum switching changes the color palette correctly (Arid/Wind/Eco distinct), (b) per-layer `scrollFactor` lerps the camera position as expected (mock camera, assert layer offset), (c) reduced-motion path forces `effectiveScroll = 1f` for every layer (T-058 invariant), (d) star-fade by `cleanseRatio` works at endpoints (0.0 → max alpha, 0.5 → min alpha). No live GL required — pure math + state.
+- **Done when:** ≥10 tests pass. No live LibGDX rendering.
+
+### T-090 — Kotest specs for LevelManager  [P2]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-090-levelmanager-tests`
+- **Started:** 2026-05-12
+- **Depends on:** T-016
+- **GDD ref:** T-016 (data-driven level registry)
+- **Files:** `core/src/test/kotlin/com/sohai/platformer/levels/LevelManagerTest.kt` (new)
+- **Goal:** Pure-logic tests for `LevelManager`. Cover: (a) `getLevel(id)` returns expected level / null for unknown ids, (b) `getNextLevel(currentId)` advances correctly through the canonical sequence, returns null at the end, (c) `getAllLevels()` returns the full ordered sequence with the expected count (8: hub + 4 tutorial + 3 campaign), (d) locked-world checks against `GameState.completedLevels` work (World 1 portal locked until World 0 done). Mirror `CloudAtlasLibraryTest` style.
+- **Done when:** ≥12 tests pass.
+
+### T-091 — `Strings.format(key, *args)` API for compositional strings  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-059
+- **GDD ref:** GAME_PLAN.md (localization future-proofing — T-059 follow-up)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`, all `screens/*.kt` with `${...}` interpolation
+- **Goal:** Add `fun format(key: StringKey, vararg args: Any): String` to `Strings` using `{0}`/`{1}` substitution (or `java.text.MessageFormat` if pluralization is needed). Add new `StringKey` entries for every interpolated literal T-059 deliberately skipped: `SLOT_N` ("Slot {0}"), `ATLAS_PCT` ("Atlas: {0}%"), `BEST_SCORE` ("Best score: {0}"), `SPIRIT_DEATH` ("{0} fell ({1} spirits left)"), `WORLD_PORTAL` ("{0} World {1}: {2}"), etc. Sweep every `${...}` site in `screens/*.kt` and replace with `Strings.format(StringKey.X, ...)`. English templates byte-identical to current rendered output.
+- **Done when:** Every `${...}` interpolation in screens routes through `Strings.format(...)`; ≥10 new keys; compile clean; smoke CI passes (visual diff zero).
+
 ---
 
 ## Backlog — AI testing v2 (planned, after MVP T-A1/T-A2 lands)
