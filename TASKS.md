@@ -262,21 +262,6 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
-### T-051 — Dependency upgrade audit (Box2D, libGDX, Kotlin, VisUI)  [P3]
-- **Status:** In Progress
-- **Tool:** `antigravity`
-- **Tier:** S  *(research-only — the audit IS the deliverable; do not bump versions)*
-- **Autonomous-eligible:** yes
-- **Agent:** antigravity
-- **Branch:** `antigravity/T-051-dep-audit`
-- **Depends on:** _none_
-- **GDD ref:** LEARNINGS.md (Box2D crash history — T-017, T-043)
-- **Files:** `research/dependency-audit.md` (new)
-- **Goal:** Read the project's `build.gradle.kts`, `core/build.gradle.kts`, and `android/build.gradle.kts` to extract current versions of all major deps (libGDX, Box2D, Kotlin, VisUI, Kotest, JUnit, etc.). For each: find latest stable version, summarize changelog between current and latest, identify breaking changes that would require code edits (cite specific Kotlin file paths when possible), tag with **upgrade-risk** (LOW / MEDIUM / HIGH) and **upgrade-value** (LOW = cosmetic, MEDIUM = bugfixes, HIGH = perf/security/feature we need).
-- **Done when:** `research/dependency-audit.md` exists with: (a) comparison table of all major deps (current → latest), (b) per-dep section with changelog summary + breaking-change citations + risk/value ratings, (c) recommended upgrade order, (d) top-3 priority upgrades with one-paragraph rationale each.
-- **Constraints:** Markdown only — do NOT modify any gradle files or code. Do NOT touch any file outside `research/`.
-
-
 ### T-XXX — <title>
 - **Status:** In Progress
 - **Agent:** <your-identity-from-START_HERE.md-section-1>
@@ -295,6 +280,13 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## Done
+
+### T-051 — Dependency upgrade audit
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Completed upgrade audit for libGDX, Kotlin, VisUI, Kotest, and kotlinx.serialization; identified Vulkan backend additions and font-scaling breaking changes.
+- **Commit/PR:** PR #27
+- **Tool:** ntigravity
 
 ### T-049 — Climate-source compilation for NotebookLM
 - **Status:** Done
