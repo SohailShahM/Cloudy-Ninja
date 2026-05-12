@@ -8,6 +8,13 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class GameState(
+    /**
+     * Save schema version. Bumped only when a non-additive schema change is made.
+     * Existing saves written before this field was introduced (T-113) are missing
+     * the key entirely; [SaveMigrations] treats those as v1 (the current version
+     * at introduction time). Writes always emit the current version.
+     */
+    val saveFormatVersion: Int = SaveMigrations.CURRENT_VERSION,
     val level: String = "level0_0",
     val characterName: String = "Ebo",
     val checkpoint: Checkpoint = Checkpoint(),
