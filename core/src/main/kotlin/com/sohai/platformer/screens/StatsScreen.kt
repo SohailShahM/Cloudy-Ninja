@@ -128,11 +128,27 @@ class StatsScreen(private val game: Game) : Screen {
             card.add(Label(Strings.get(StringKey.STATS_ACHIEVEMENTS_MISSING), bodyStyle)).left().padBottom(2f).row()
             card.add(Label(Strings.get(StringKey.STATS_ACHIEVEMENTS_NONE), mutedStyle)).left().row()
         } else {
-            val list = if (unlockedAchievements.isEmpty()) Strings.get(StringKey.STATS_DASH) else unlockedAchievements.sorted().joinToString(", ")
-            card.add(Label(Strings.format(StringKey.ACHIEVEMENTS_UNLOCKED, unlockedAchievements.size, TOTAL_ACHIEVEMENTS), bodyStyle)).left().padBottom(2f).row()
-            val achievementsLabel = Label(list, bodyStyle)
-            achievementsLabel.wrap = true
-            card.add(achievementsLabel).left().width(STATS_CARD_CONTENT_WIDTH).row()
+            // T-108: replaced comma-joined id string with count + "View All →" link
+            // that opens the new AchievementsScreen on the same slot.
+            card.add(
+                Label(
+                    Strings.format(
+                        StringKey.STATS_ACHIEVEMENT_COUNT,
+                        unlockedAchievements.size,
+                        TOTAL_ACHIEVEMENTS
+                    ),
+                    bodyStyle
+                )
+            ).left().padBottom(4f).row()
+
+            val viewAllBtn = VisTextButton(Strings.get(StringKey.ACHIEVEMENTS_VIEW_ALL_BUTTON))
+            viewAllBtn.addListener(object : ChangeListener() {
+                override fun changed(event: ChangeEvent?, actor: Actor?) {
+                    game.screen = AchievementsScreen(game, slotIndex)
+                    this@StatsScreen.dispose()
+                }
+            })
+            card.add(viewAllBtn).left().width(180f).height(40f).row()
         }
 
         return card

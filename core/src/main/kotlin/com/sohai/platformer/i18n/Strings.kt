@@ -18,9 +18,19 @@ enum class StringKey {
     MAIN_BTN_NEW_GAME,
     MAIN_BTN_LEVEL_SELECT,
     MAIN_BTN_CLOUD_ATLAS,
+    MAIN_BTN_ACHIEVEMENTS,
     MAIN_BTN_STATS,
     MAIN_BTN_SETTINGS,
     MAIN_BTN_QUIT,
+
+    // ── Achievements screen (T-108) ──────────────────────────────────────────
+    ACHIEVEMENTS_SCREEN_TITLE,
+    ACHIEVEMENTS_BACK_BUTTON,
+    ACHIEVEMENTS_VIEW_ALL_BUTTON,
+    ACHIEVEMENT_UNLOCKED_LABEL,
+    ACHIEVEMENT_LOCKED_LABEL,
+    MENU_ACHIEVEMENTS,
+    STATS_ACHIEVEMENT_COUNT,
 
     // ── Settings: headers ────────────────────────────────────────────────────
     SETTINGS_TITLE,
@@ -201,9 +211,19 @@ object Strings {
         StringKey.MAIN_BTN_NEW_GAME       to "New Game",
         StringKey.MAIN_BTN_LEVEL_SELECT   to "Level Select",
         StringKey.MAIN_BTN_CLOUD_ATLAS    to "Cloud Atlas",
+        StringKey.MAIN_BTN_ACHIEVEMENTS   to "Achievements",
         StringKey.MAIN_BTN_STATS          to "Stats",
         StringKey.MAIN_BTN_SETTINGS       to "Settings",
         StringKey.MAIN_BTN_QUIT           to "Quit",
+
+        // Achievements screen (T-108)
+        StringKey.ACHIEVEMENTS_SCREEN_TITLE     to "Achievements — Slot {0}",
+        StringKey.ACHIEVEMENTS_BACK_BUTTON      to "← Back",
+        StringKey.ACHIEVEMENTS_VIEW_ALL_BUTTON  to "View All →",
+        StringKey.ACHIEVEMENT_UNLOCKED_LABEL    to "✓ Unlocked",
+        StringKey.ACHIEVEMENT_LOCKED_LABEL      to "🔒 Locked",
+        StringKey.MENU_ACHIEVEMENTS             to "Achievements",
+        StringKey.STATS_ACHIEVEMENT_COUNT       to "Achievements: {0}/{1} unlocked",
 
         // Settings: headers
         StringKey.SETTINGS_TITLE         to "SETTINGS",
