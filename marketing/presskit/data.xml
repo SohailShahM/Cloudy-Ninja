@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  presskit() data file for Cloudy Ninja.
+  Schema: Rami Ismail's presskit() — http://dopresskit.com
+  Fields left blank are noted with an inline <!-- pending --> comment.
+-->
+<presskit>
+  <project>
+    <title>Cloudy Ninja</title>
+    <tagline>Heal a broken world, one cloud at a time.</tagline>
+
+    <description>
+      Cloudy Ninja is a momentum-based 2D pixel-art platformer about restoring
+      corrupted ecosystems. Players switch between three characters — each with
+      a distinct ability tied to the water cycle — across hand-crafted levels
+      that double as light interactive science lessons. Eight stages culminate
+      in a multi-phase Storm Sentinel boss arena, and the in-game Cloud Atlas
+      pulls from real NOAA and NASA sources so every entry is grounded climate
+      education, not flavor text.
+    </description>
+
+    <history>
+      Cloudy Ninja began as a solo experiment in mid-2025 to combine
+      Celeste-style precision movement with a non-violent objective: restore
+      the level instead of fighting through it. The project is built in libGDX
+      (Kotlin) with an open AI-assisted development pipeline. Sprint D
+      (early-2026) brought the game to ship-ready alpha: seven playable levels,
+      a Storm Sentinel boss, 12 achievements, Cloud Atlas climate codex, 4K /
+      HiDPI scaling, full key/button rebinding, and an Assist Mode for motor
+      accessibility. v1.0 ships with the current three-character × three-world
+      scope; World 4 and Character 4 are planned as a free v1.1 update.
+    </history>
+
+    <genre>2D Platformer · Pixel Art · Accessibility-First · Eco</genre>
+
+    <platforms>
+      <platform>Windows</platform>
+      <platform>macOS</platform>
+      <platform>Linux</platform>
+      <platform>Android</platform>
+    </platforms>
+
+    <releaseDate>TBA (alpha 2026)</releaseDate>
+    <price>USD 2.99–4.99 (premium one-time purchase, no IAP, no ads)</price>
+
+    <features>
+      <feature>Three switchable characters — Ebo (Seed Slam), Laya (Wind Dash), Zephyr (Float) — chainable mid-jump.</feature>
+      <feature>8 levels plus a three-phase Storm Sentinel boss encounter.</feature>
+      <feature>12 achievements, all unlockable in Assist Mode.</feature>
+      <feature>Cloud Atlas: in-game climate codex sourced from real NOAA / NASA research.</feature>
+      <feature>Accessibility-first: color-blind palette, reduced motion, full key/button rebinding, gamepad support, 4K / HiDPI scaling.</feature>
+      <feature>Assist Mode: invincibility, infinite spirit charges, and a slow-speed slider.</feature>
+      <feature>Three save slots with checkpoint autosave and time-trial best times.</feature>
+      <feature>Mobile two-thumb HUD plus desktop keyboard / gamepad.</feature>
+    </features>
+
+    <trailers>
+      <!-- pending: trailer will be cut post-alpha; replace src with the YouTube embed when live. -->
+      <trailer>
+        <name>Cloudy Ninja — Launch Trailer (placeholder)</name>
+        <url>#</url>
+      </trailer>
+    </trailers>
+
+    <images>
+      <image>cover.png</image>
+      <image>screenshot-01.png</image>
+      <image>screenshot-02.png</image>
+      <image>screenshot-03.png</image>
+      <image>screenshot-04.png</image>
+      <image>screenshot-05.png</image>
+      <image>screenshot-06.png</image>
+    </images>
+
+    <logo>logo.png</logo>
+    <icon>icon.png</icon>
+
+    <awards>
+      <!-- pending: no awards or festival recognition yet. -->
+    </awards>
+
+    <quotes>
+      <!-- pending: no press quotes yet. -->
+    </quotes>
+
+    <credits>
+      <credit>
+        <role>Design, code, art direction</role>
+        <name>Sohail Shah</name>
+      </credit>
+      <credit>
+        <role>Base pixel art (CC0)</role>
+        <name>Kenney — pixel-platformer pack</name>
+      </credit>
+      <credit>
+        <role>Theme accents (CC0)</role>
+        <name>OpenGameArt — Pixel Art Forest tilesets</name>
+      </credit>
+    </credits>
+
+    <contact>
+      <!-- public-only contact surfaces; no private email. -->
+      <github>https://github.com/sohailshah/cloudy-ninja</github>
+      <issues>https://github.com/sohailshah/cloudy-ninja/issues</issues>
+    </contact>
+
+    <social>
+      <link>
+        <name>GitHub</name>
+        <url>https://github.com/sohailshah/cloudy-ninja</url>
+      </link>
+    </social>
+  </project>
+
+  <projects>
+    <relatedProject>
+      <name>Cloudy Ninja</name>
+      <url>https://github.com/sohailshah/cloudy-ninja</url>
+    </relatedProject>
+  </projects>
+</presskit>
