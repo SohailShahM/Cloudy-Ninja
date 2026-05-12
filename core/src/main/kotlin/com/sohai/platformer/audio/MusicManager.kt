@@ -125,21 +125,34 @@ object MusicManager {
     }
 
     /**
-     * Set the master music volume. Takes effect immediately on the current track.
+     * Set the master music volume. Takes effect immediately, including
+     * mid-crossfade and mid-fade-in: the new master volume is applied to
+     * each active track scaled by its current fade weight so the user's
+     * slider drag is heard right away.
      *
      * @param vol Volume level 0..1.
      */
     fun setMusicVolume(vol: Float) {
         volMusic = vol.coerceIn(0f, 1f)
-        // Apply immediately if not mid-crossfade
-        if (next == null && !isFadingIn) {
-            current?.volume = volMusic
+        val t = (fadeTimer / FADE_DURATION).coerceIn(0f, 1f)
+        when {
+            next != null -> {
+                current?.volume = volMusic * (1f - t)
+                next?.volume = volMusic * t
+            }
+            isFadingIn -> {
+                current?.volume = volMusic * t
+            }
+            else -> {
+                current?.volume = volMusic
+            }
         }
     }
 
     /**
-     * Fade out and stop the current track over [FADE_DURATION] seconds.
-     * For simplicity, stops immediately (most transitions use crossfade via play()).
+     * Stop the current track immediately (no fade-out). The crossfade in
+     * [play] handles smooth transitions between tracks; [stop] is the
+     * blunt instrument used on app pause / level teardown.
      */
     fun stop() {
         next?.stop()
