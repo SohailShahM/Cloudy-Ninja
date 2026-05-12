@@ -320,6 +320,137 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Either: (A) Android APK builds locally + CI step passes + a one-line "Mobile build OK as of 2026-05-12" note in LEARNINGS.md. Or: (B) `BUILD-LOG.md` + `QUESTIONS.md` entry documents the blocker; ticket marked blocked. Either outcome is a success — clarity is the goal.
 - **Constraints:** Do NOT attempt risky toolchain bumps (AGP > 1 minor, Kotlin > 1 minor, Java target changes). Do NOT publish APK to anywhere. Do NOT change signing config.
 
+### T-093 — Kotest specs for FontManager (scaling + shared cache)  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(Flash-tier AGV is also a fine candidate per cc-agv-bridge 6-model docs)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-042
+- **GDD ref:** T-042 (4K/HiDPI scaling — `fontScale` × requested size = effective px)
+- **Files:** `core/src/test/kotlin/com/sohai/platformer/FontManagerTest.kt` (new)
+- **Goal:** Pure-logic tests for `FontManager`. Cover: (a) `getShared(size)` returns the same instance for the same size across calls, (b) `getShared` returns *different* instances for different sizes, (c) `fontScale` (from `DisplayScale`) multiplies into the effective font size correctly (mock DisplayScale or seed via reflection), (d) `clearSharedCache()` invalidates everything. Mirror style of `MapLevelLoaderCoordTest`. Use MockK for `BitmapFont` if construction requires GL.
+- **Done when:** ≥10 tests pass; no live libGDX renderer required.
+
+### T-094 — Kotest specs for MusicManager (crossfade timing + volume)  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(Flash-tier AGV viable)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-030
+- **GDD ref:** §18 ("Music System Spec")
+- **Files:** `core/src/test/kotlin/com/sohai/platformer/audio/MusicManagerTest.kt` (new)
+- **Goal:** Pure-logic tests for `MusicManager`. Cover: (a) `play(track, fadeIn=true)` starts a 1.5s crossfade, (b) `update(delta)` advances the fade and switches active track at t=1.5s, (c) `setMusicVolume(v)` applies to the active track immediately, (d) `play(sameTrack)` is a no-op. Mock the libGDX `Music` class with MockK; assert via captured `setVolume(...)` calls.
+- **Done when:** ≥10 tests pass.
+
+### T-095 — Kotest specs for SoundManager (per-bus volume)  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(Flash-tier AGV viable)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-013, T-014, T-035
+- **GDD ref:** §18.4 (audio bus sliders)
+- **Files:** `core/src/test/kotlin/com/sohai/platformer/audio/SoundManagerTest.kt` (new)
+- **Goal:** Pure-logic tests for `SoundManager`. Cover: (a) `play(id)` looks up the right loaded `Sound`, (b) `setVolume(v)` is applied on subsequent plays, (c) unknown id is a logged no-op (not a crash), (d) volume = 0 produces silent play. Mock `Sound` with MockK.
+- **Done when:** ≥8 tests pass.
+
+### T-096 — Kotest specs for ScreenFade state machine  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(Flash-tier AGV viable)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** ScreenFade used in level transitions + pause flow
+- **Files:** `core/src/test/kotlin/com/sohai/platformer/rendering/ScreenFadeTest.kt` (new)
+- **Goal:** Pure-logic tests for `ScreenFade`. Cover: `fadeIn(speed)`/`fadeOut(speed)` set the right target alpha, `update(delta)` lerps toward target at the requested speed, `isComplete` flips at the boundary, calling `fadeIn` mid-fadeOut reverses direction correctly. Use mocked `ShapeRenderer`.
+- **Done when:** ≥8 tests pass.
+
+### T-097 — Death animation: player fade + zoom-out before respawn  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-058  *(must respect reducedMotion flag)*
+- **GDD ref:** GAME_PLAN.md (juice + polish for itch.io alpha)
+- **Files:** `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`
+- **Goal:** On player death, play a 0.5s animation before respawn: (a) player sprite alpha fades 1.0 → 0.0 ease-out, (b) camera zooms out by 1.2× over the same duration. Then respawn at checkpoint with a 0.2s screen-flash. **Guard behind `if (!settings.reducedMotion)`** — when reduced-motion is on, snap to respawn instantly (preserves current behavior; T-058 contract).
+- **Done when:** Death pauses for 0.5s with the visual transition; `reducedMotion=true` is byte-identical to current; smoke CI passes.
+
+### T-098 — Enemy hit-flash on takeDamage (200ms white tint)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-029, T-062
+- **GDD ref:** GAME_PLAN.md (combat juice)
+- **Files:** `entities/Enemy.kt` (abstract base — add `hitFlashTimer`), `entities/SmogSprite.kt` + `entities/DriftHusk.kt` (set timer in takeDamage), `screens/LevelRenderer.kt` (lerp color toward white when timer > 0)
+- **Goal:** Add `hitFlashTimer: Float = 0f` to `Enemy`. `takeDamage()` sets it to 0.2f. `update(delta)` decrements. `LevelRenderer` reads `enemy.hitFlashTimer` and lerps base color toward white `(1, 1, 1, 1)` by `clamp(timer / 0.2f)`. Don't touch defeat path; just hit-feedback frames.
+- **Done when:** Visible hit-flash on Seed-Slamming SmogSprite + DriftHusk; unchanged when not hit; smoke CI passes.
+
+### T-099 — Achievement progress counter on MainMenu  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-037, T-091
+- **GDD ref:** GAME_PLAN.md (player engagement signals)
+- **Files:** `screens/MainMenuScreen.kt`, `i18n/Strings.kt`
+- **Goal:** Below the slot cards on MainMenu, render `Achievements: {0}/12 unlocked` showing the **max** count across the 3 save slots. Style: `FontManager.getShared(14)`, light grey, 12px padded. Use `Strings.format(StringKey.MENU_ACHIEVEMENT_PROGRESS, count, total)` — new key. If all 12 unlocked: `MENU_ACHIEVEMENT_PROGRESS_COMPLETE` rendered in gold `(1f, 0.85f, 0.1f, 1f)`.
+- **Done when:** Counter visible reflecting save data; both states verified; smoke CI passes.
+
+### T-100 — Game version + build info on MainMenu (bottom corner)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-091
+- **GDD ref:** GAME_PLAN.md (release readiness — let players report exact version)
+- **Files:** `screens/MainMenuScreen.kt`, `Constants.kt` (add `BUILD_VERSION` + `BUILD_DATE`), `i18n/Strings.kt`
+- **Goal:** Add `BUILD_VERSION` and `BUILD_DATE` constants in `Constants.kt` (manually maintained for alpha). MainMenu shows a tiny right-bottom label: `v{0} · {1}` (e.g. `v0.1.0 · 2026-05-12`). Style: `FontManager.getShared(11)`, dim grey `(0.5f, 0.5f, 0.5f, 0.6f)`, 8px from corner. Add `StringKey.MENU_BUILD_INFO`.
+- **Done when:** Label visible on MainMenu; reads from constants; smoke CI passes.
+
+### T-101 — Credits screen  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-031, T-046a
+- **GDD ref:** GAME_PLAN.md (legal compliance + community goodwill)
+- **Files:** `screens/CreditsScreen.kt` (new), `screens/SettingsScreen.kt` (add a "Credits" button in the footer row), `i18n/Strings.kt` (credit-related keys)
+- **Goal:** Scrollable Credits screen reachable from Settings. Sections: **Game** (Sohail Shah, design + code, 2026); **Code assistants** (Claude Code/Anthropic, GitHub Copilot, Antigravity/Gemini/Google, NotebookLM); **Art** (Kenney pixel-platformer, CC0, kenney.nl + entries from `art-research/tileset-candidates.md`); **Audio** (procedural via T-013/T-030 + candidates in `art-research/audio-candidates.md`); **Engine** (libGDX, Box2D, Kotlin, VisUI, Kotest); **Climate sources** (NOAA, NASA Earth Observatory, IPCC etc. — see `research/climate-sources/INDEX.md`). Section header `FontManager.getShared(22)`, body `getShared(14)`. Back button bottom-center.
+- **Done when:** Screen reachable, all sections render, no asset URLs hardcoded (in `Strings.kt`), smoke CI passes.
+
+### T-102 — Controller (gamepad) input support  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes-with-review  *(input is hard to verify in CI; manual smoke recommended)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-036
+- **GDD ref:** GAME_PLAN.md (broader platform support; pre-Steam-controller compatibility)
+- **Files:** `input/InputManager.kt`, `input/GamepadMapping.kt` (new), `persist/Settings.kt` (add `gamepadEnabled: Boolean = true`)
+- **Goal:** Add gamepad via libGDX's `Controllers` API. Map: left stick / D-pad → move; A / cross → jump; X / square → action; Y / triangle → swap; Start → pause. Reads from `Settings.gamepadEnabled` (default true; opt-out toggle in Accessibility). Both keyboard and gamepad work simultaneously. Detect plug/unplug at runtime.
+- **Done when:** Verified locally with at least one gamepad (Xbox or DualShock 4); keyboard parallel works; smoke CI passes (no controller plugged = no-op).
+- **Constraints:** `gdx-controllers` extension required — verify it's already on the classpath before adding any new dep. If a new dep is needed, stop and post to QUESTIONS.md.
+
 
 ---
 
