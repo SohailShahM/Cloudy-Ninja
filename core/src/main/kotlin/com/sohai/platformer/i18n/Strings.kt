@@ -157,6 +157,61 @@ enum class StringKey {
     RUN_SPIRIT_EXHAUSTED,
     RUN_ECOSYSTEM_RESTORED,
 
+    // ── Credits screen (T-101) ───────────────────────────────────────────────
+    // Title + back button
+    CREDITS_TITLE,
+    CREDITS_BACK,
+    // Settings entry-point
+    SETTINGS_CREDITS,
+    // Section headers
+    CREDITS_SECTION_GAME,
+    CREDITS_SECTION_CODE_ASSISTANTS,
+    CREDITS_SECTION_ART,
+    CREDITS_SECTION_AUDIO,
+    CREDITS_SECTION_ENGINE,
+    CREDITS_SECTION_CLIMATE_SOURCES,
+    CREDITS_SECTION_THANKS,
+    // Game section
+    CREDITS_GAME_AUTHOR,
+    CREDITS_GAME_ROLE,
+    CREDITS_GAME_YEAR,
+    // Code-assistants entries
+    CREDITS_CODE_CLAUDE,
+    CREDITS_CODE_COPILOT,
+    CREDITS_CODE_ANTIGRAVITY,
+    CREDITS_CODE_NOTEBOOKLM,
+    // Art entries
+    CREDITS_ART_KENNEY,
+    CREDITS_ART_KENNEY_LICENSE,
+    CREDITS_ART_PIXEL_LINE,
+    CREDITS_ART_PIXEL_REDUX,
+    CREDITS_ART_FOREST_TILESET,
+    CREDITS_ART_BLUEGRASS,
+    CREDITS_ART_RESEARCH_NOTE,
+    // Audio entries
+    CREDITS_AUDIO_PROCEDURAL,
+    CREDITS_AUDIO_KENNEY_SFX,
+    CREDITS_AUDIO_RESEARCH_NOTE,
+    // Engine entries
+    CREDITS_ENGINE_LIBGDX,
+    CREDITS_ENGINE_BOX2D,
+    CREDITS_ENGINE_KOTLIN,
+    CREDITS_ENGINE_VISUI,
+    CREDITS_ENGINE_KOTEST,
+    CREDITS_ENGINE_GRADLE,
+    // Climate-source entries
+    CREDITS_CLIMATE_NOAA,
+    CREDITS_CLIMATE_NASA_EO,
+    CREDITS_CLIMATE_NASA_CLIMATE,
+    CREDITS_CLIMATE_NSIDC,
+    CREDITS_CLIMATE_USGS,
+    CREDITS_CLIMATE_IPCC,
+    CREDITS_CLIMATE_ARXIV,
+    CREDITS_CLIMATE_NOTE,
+    // Closing thank-you
+    CREDITS_THANKS_PLAYERS,
+    CREDITS_THANKS_OPEN_SOURCE,
+
     // ── Compositional templates (T-091) ──────────────────────────────────────
     // Used with Strings.format(key, *args). Placeholders {0}, {1}, … map to
     // varargs by position. English word-order is encoded in the template, so
@@ -349,6 +404,58 @@ object Strings {
         StringKey.RUN_BOSS_DEFEATED       to "Storm Sentinel defeated!",
         StringKey.RUN_SPIRIT_EXHAUSTED    to "Spirit Exhausted...",
         StringKey.RUN_ECOSYSTEM_RESTORED  to "Eco-System Restored!",
+
+        // Credits screen (T-101)
+        StringKey.CREDITS_TITLE                  to "CREDITS",
+        StringKey.CREDITS_BACK                   to "Back",
+        StringKey.SETTINGS_CREDITS               to "Credits",
+        StringKey.CREDITS_SECTION_GAME           to "Game",
+        StringKey.CREDITS_SECTION_CODE_ASSISTANTS to "Code Assistants",
+        StringKey.CREDITS_SECTION_ART            to "Art",
+        StringKey.CREDITS_SECTION_AUDIO          to "Audio",
+        StringKey.CREDITS_SECTION_ENGINE         to "Engine & Tools",
+        StringKey.CREDITS_SECTION_CLIMATE_SOURCES to "Climate Sources",
+        StringKey.CREDITS_SECTION_THANKS         to "Thanks",
+        // Game section body
+        StringKey.CREDITS_GAME_AUTHOR            to "Sohail Shah",
+        StringKey.CREDITS_GAME_ROLE              to "Design, code, art direction",
+        StringKey.CREDITS_GAME_YEAR              to "2026",
+        // Code-assistant credits
+        StringKey.CREDITS_CODE_CLAUDE            to "Claude Code — Anthropic (claude.ai/code)",
+        StringKey.CREDITS_CODE_COPILOT           to "GitHub Copilot — GitHub / Microsoft",
+        StringKey.CREDITS_CODE_ANTIGRAVITY       to "Antigravity — Google (Gemini 3)",
+        StringKey.CREDITS_CODE_NOTEBOOKLM        to "NotebookLM — Google (research synthesis)",
+        // Art credits
+        StringKey.CREDITS_ART_KENNEY             to "Kenney — Pixel Platformer pack (kenney.nl)",
+        StringKey.CREDITS_ART_KENNEY_LICENSE     to "Kenney assets used under CC0 1.0 Universal",
+        StringKey.CREDITS_ART_PIXEL_LINE         to "Kenney — Pixel Line Platformer (CC0)",
+        StringKey.CREDITS_ART_PIXEL_REDUX        to "Kenney — Platformer Art: Pixel Redux (CC0)",
+        StringKey.CREDITS_ART_FOREST_TILESET     to "Pixel Art Forest Tilesets — OpenGameArt (CC0)",
+        StringKey.CREDITS_ART_BLUEGRASS          to "Bluegrass Tileset & Backgrounds — OpenGameArt (CC0)",
+        StringKey.CREDITS_ART_RESEARCH_NOTE      to "Full art-research list: art-research/tileset-candidates.md",
+        // Audio credits
+        StringKey.CREDITS_AUDIO_PROCEDURAL       to "Procedural ambient + SFX (T-013, T-030)",
+        StringKey.CREDITS_AUDIO_KENNEY_SFX       to "Kenney — UI / Digital Audio packs (CC0)",
+        StringKey.CREDITS_AUDIO_RESEARCH_NOTE    to "Full audio-research list: art-research/audio-candidates.md",
+        // Engine credits
+        StringKey.CREDITS_ENGINE_LIBGDX          to "libGDX — Apache 2.0 (libgdx.com)",
+        StringKey.CREDITS_ENGINE_BOX2D           to "Box2D — zlib (box2d.org)",
+        StringKey.CREDITS_ENGINE_KOTLIN          to "Kotlin — Apache 2.0 (JetBrains)",
+        StringKey.CREDITS_ENGINE_VISUI           to "VisUI — Apache 2.0 (Kotcrab)",
+        StringKey.CREDITS_ENGINE_KOTEST          to "Kotest — Apache 2.0 (kotest.io)",
+        StringKey.CREDITS_ENGINE_GRADLE          to "Gradle — Apache 2.0 (gradle.org)",
+        // Climate-source credits
+        StringKey.CREDITS_CLIMATE_NOAA           to "NOAA — National Oceanic and Atmospheric Administration",
+        StringKey.CREDITS_CLIMATE_NASA_EO        to "NASA Earth Observatory",
+        StringKey.CREDITS_CLIMATE_NASA_CLIMATE   to "NASA Global Climate Change (climate.nasa.gov)",
+        StringKey.CREDITS_CLIMATE_NSIDC          to "NSIDC — National Snow and Ice Data Center",
+        StringKey.CREDITS_CLIMATE_USGS           to "USGS — U.S. Geological Survey",
+        StringKey.CREDITS_CLIMATE_IPCC           to "IPCC — Intergovernmental Panel on Climate Change",
+        StringKey.CREDITS_CLIMATE_ARXIV          to "arXiv preprints — open-access peer-review",
+        StringKey.CREDITS_CLIMATE_NOTE           to "Full source index: research/climate-sources/INDEX.md",
+        // Closing thanks
+        StringKey.CREDITS_THANKS_PLAYERS         to "Thank you for playing.",
+        StringKey.CREDITS_THANKS_OPEN_SOURCE     to "Built on the shoulders of open-source giants.",
 
         // Compositional templates (T-091). Args are substituted by {N} index.
         StringKey.SLOT_LABEL                 to "Slot {0}",

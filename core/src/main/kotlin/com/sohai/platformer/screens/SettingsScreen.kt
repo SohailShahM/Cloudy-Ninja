@@ -360,7 +360,15 @@ class SettingsScreen(
         scroll.setFlickScroll(false)
         root.add(scroll).expand().fill().padTop(10f).padBottom(10f).row()
 
-        // Back button
+        // Footer row — Credits (T-101) + Back
+        val footer = VisTable()
+        val btnCredits = VisTextButton(Strings.get(StringKey.SETTINGS_CREDITS))
+        btnCredits.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                game.screen = CreditsScreen(game)
+                dispose()
+            }
+        })
         val btnBack = VisTextButton(Strings.get(StringKey.SETTINGS_BACK))
         btnBack.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
@@ -368,7 +376,9 @@ class SettingsScreen(
                 dispose()
             }
         })
-        root.add(btnBack).size(200f, 55f).padBottom(30f).row()
+        footer.add(btnCredits).size(200f, 55f).padRight(16f)
+        footer.add(btnBack).size(200f, 55f)
+        root.add(footer).padBottom(30f).row()
 
         stage.addActor(root)
     }
