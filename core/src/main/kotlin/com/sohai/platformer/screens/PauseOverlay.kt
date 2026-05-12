@@ -15,6 +15,8 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.persist.SettingsManager
 
 class PauseOverlay(
@@ -47,28 +49,28 @@ class PauseOverlay(
         table.setFillParent(true)
         table.center()
 
-        table.add(Label("PAUSED", titleStyle)).padBottom(30f).row()
+        table.add(Label(Strings.get(StringKey.PAUSE_TITLE), titleStyle)).padBottom(30f).row()
 
-        val btnResume = VisTextButton("Resume")
+        val btnResume = VisTextButton(Strings.get(StringKey.PAUSE_RESUME))
         btnResume.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) { onResume() }
         })
         table.add(btnResume).size(220f, 55f).padBottom(14f).row()
 
-        val btnRestart = VisTextButton("Restart Level")
+        val btnRestart = VisTextButton(Strings.get(StringKey.PAUSE_RESTART))
         btnRestart.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) { onRestart() }
         })
         table.add(btnRestart).size(220f, 55f).padBottom(14f).row()
 
-        val btnMenu = VisTextButton("Main Menu")
+        val btnMenu = VisTextButton(Strings.get(StringKey.PAUSE_MAIN_MENU))
         btnMenu.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) { onMainMenu() }
         })
         table.add(btnMenu).size(220f, 55f).row()
 
         // Time Trial button (always shown; label reflects current state)
-        val trialLabel = if (isCurrentlyTimeTrial) "Exit Time Trial" else "▶ Time Trial"
+        val trialLabel = if (isCurrentlyTimeTrial) Strings.get(StringKey.PAUSE_EXIT_TIME_TRIAL) else Strings.get(StringKey.PAUSE_ENTER_TIME_TRIAL)
         val btnTrial = VisTextButton(trialLabel)
         btnTrial.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) { onTimeTrial?.invoke() }
@@ -92,7 +94,7 @@ class PauseOverlay(
     /** Display name of the current pause key, falling back to "Esc". */
     private fun pauseKeyName(): String {
         val code = SettingsManager.load().keybinds["pause"] ?: -1
-        return if (code > 0) Input.Keys.toString(code) else "Esc"
+        return if (code > 0) Input.Keys.toString(code) else Strings.get(StringKey.PAUSE_KEY_ESC)
     }
 
     /**

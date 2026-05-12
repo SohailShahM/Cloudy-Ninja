@@ -14,6 +14,8 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.levels.LevelManager
 
 class VictoryScreen(
@@ -40,8 +42,8 @@ class VictoryScreen(
         table.setFillParent(true)
         table.center()
 
-        table.add(Label("MISSION COMPLETE!", titleStyle)).padBottom(20f).row()
-        table.add(Label("The ecosystem has been restored.", bodyStyle)).padBottom(12f).row()
+        table.add(Label(Strings.get(StringKey.VICTORY_TITLE), titleStyle)).padBottom(20f).row()
+        table.add(Label(Strings.get(StringKey.VICTORY_SUBTITLE), bodyStyle)).padBottom(12f).row()
         table.add(Label("Final Score: $finalScore", scoreStyle)).padBottom(40f).row()
 
         if (bestTrialTime != null) {
@@ -65,11 +67,11 @@ class VictoryScreen(
             }
             if (isNewTimeBest) {
                 val bestStyle = Label.LabelStyle(bodyFont, Color(1f, 0.85f, 0.1f, 1f))
-                table.add(Label("★ NEW BEST! ★", bestStyle)).padBottom(32f).row()
+                table.add(Label(Strings.get(StringKey.VICTORY_NEW_BEST), bestStyle)).padBottom(32f).row()
             }
         }
 
-        val btnMenu = VisTextButton("Main Menu")
+        val btnMenu = VisTextButton(Strings.get(StringKey.VICTORY_MAIN_MENU))
         btnMenu.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
                 game.screen = MainMenuScreen(game)
@@ -78,7 +80,7 @@ class VictoryScreen(
         })
         table.add(btnMenu).size(220f, 60f).padBottom(14f).row()
 
-        val btnReplay = VisTextButton("Play Again")
+        val btnReplay = VisTextButton(Strings.get(StringKey.VICTORY_PLAY_AGAIN))
         btnReplay.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
                 val level1 = LevelManager.getLevel("level1") ?: return

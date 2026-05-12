@@ -22,6 +22,8 @@ import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.entities.StormSentinel
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.input.InputManager
 import com.sohai.platformer.levels.Level
 import com.sohai.platformer.levels.Level0_0
@@ -493,7 +495,7 @@ class LevelRunState(
             if (spiritHealth <= 0 && !assistSettings.assistInfiniteSpirits) {
                 isGameOver   = true
                 gameOverTimer = 4f
-                hud.showTransientMessage("Spirit Exhausted...", 2f)
+                hud.showTransientMessage(Strings.get(StringKey.RUN_SPIRIT_EXHAUSTED), 2f)
                 onGameOverStart?.invoke()
             } else {
                 hud.showTransientMessage("$currentCharacter fell ($spiritHealth spirits left)", 1.2f)
@@ -585,7 +587,7 @@ class LevelRunState(
             cleanseRatio = cleansedCount.toFloat() / totalHazards.toFloat()
             if (cleanseRatio >= 1f && !ecoRestoredAnnounced) {
                 ecoRestoredAnnounced = true
-                hud.showTransientMessage("Eco-System Restored!", 2.5f)
+                hud.showTransientMessage(Strings.get(StringKey.RUN_ECOSYSTEM_RESTORED), 2.5f)
             }
         }
 

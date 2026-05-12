@@ -18,6 +18,8 @@ import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.atlas.CloudAtlasEntry
 import com.sohai.platformer.atlas.CloudAtlasLibrary
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.persist.SaveManager
 
 /**
@@ -52,7 +54,7 @@ class CloudAtlasScreen(private val game: Game) : Screen {
         root.setFillParent(true)
         root.top().pad(40f)
 
-        root.add(Label("CLOUD ATLAS", rootStyle)).colspan(2).padBottom(8f).row()
+        root.add(Label(Strings.get(StringKey.ATLAS_TITLE), rootStyle)).colspan(2).padBottom(8f).row()
         root.add(Label("${collected.size} / ${CloudAtlasLibrary.entries.size} snapshots discovered", countStyle))
             .colspan(2).padBottom(28f).row()
 
@@ -62,7 +64,7 @@ class CloudAtlasScreen(private val game: Game) : Screen {
         for (entry in CloudAtlasLibrary.entries.values) {
             val isUnlocked = entry.id in collected
             val style = if (isUnlocked) unlockedStyle else lockedStyle
-            val label = if (isUnlocked) "${entry.title}" else "??? (locked)"
+            val label = if (isUnlocked) "${entry.title}" else Strings.get(StringKey.ATLAS_LOCKED)
             val btn = VisTextButton(label)
             btn.label.style = style
             btn.addListener(object : ChangeListener() {
@@ -86,7 +88,7 @@ class CloudAtlasScreen(private val game: Game) : Screen {
         root.add(detailContainer).top().left().width(680f).height(420f).row()
 
         // Bottom: back button
-        val btnBack = VisTextButton("Back to Menu")
+        val btnBack = VisTextButton(Strings.get(StringKey.ATLAS_BACK))
         btnBack.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
                 game.screen = MainMenuScreen(game)
@@ -107,7 +109,7 @@ class CloudAtlasScreen(private val game: Game) : Screen {
         val infoStyle     = Label.LabelStyle(bodyFont,  Color(0.6f, 0.6f, 0.6f, 1f))
 
         if (entry == null) {
-            detailContainer.add(Label("Select a snapshot to read.", infoStyle)).left().pad(20f)
+            detailContainer.add(Label(Strings.get(StringKey.ATLAS_SELECT_HINT), infoStyle)).left().pad(20f)
             return
         }
         detailContainer.add(Label(entry.title, titleStyle)).left().padBottom(6f).row()

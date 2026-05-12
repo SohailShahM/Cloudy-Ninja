@@ -15,6 +15,8 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.levels.LevelManager
 import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
@@ -42,7 +44,7 @@ class StatsScreen(private val game: Game) : Screen {
         root.setFillParent(true)
         root.top().padTop(36f).padLeft(30f).padRight(30f)
 
-        root.add(Label("STATS", titleStyle)).padBottom(20f).row()
+        root.add(Label(Strings.get(StringKey.STATS_TITLE), titleStyle)).padBottom(20f).row()
 
         val slotList = VisTable()
         slotList.top().left()
@@ -55,7 +57,7 @@ class StatsScreen(private val game: Game) : Screen {
         scroll.setFlickScroll(false)
         root.add(scroll).expand().fill().row()
 
-        val backButton = VisTextButton("Back")
+        val backButton = VisTextButton(Strings.get(StringKey.STATS_BACK))
         backButton.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
                 game.screen = MainMenuScreen(game)
@@ -84,7 +86,7 @@ class StatsScreen(private val game: Game) : Screen {
 
         card.add(Label("Slot ${slotIndex + 1}", sectionStyle)).left().padBottom(8f).row()
         if (state == null) {
-            card.add(Label("— Empty —", mutedStyle)).left().row()
+            card.add(Label(Strings.get(StringKey.STATS_EMPTY), mutedStyle)).left().row()
             return card
         }
 
@@ -93,7 +95,7 @@ class StatsScreen(private val game: Game) : Screen {
         val completedOrdered = LevelManager.getAllLevels()
             .map { it.id }
             .filter { it in state.completedLevels }
-        val completedDisplay = if (completedOrdered.isEmpty()) "—" else completedOrdered.joinToString(", ") { id ->
+        val completedDisplay = if (completedOrdered.isEmpty()) Strings.get(StringKey.STATS_DASH) else completedOrdered.joinToString(", ") { id ->
             LevelManager.getLevel(id)?.name ?: id
         }
         card.add(Label("Levels completed: ${state.completedLevels.size}", bodyStyle)).left().padBottom(2f).row()
@@ -107,10 +109,10 @@ class StatsScreen(private val game: Game) : Screen {
         card.add(Label("Eco-tokens collected: $ecoCollected", bodyStyle)).left().padBottom(6f).row()
 
         if (state.bestTimes.isEmpty()) {
-            card.add(Label("Best times: (no times recorded)", mutedStyle))
+            card.add(Label(Strings.get(StringKey.STATS_BEST_TIMES_EMPTY), mutedStyle))
                 .left().padBottom(6f).row()
         } else {
-            card.add(Label("Best times:", sectionStyle)).left().padBottom(2f).row()
+            card.add(Label(Strings.get(StringKey.STATS_BEST_TIMES_HEADER), sectionStyle)).left().padBottom(2f).row()
             // Iterate levels in canonical LevelManager order; skip levels with no recorded time.
             for (level in LevelManager.getAllLevels()) {
                 val timeSec = state.bestTimes[level.id] ?: continue
@@ -123,10 +125,10 @@ class StatsScreen(private val game: Game) : Screen {
 
         val unlockedAchievements = readUnlockedAchievements(state)
         if (unlockedAchievements == null) {
-            card.add(Label("Achievements unlocked: —", bodyStyle)).left().padBottom(2f).row()
-            card.add(Label("—", mutedStyle)).left().row()
+            card.add(Label(Strings.get(StringKey.STATS_ACHIEVEMENTS_MISSING), bodyStyle)).left().padBottom(2f).row()
+            card.add(Label(Strings.get(StringKey.STATS_ACHIEVEMENTS_NONE), mutedStyle)).left().row()
         } else {
-            val list = if (unlockedAchievements.isEmpty()) "—" else unlockedAchievements.sorted().joinToString(", ")
+            val list = if (unlockedAchievements.isEmpty()) Strings.get(StringKey.STATS_DASH) else unlockedAchievements.sorted().joinToString(", ")
             card.add(Label("Achievements unlocked: ${unlockedAchievements.size}/$TOTAL_ACHIEVEMENTS", bodyStyle)).left().padBottom(2f).row()
             val achievementsLabel = Label(list, bodyStyle)
             achievementsLabel.wrap = true

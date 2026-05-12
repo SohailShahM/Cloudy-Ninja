@@ -14,6 +14,8 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.levels.LevelManager
 import com.sohai.platformer.persist.SaveManager
 
@@ -39,7 +41,7 @@ class LevelSelectScreen(private val game: Game) : Screen {
         table.setFillParent(true)
         table.center()
 
-        table.add(Label("SELECT WORLD", titleStyle)).padBottom(36f).row()
+        table.add(Label(Strings.get(StringKey.LEVEL_SELECT_TITLE), titleStyle)).padBottom(36f).row()
 
         val allLevels = LevelManager.getAllLevels()
         // Level 1 is always unlocked; subsequent levels unlock when previous is completed
@@ -68,12 +70,12 @@ class LevelSelectScreen(private val game: Game) : Screen {
             if (best != null) {
                 innerTable.add(Label("Best score: $best", bestStyle)).left().padTop(2f).row()
             } else if (unlocked) {
-                innerTable.add(Label("Not yet cleared", infoStyle)).left().padTop(2f).row()
+                innerTable.add(Label(Strings.get(StringKey.LEVEL_SELECT_NOT_CLEARED), infoStyle)).left().padTop(2f).row()
             } else {
                 innerTable.add(Label("Complete World ${idx} first", infoStyle)).left().padTop(2f).row()
             }
 
-            val btnPlay = VisTextButton(if (unlocked) "Play" else "Locked")
+            val btnPlay = VisTextButton(if (unlocked) Strings.get(StringKey.LEVEL_SELECT_BTN_PLAY) else Strings.get(StringKey.LEVEL_SELECT_BTN_LOCKED))
             btnPlay.isDisabled = !unlocked
             val capturedLevel = level
             btnPlay.addListener(object : ChangeListener() {
@@ -93,7 +95,7 @@ class LevelSelectScreen(private val game: Game) : Screen {
 
         table.add(Label("", infoStyle)).padBottom(20f).row()
 
-        val btnBack = VisTextButton("Back")
+        val btnBack = VisTextButton(Strings.get(StringKey.LEVEL_SELECT_BACK))
         btnBack.addListener(object : ChangeListener() {
             override fun changed(event: ChangeEvent?, actor: Actor?) {
                 game.screen = MainMenuScreen(game)

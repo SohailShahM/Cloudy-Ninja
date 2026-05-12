@@ -19,6 +19,8 @@ import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
 import com.sohai.platformer.FontManager
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.input.InputManager
 
 class Hud(private val viewportWidth: Float, private val viewportHeight: Float) : Disposable {
@@ -73,7 +75,7 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
         barSkin.add("white", whiteTexture)
 
         // ---------- Left movement buttons ----------
-        val btnLeft = VisTextButton("<")
+        val btnLeft = VisTextButton(Strings.get(StringKey.HUD_BTN_LEFT))
         btnLeft.addListener(object : InputListener() {
             override fun touchDown(e: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
                 InputManager.uiLeftPressed = true; return true
@@ -83,7 +85,7 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
             }
         })
 
-        val btnRight = VisTextButton(">")
+        val btnRight = VisTextButton(Strings.get(StringKey.HUD_BTN_RIGHT))
         btnRight.addListener(object : InputListener() {
             override fun touchDown(e: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
                 InputManager.uiRightPressed = true; return true
@@ -94,7 +96,7 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
         })
 
         // ---------- Right action buttons ----------
-        val btnJump = VisTextButton("Jump")
+        val btnJump = VisTextButton(Strings.get(StringKey.HUD_BTN_JUMP))
         btnJump.addListener(object : InputListener() {
             override fun touchDown(e: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
                 InputManager.uiJumpPressed = true; return true
@@ -104,7 +106,7 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
             }
         })
 
-        btnAction = VisTextButton("Action")
+        btnAction = VisTextButton(Strings.get(StringKey.HUD_BTN_ACTION))
         btnAction.addListener(object : InputListener() {
             override fun touchDown(e: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
                 InputManager.uiActionPressed = true; InputManager.uiActionJustPressed = true; return true
@@ -115,7 +117,7 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
         })
 
         // ---------- Swap button (centre) ----------
-        val btnSwap = VisTextButton("Swap")
+        val btnSwap = VisTextButton(Strings.get(StringKey.HUD_BTN_SWAP))
         btnSwap.addListener(object : InputListener() {
             override fun touchDown(e: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
                 onSwapCharacter?.invoke(); return true
@@ -169,9 +171,9 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
         val topLeft = VisTable()
         topLeft.top().left().padTop(20f).padLeft(40f)
         topLeft.setFillParent(true)
-        charLabel = VisLabel("Ebo — Seed Slam", charStyle)
+        charLabel = VisLabel(Strings.get(StringKey.HUD_INIT_CHAR_ABILITY), charStyle)
         topLeft.add(charLabel).row()
-        spiritLabel = VisLabel("Spirit: ***", Label.LabelStyle(charFont, Color(0.3f, 1f, 0.4f, 1f)))
+        spiritLabel = VisLabel(Strings.get(StringKey.HUD_INIT_SPIRIT), Label.LabelStyle(charFont, Color(0.3f, 1f, 0.4f, 1f)))
         topLeft.add(spiritLabel).left().padTop(4f)
         stage.addActor(topLeft)
 
@@ -179,8 +181,8 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
         val topRight = VisTable()
         topRight.top().right().padTop(20f).padRight(40f)
         topRight.setFillParent(true)
-        scoreLabel = VisLabel("Score: 0", Label.LabelStyle(charFont, Color(0.3f, 1f, 0.4f, 1f)))
-        timerLabel = VisLabel("0:00", Label.LabelStyle(charFont, Color(0.75f, 0.75f, 1f, 1f)))
+        scoreLabel = VisLabel(Strings.get(StringKey.HUD_INIT_SCORE), Label.LabelStyle(charFont, Color(0.3f, 1f, 0.4f, 1f)))
+        timerLabel = VisLabel(Strings.get(StringKey.HUD_INIT_TIMER), Label.LabelStyle(charFont, Color(0.75f, 0.75f, 1f, 1f)))
         progressBarBg   = VisImage(barSkin.newDrawable("white", Color(0.2f, 0.2f, 0.2f, 0.6f)))
         progressBarFill = VisImage(barSkin.newDrawable("white", Color(0.3f, 1f, 0.4f, 0.9f)))
 
@@ -200,7 +202,7 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
         val stopwatchTable = VisTable()
         stopwatchTable.top().padTop(16f)
         stopwatchTable.setFillParent(true)
-        stopwatchLabel = VisLabel("⏱ 0:00.0", Label.LabelStyle(stopwatchFont, Color(0.1f, 0.95f, 0.85f, 1f)))
+        stopwatchLabel = VisLabel(Strings.get(StringKey.HUD_INIT_STOPWATCH), Label.LabelStyle(stopwatchFont, Color(0.1f, 0.95f, 0.85f, 1f)))
         stopwatchLabel.isVisible = false
         stopwatchTable.add(stopwatchLabel)
         stage.addActor(stopwatchTable)
