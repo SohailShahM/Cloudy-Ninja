@@ -538,7 +538,7 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Tier:** S
 - **Autonomous-eligible:** yes
 - **Agent:** copilot-agent
-- **Branch:** copilot/T-111-soundmanager-error-level
+- **Branch:** copilot/t-111-fix-soundmanager-log-level
 - **Started:** 2026-05-12
 - **Depends on:** _none_
 - **GDD ref:** HANDOFF.md source-side quirk #1 — `SoundManager` unknown-id uses `Gdx.app.log` not `Gdx.app.error`; IS an error state
