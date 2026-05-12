@@ -43,8 +43,8 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
     private val comboLabel: VisLabel
     private var comboLabelTimer = 0f
     private val cooldownBarImage: VisImage
-    private lateinit var btnAction: VisTextButton
-    private lateinit var stopwatchLabel: VisLabel
+    private val btnAction: VisTextButton
+    private val stopwatchLabel: VisLabel
     private var isTrialMode = false
 
     /** When true, the action button pulses with a warm glow to direct player attention. */
