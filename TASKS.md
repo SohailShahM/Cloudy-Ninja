@@ -336,6 +336,90 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Cloudy Ninja's eventual Steam listing needs the right tag combination. Survey Steam's top-rated 2D pixel-art platformers with eco/climate/accessibility angles. Cross-reference Steam's official tag taxonomy. Identify: (a) tag combinations correlating with discovery success, (b) tag conflicts that *hurt* visibility, (c) the 3-5 must-have tags for our pitch, (d) 5-8 "stretch" tags that broaden audience without diluting positioning.
 - **Done when:** `marketing/steam-tags-research.md` exists with a recommended primary tag set, a stretch tag set, and rationale citing 3+ comparable games per tag.
 
+### T-076 — Execute low-risk dependency upgrades (from T-051 audit)  [P2]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** M  *(real code work — bumps versions, must keep CI green)*
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-076-dep-upgrades-low-risk`
+- **Depends on:** T-051
+- **GDD ref:** `research/dependency-audit.md` (the T-051 deliverable)
+- **Files:** `build.gradle.kts`, `core/build.gradle.kts`, `android/build.gradle.kts`, plus any Kotlin source files that need adjustment for breaking changes.
+- **Goal:** Read T-051's `research/dependency-audit.md` and execute every upgrade tagged **upgrade-risk: LOW** (and only LOW). For each upgrade, open it as a **separate PR** so failures can be reverted independently. For each PR: (1) bump the version in the right gradle file, (2) fix any compilation errors the bump introduces, (3) run `./gradlew :core:test` locally + ensure CI passes, (4) include a one-paragraph PR description citing the audit entry. **Do not do MEDIUM or HIGH risk upgrades** — those need a separate decision.
+- **Done when:** All LOW-risk upgrades from the audit are merged as individual PRs, each with green CI. If any LOW upgrade unexpectedly breaks something, halt that PR and post to QUESTIONS.md — do not chain into a multi-version cascade.
+- **Constraints:** One upgrade = one PR. Don't combine. If the audit lists 5 LOW upgrades, that's 5 PRs. Don't bypass CI. Don't touch source code beyond what each version bump strictly requires.
+
+### T-077 — presskit() scaffold for Cloudy Ninja  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** M  *(real folder structure + HTML + populated metadata; not just markdown)*
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-077-presskit`
+- **Depends on:** T-050, T-048  *(needs the outreach list and the style guide as inputs)*
+- **GDD ref:** GAME_PLAN.md (launch/marketing)
+- **Files:** `marketing/presskit/` (new directory — full scaffold)
+- **Goal:** Build a real [presskit()](https://dopresskit.com/) compatible folder structure under `marketing/presskit/`. Generate `data.xml` (or the modern JSON equivalent), `presskit.css`, `index.html` from current game info (project name, tagline derived from T-048 style guide, description, key features list, system requirements stub, accessibility section, eco/climate angle). Drop placeholder images at the correct dimensions (cover.png 1920×1080, screenshot-01..06.png 1920×1080, logo.png with transparency). Populate `team.xml`-style author metadata using public info only (Sohail Shah, public GitHub). Pre-fill outreach contact info from the T-050 list as a CSV the user can mail-merge. Should be deployable to itch.io/GitHub Pages with zero further edits to the structure.
+- **Done when:** `marketing/presskit/index.html` opens locally and renders a complete press page. All placeholder images present at correct dimensions (PNGs can be simple solid-color placeholders for v1 — real screenshots come later). `data.xml` (or .json) validates against the presskit() schema.
+- **Constraints:** No third-party hosting required. Do NOT include private contact info anywhere. Generate placeholder PNGs via ImageMagick / Pillow — no need to source real screenshots.
+
+### T-078 — Procedural achievement icon generator (Kotlin tool)  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** M  *(real code — writes a build-time Kotlin generator)*
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-078-icon-generator`
+- **Depends on:** T-037  *(achievements exist)*
+- **GDD ref:** T-066 (achievement icons — this ticket builds the *generator*; T-066 wires icons in)
+- **Files:** `tools/IconGenerator.kt` (new — standalone Kotlin script), `assets/icons/achievements/*.png` (generated outputs, 16×16, 12 files), `build.gradle.kts` (optional gradle task to invoke the generator).
+- **Goal:** Write a self-contained Kotlin tool (`tools/IconGenerator.kt`, runnable via `kotlinc -script` or as a `:tools:run` gradle task) that emits 12 distinct 16×16 PNG icons — one per achievement in `AchievementRegistry.ALL`. Each icon must be visually distinct (different shape silhouette + 2–3-color palette). Use simple primitives: stomp→boot, time-trial→stopwatch, atlas_full→open book, world_1_clear→shield, all_levels→trophy, etc. Stick to one shared palette across all icons (consistent visual language). Commit the generated PNGs alongside the generator so consumers don't have to re-run.
+- **Done when:** `tools/IconGenerator.kt` runs cleanly, produces 12 PNGs in `assets/icons/achievements/`, each 16×16, each distinct. Re-running is idempotent (same output bytes). T-066 can then wire `iconPath` to these without further work.
+- **Constraints:** Pure-Kotlin (use `java.awt.image.BufferedImage` + `ImageIO` from the JDK — no extra deps). No web fetches. No interactive prompts.
+
+### T-079 — CI duration optimization (smoke matrix)  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** M
+- **Autonomous-eligible:** yes-with-review  *(touches CI workflow — let a human eyeball the workflow diff before admin-merge)*
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-079-ci-optimization`
+- **Depends on:** T-A1
+- **GDD ref:** `.github/workflows/ai-smoke.yml` (current 9-job matrix; ~4.5 min per job)
+- **Files:** `.github/workflows/ai-smoke.yml`, `.github/workflows/ci.yml`
+- **Goal:** Profile + optimize the current CI workflows. Investigate: (a) gradle cache hit rate (`actions/cache@v4` config), (b) JDK setup time (`actions/setup-java` caching), (c) whether the 9-level smoke matrix can be packed into fewer jobs (e.g. 3 jobs × 3 levels each, reusing the gradle daemon), (d) test parallelism in `:core:test`, (e) whether `xvfb-run` can be replaced or pre-warmed. Goal: cut total CI wall time by ≥30% without losing coverage. Document the optimization decisions in the workflow file's top comment.
+- **Done when:** Both workflows still green on a PR. Total CI wall time (longest job, measured across 3 consecutive PR runs) ≤ 0.7× the current baseline. Workflow file has a top-of-file comment summarizing what changed and why.
+- **Constraints:** Do NOT reduce smoke matrix coverage. Every level still tested per PR. Do NOT skip lint or compile. If an optimization requires losing coverage to hit the 30% target, surface in QUESTIONS.md instead of doing it.
+
+### T-080 — GitHub repo infrastructure (Issue templates + Discussions)  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-080-repo-infra`
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (community readiness for itch.io alpha)
+- **Files:** `.github/ISSUE_TEMPLATE/bug-report.yml` (new), `.github/ISSUE_TEMPLATE/feature-request.yml` (new), `.github/ISSUE_TEMPLATE/accessibility-issue.yml` (new), `.github/ISSUE_TEMPLATE/config.yml` (new), `.github/PULL_REQUEST_TEMPLATE.md` (new), `.github/DISCUSSION_TEMPLATE/announcements.yml` (new), `.github/DISCUSSION_TEMPLATE/help.yml` (new).
+- **Goal:** Add the standard public-repo infrastructure: structured Issue templates (bug-report with reproduction steps + screenshots; feature-request with use-case-first; accessibility-issue with WCAG context), a PR template that mirrors current PR conventions (Summary + Test plan + Closes T-XXX), and Discussion templates for Announcements + Help. Reference Cloudy Ninja's existing AGENTS.md / LEARNINGS.md / START_HERE.md for reporter expectations. Issue forms (the YAML format) preferred over markdown templates.
+- **Done when:** Opening "New Issue" on github.com/SohailShahM/Cloudy-Ninja shows the 3 templates with proper form fields. PR template auto-populates on `gh pr create`. Discussion templates available if/when Discussions are enabled on the repo.
+- **Constraints:** Do NOT toggle GitHub features (Discussions, Wiki) — leave that to the user. Do NOT modify CODEOWNERS or branch protection. Only `.github/ISSUE_TEMPLATE/`, `.github/DISCUSSION_TEMPLATE/`, and `.github/PULL_REQUEST_TEMPLATE.md` are in scope.
+
+### T-081 — Android build verification + smoke  [P3]
+- **Status:** Todo
+- **Tool:** `antigravity`
+- **Tier:** M
+- **Autonomous-eligible:** yes-with-review  *(if a real fix is needed, surface it)*
+- **Agent:** _unclaimed_
+- **Branch:** `antigravity/T-081-android-build`
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (mobile-platform support)
+- **Files:** `android/build.gradle.kts`, `android/src/...` (only if a real fix is required), `.github/workflows/ci.yml` (add an `assembleDebug` step)
+- **Goal:** Verify the `android` module still builds an APK in 2026 toolchain. (1) Run `./gradlew android:assembleDebug` locally — if it fails, document each error in a `BUILD-LOG.md` and only fix issues that are *obviously* trivial (deprecated API name swaps, AGP version mismatches). (2) Add a CI step that runs `assembleDebug` on every PR so we catch future regressions early. (3) Surface any *non-trivial* failures (e.g. a manifest schema change, a Box2D-Android ABI mismatch) in `QUESTIONS.md` — do not improvise architectural decisions.
+- **Done when:** Either: (A) Android APK builds locally + CI step passes + a one-line "Mobile build OK as of 2026-05-12" note in LEARNINGS.md. Or: (B) `BUILD-LOG.md` + `QUESTIONS.md` entry documents the blocker; ticket marked blocked. Either outcome is a success — clarity is the goal.
+- **Constraints:** Do NOT attempt risky toolchain bumps (AGP > 1 minor, Kotlin > 1 minor, Java target changes). Do NOT publish APK to anywhere. Do NOT change signing config.
+
 ---
 
 ## Backlog — AI testing v2 (planned, after MVP T-A1/T-A2 lands)
