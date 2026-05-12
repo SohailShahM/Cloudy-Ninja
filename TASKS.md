@@ -384,19 +384,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add 1 visually-distinct "hidden" eco-token to each of level1/2/3, placed in an out-of-the-way spot (e.g. behind a wall jump, in a ceiling alcove). Collecting all 3 across runs unlocks a new `collector` achievement. Hidden tokens render with a slight golden tint to distinguish from regular ones.
 - **Done when:** Each campaign level has 1 hidden token; collecting all 3 unlocks `collector`; smoke CI passes (autopilot is unlikely to find them — that's fine, they're hidden).
 
-### T-108 — AchievementsScreen with per-row icon layout  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-108-achievements-screen`
-- **Started:** 2026-05-12
-- **Depends on:** T-066, T-078
-- **GDD ref:** §22 (achievements list) — completes the surface T-066 deferred
-- **Files:** `screens/AchievementsScreen.kt` (new), `screens/MainMenuScreen.kt` (Achievements button), `screens/StatsScreen.kt` (drop comma-joined string → count + link), `i18n/Strings.kt` (new keys)
-- **Goal:** Build the proper per-row achievement list. Each row: 32×32 icon + bold title + italic description + locked/unlocked indicator (50% alpha or grayscale tint for locked). Sort unlocked-first, then by registration order within each group. Reuse T-066's lazy-cache texture pattern. Add a Main-menu button between Atlas and Stats. Refactor `StatsScreen` achievement display to a count + link.
-- **Done when:** New screen reachable from MainMenu and StatsScreen; all 12 icons visible; locked styling clearly distinguishable from unlocked; compile clean; smoke CI passes.
 
 
 ---
@@ -657,6 +644,13 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Completed:** 2026-05-12
 - **Outcome:** `Achievement.kt` gets new `iconPath: String = "icons/achievements/$id.png"` field — default uses `id` interpolation so `AchievementRegistry`'s 12 existing entries pick it up unchanged. `AchievementToast.kt` lazy-loads icons via `HashMap<String, Texture>` keyed by id, populates from `applyIcon()` when a toast promotes off `IDLE`. Missing files tolerated (warning log, no crash). Rendered via `VisImage` + `TextureRegionDrawable` at 32×32 with 8px right-pad before title/desc column. Cached textures disposed in `dispose()`. T-056's `AchievementTest` continues to pass via the default. **Scope deviation:** the brief listed `screens/AchievementsScreen.kt` as a second surface, but that file doesn't exist — achievements live as a comma-joined string in `StatsScreen`. Spawn-task chip generated for building the proper `AchievementsScreen`.
 - **Commit/PR:** PR #59 (squashed merge `8ed30f2`)
+- **Tool:** `claude-code-sub-agent`
+
+### T-108 — AchievementsScreen with per-row icon layout
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Closes the surface T-066 deferred. New `screens/AchievementsScreen.kt` — scrollable per-slot list with 32×32 icon + bold gold title + italic desc + locked/unlocked status per row. Sort: unlocked first, then by registration order within each group. Lazy texture cache mirrors T-066 `AchievementToast` (HashMap by id, lazy populate, dispose-all). **Slot UX:** top-row tabs (1/2/3, active wrapped in brackets); `initialSlotIndex` constructor param lets MainMenu open on slot 0 while StatsScreen's "View All →" deep-links to its own slot. Locked vs unlocked styling: gold/green/full-alpha vs muted-grey/50%-alpha icon. **MainMenu button** added between Atlas and Stats via `Strings.get(StringKey.MENU_ACHIEVEMENTS)`. **StatsScreen refactor** drops comma-joined ids → `Achievements: N/12 unlocked` count + `[View All →]` button; all other StatsScreen features preserved untouched (T-060 best-times, deaths, completed levels, eco-tokens, slot-empty handling, `formatBestTime`).
+- **Commit/PR:** PR #60 (squashed merge `baf46c3`)
 - **Tool:** `claude-code-sub-agent`
 
 ### T-095 — Kotest specs for SoundManager (per-bus volume)
