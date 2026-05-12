@@ -26,6 +26,7 @@ import com.sohai.platformer.FontManager
 import com.sohai.platformer.audio.MusicManager
 import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.input.InputManager
+import com.sohai.platformer.persist.ColorBlindMode
 import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.persist.SettingsManager
@@ -182,6 +183,23 @@ class SettingsScreen(
             }
         })
         inner.add(chkFps).left().padBottom(16f).row()
+
+        // ── Accessibility ─────────────────────────────────────────────────
+        inner.add(Label("Accessibility", sectionStyle)).left().padBottom(8f).row()
+
+        inner.add(Label("Color-blind mode", bodyStyle)).left().padRight(16f)
+        val cbBox = SelectBox<ColorBlindMode>(skin)
+        val cbItems = GdxArray<ColorBlindMode>()
+        ColorBlindMode.values().forEach { cbItems.add(it) }
+        cbBox.items = cbItems
+        cbBox.selected = settings.colorBlindMode
+        cbBox.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                val m = cbBox.selected ?: return
+                settings = SettingsManager.update { it.copy(colorBlindMode = m) }
+            }
+        })
+        inner.add(cbBox).width(300f).padBottom(16f).row()
 
         // ── Assist Mode ───────────────────────────────────────────────────
         inner.add(Label("Assist Mode", sectionStyle)).left().padBottom(8f).row()

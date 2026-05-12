@@ -19,7 +19,9 @@ import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.entities.StormSentinel
 import com.sohai.platformer.levels.Level0_0
+import com.sohai.platformer.persist.ColorBlindMode
 import com.sohai.platformer.persist.SaveManager
+import com.sohai.platformer.persist.SettingsManager
 import com.sohai.platformer.rendering.CharacterAnimator
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.rendering.ParallaxBackground
@@ -60,41 +62,157 @@ class LevelRenderer(
 ) {
 
     // ── Hot-path colour constants (hoisted to avoid per-frame allocation) ─────
+    //
+    // The companion below holds the DEFAULT (OFF) palette. Colors that need to
+    // shift for color-blind accessibility are also exposed on [Palette] (a small
+    // value-holder), and [Palette.forMode] returns a per-mode override set.
+    //
+    // Color choices for non-OFF modes are based on Brettel/Viénot/Mollon (1997)
+    // dichromat simulation models and the IBM design library's color-blind safe
+    // recommendations: red/green pairs become blue/orange under deuteranopia &
+    // protanopia (both red-green deficiencies), and blue/yellow pairs become
+    // teal/magenta under tritanopia. Luminance contrast is preserved so the
+    // game still reads at a glance.
+    private class Palette(
+        val HAZARD_BASE: Color,
+        val HAZARD_STRIPE: Color,
+        val HAZARD_SPIKE: Color,
+        val HAZARD_CLEAN_BASE: Color,
+        val HAZARD_CLEAN_GLEAM: Color,
+        val EXIT_BASE: Color,
+        val EXIT_EDGE: Color,
+        val CP_GLOW_INACTIVE: Color,
+        val CP_GLOW_ACTIVE: Color,
+        val CP_BODY_INACTIVE: Color,
+        val CP_BODY_ACTIVE: Color,
+        val SNAPSHOT_GLOW: Color,
+        val SNAPSHOT_BODY: Color,
+        val TOKEN: Color,
+        val SPARKLE_TOKEN: Color,
+        val SPARKLE_SNAPSHOT: Color,
+        val GRASS_TUFT: Color,
+        val PORTAL_UNLOCKED: Color,
+        val PORTAL_UNLOCKED_EDGE: Color
+    ) {
+        companion object {
+            /** OFF palette — the original colors verbatim. */
+            val DEFAULT = Palette(
+                HAZARD_BASE         = Color(0.75f, 0.15f, 0.15f, 1f),
+                HAZARD_STRIPE       = Color(0.55f, 0.08f, 0.08f, 1f),
+                HAZARD_SPIKE        = Color(0.95f, 0.10f, 0.10f, 1f),
+                HAZARD_CLEAN_BASE   = Color(0.25f, 0.65f, 0.3f,  1f),
+                HAZARD_CLEAN_GLEAM  = Color(0.5f,  0.95f, 0.55f, 0.8f),
+                EXIT_BASE           = Color(0.15f, 0.9f,  0.55f, 0.45f),
+                EXIT_EDGE           = Color(0.3f,  1f,    0.65f, 0.85f),
+                CP_GLOW_INACTIVE    = Color(0.15f, 0.15f, 0.65f, 0.3f),
+                CP_GLOW_ACTIVE      = Color(0.1f,  0.6f,  0.15f, 0.3f),
+                CP_BODY_INACTIVE    = Color(0.2f,  0.2f,  0.9f,  1f),
+                CP_BODY_ACTIVE      = Color(0.25f, 0.85f, 0.3f,  1f),
+                SNAPSHOT_GLOW       = Color(0.1f,  0.8f,  0.9f,  0.35f),
+                SNAPSHOT_BODY       = Color(0.15f, 0.85f, 0.95f, 1f),
+                TOKEN               = Color(0.2f,  0.9f,  0.3f,  1f),
+                SPARKLE_TOKEN       = Color(0.3f,  1f,    0.9f,  1f),
+                SPARKLE_SNAPSHOT    = Color(1f,    0.9f,  0.2f,  1f),
+                GRASS_TUFT          = Color(0.22f, 0.72f, 0.16f, 1f),
+                PORTAL_UNLOCKED     = Color(0.2f,  0.45f, 0.95f, 0.85f),
+                PORTAL_UNLOCKED_EDGE = Color(0.4f, 0.65f, 1f,    1f)
+            )
 
-    private companion object Palette {
+            /**
+             * Deuteranopia / protanopia (red-green): swap reds → high-luminance
+             * orange (#FF8800), greens → blue (#0088FF), cleansed-hazard green →
+             * blue-cyan (#00BBFF). Eco-token (was green) becomes orange to keep
+             * it distinct from blue checkpoints. Yellow snapshot sparkle moves
+             * to white so it never fights the orange/blue split.
+             */
+            private val RED_GREEN = Palette(
+                HAZARD_BASE         = Color(1.00f, 0.53f, 0.00f, 1f),   // #FF8800
+                HAZARD_STRIPE       = Color(0.70f, 0.30f, 0.00f, 1f),
+                HAZARD_SPIKE        = Color(1.00f, 0.60f, 0.10f, 1f),
+                HAZARD_CLEAN_BASE   = Color(0.00f, 0.73f, 1.00f, 1f),   // #00BBFF
+                HAZARD_CLEAN_GLEAM  = Color(0.40f, 0.90f, 1.00f, 0.8f),
+                EXIT_BASE           = Color(0.00f, 0.53f, 1.00f, 0.45f),// #0088FF
+                EXIT_EDGE           = Color(0.40f, 0.75f, 1.00f, 0.85f),
+                CP_GLOW_INACTIVE    = Color(0.10f, 0.10f, 0.50f, 0.3f), // deep blue
+                CP_GLOW_ACTIVE      = Color(1.00f, 0.55f, 0.00f, 0.3f), // orange
+                CP_BODY_INACTIVE    = Color(0.20f, 0.30f, 0.95f, 1f),
+                CP_BODY_ACTIVE      = Color(1.00f, 0.65f, 0.10f, 1f),
+                SNAPSHOT_GLOW       = Color(0.95f, 0.95f, 0.95f, 0.35f),
+                SNAPSHOT_BODY       = Color(1.00f, 1.00f, 1.00f, 1f),
+                TOKEN               = Color(1.00f, 0.60f, 0.00f, 1f),   // orange (distinct from blue)
+                SPARKLE_TOKEN       = Color(1.00f, 0.80f, 0.30f, 1f),
+                SPARKLE_SNAPSHOT    = Color(0.95f, 0.95f, 1.00f, 1f),
+                GRASS_TUFT          = Color(0.55f, 0.55f, 0.55f, 1f),   // neutral grey — no red-green cue
+                PORTAL_UNLOCKED     = Color(0.00f, 0.53f, 1.00f, 0.85f),
+                PORTAL_UNLOCKED_EDGE = Color(0.40f, 0.75f, 1.00f, 1f)
+            )
+
+            /**
+             * Tritanopia (blue-yellow): shift blues → magenta/red, yellows → cyan.
+             * Hazards stay red (no blue-yellow component) and eco-tokens move to
+             * magenta to remain distinguishable from the red hazard.
+             */
+            private val BLUE_YELLOW = Palette(
+                HAZARD_BASE         = Color(0.85f, 0.15f, 0.15f, 1f),
+                HAZARD_STRIPE       = Color(0.60f, 0.08f, 0.08f, 1f),
+                HAZARD_SPIKE        = Color(1.00f, 0.20f, 0.20f, 1f),
+                HAZARD_CLEAN_BASE   = Color(0.10f, 0.75f, 0.80f, 1f),   // teal
+                HAZARD_CLEAN_GLEAM  = Color(0.40f, 0.95f, 1.00f, 0.8f),
+                EXIT_BASE           = Color(0.95f, 0.30f, 0.80f, 0.45f),// magenta
+                EXIT_EDGE           = Color(1.00f, 0.55f, 0.90f, 0.85f),
+                CP_GLOW_INACTIVE    = Color(0.50f, 0.10f, 0.50f, 0.3f),
+                CP_GLOW_ACTIVE      = Color(0.10f, 0.65f, 0.70f, 0.3f),
+                CP_BODY_INACTIVE    = Color(0.85f, 0.20f, 0.75f, 1f),   // magenta
+                CP_BODY_ACTIVE      = Color(0.15f, 0.80f, 0.85f, 1f),   // cyan
+                SNAPSHOT_GLOW       = Color(0.10f, 0.75f, 0.80f, 0.35f),
+                SNAPSHOT_BODY       = Color(0.20f, 0.85f, 0.90f, 1f),
+                TOKEN               = Color(0.95f, 0.30f, 0.80f, 1f),   // magenta
+                SPARKLE_TOKEN       = Color(1.00f, 0.60f, 0.95f, 1f),
+                SPARKLE_SNAPSHOT    = Color(0.95f, 0.95f, 0.95f, 1f),   // white (yellow disappears)
+                GRASS_TUFT          = Color(0.22f, 0.72f, 0.16f, 1f),   // green is fine
+                PORTAL_UNLOCKED     = Color(0.95f, 0.30f, 0.80f, 0.85f),
+                PORTAL_UNLOCKED_EDGE = Color(1.00f, 0.55f, 0.90f, 1f)
+            )
+
+            /** Resolve the active palette for [mode]. OFF returns [DEFAULT] (no allocation). */
+            fun forMode(mode: ColorBlindMode): Palette = when (mode) {
+                ColorBlindMode.OFF          -> DEFAULT
+                ColorBlindMode.DEUTERANOPIA -> RED_GREEN
+                ColorBlindMode.PROTANOPIA   -> RED_GREEN
+                ColorBlindMode.TRITANOPIA   -> BLUE_YELLOW
+            }
+        }
+    }
+
+    // Non-mode-sensitive colours (terrain, particles, walls, etc.) — these stay
+    // identical across all modes and don't need a swap table.
+    private companion object SharedPalette {
         val DROPLET             = Color(0.3f, 0.6f, 1f, 0.7f)
-        val HAZARD_CLEAN_BASE   = Color(0.25f, 0.65f, 0.3f,  1f)
-        val HAZARD_CLEAN_GLEAM  = Color(0.5f,  0.95f, 0.55f, 0.8f)
-        val HAZARD_BASE         = Color(0.75f, 0.15f, 0.15f, 1f)
-        val HAZARD_STRIPE       = Color(0.55f, 0.08f, 0.08f, 1f)
         val WALL_BASE           = Color(0.20f, 0.20f, 0.22f, 1f)
         val WALL_EDGE           = Color(0.35f, 0.35f, 0.38f, 1f)
-        val EXIT_BASE           = Color(0.15f, 0.9f,  0.55f, 0.45f)
-        val EXIT_EDGE           = Color(0.3f,  1f,    0.65f, 0.85f)
         val GROUND_BASE         = Color(0.40f, 0.42f, 0.45f, 1f)
         val GROUND_TOP          = Color(0.62f, 0.65f, 0.68f, 1f)
         val MP_BASE             = Color(0.50f, 0.33f, 0.14f, 1f)
         val MP_TOP              = Color(0.75f, 0.55f, 0.30f, 1f)
-        val CP_GLOW_INACTIVE    = Color(0.15f, 0.15f, 0.65f, 0.3f)
-        val CP_GLOW_ACTIVE      = Color(0.1f,  0.6f,  0.15f, 0.3f)
-        val CP_BODY_INACTIVE    = Color(0.2f,  0.2f,  0.9f,  1f)
-        val CP_BODY_ACTIVE      = Color(0.25f, 0.85f, 0.3f,  1f)
-        val SNAPSHOT_GLOW       = Color(0.1f,  0.8f,  0.9f,  0.35f)
-        val SNAPSHOT_BODY       = Color(0.15f, 0.85f, 0.95f, 1f)
-        val TOKEN               = Color(0.2f,  0.9f,  0.3f,  1f)
-        val SPARKLE_TOKEN       = Color(0.3f,  1f,    0.9f,  1f)
-        val SPARKLE_SNAPSHOT    = Color(1f,    0.9f,  0.2f,  1f)
         val SMOKE_STOMP         = Color(0.45f, 0.42f, 0.40f, 0.85f)
         val PROJECTILE          = Color(1f,    0.6f,  0f,    1f)
-        val PORTAL_UNLOCKED     = Color(0.2f,  0.45f, 0.95f, 0.85f)
         val PORTAL_LOCKED       = Color(0.35f, 0.35f, 0.38f, 0.65f)
-        val PORTAL_UNLOCKED_EDGE = Color(0.4f, 0.65f, 1f,    1f)
         val PORTAL_LOCKED_EDGE  = Color(0.50f, 0.50f, 0.52f, 0.8f)
         val tmpWindCol          = Color(1f,    1f,    1f,    1f)
         val GROUND_SHADOW       = Color(0.28f, 0.29f, 0.32f, 1f)
-        val GRASS_TUFT          = Color(0.22f, 0.72f, 0.16f, 1f)
-        val HAZARD_SPIKE        = Color(0.95f, 0.10f, 0.10f, 1f)
         val MP_SHADOW           = Color(0.30f, 0.18f, 0.06f, 1f)
+    }
+
+    /** Active mode-sensitive palette; resolved from SettingsManager at render time. */
+    private var palette: Palette = Palette.forMode(SettingsManager.load().colorBlindMode)
+    private var paletteMode: ColorBlindMode = SettingsManager.load().colorBlindMode
+
+    private fun refreshPalette() {
+        val m = SettingsManager.load().colorBlindMode
+        if (m != paletteMode) {
+            paletteMode = m
+            palette = Palette.forMode(m)
+        }
     }
 
     /**
@@ -103,6 +221,7 @@ class LevelRenderer(
      * Filled block. Caller must NOT have an open SR block before calling this.
      */
     fun renderWorld(cleanseRatio: Float, currentCharacter: String, projectiles: List<Projectile> = emptyList()) {
+        refreshPalette()
         shapeRenderer.projectionMatrix = camera.combined
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
 
@@ -168,22 +287,22 @@ class LevelRenderer(
 
             when {
                 rect.kind == ObstacleKind.HAZARD && ud == "hazard_cleaned" -> {
-                    shapeRenderer.color = HAZARD_CLEAN_BASE
+                    shapeRenderer.color = palette.HAZARD_CLEAN_BASE
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
-                    shapeRenderer.color = HAZARD_CLEAN_GLEAM
+                    shapeRenderer.color = palette.HAZARD_CLEAN_GLEAM
                     shapeRenderer.rect(cx - w, cy + he - 0.04f, w * 2f, 0.04f)
                 }
                 rect.kind == ObstacleKind.HAZARD -> {
-                    shapeRenderer.color = HAZARD_BASE
+                    shapeRenderer.color = palette.HAZARD_BASE
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
-                    shapeRenderer.color = HAZARD_STRIPE
+                    shapeRenderer.color = palette.HAZARD_STRIPE
                     var sx = cx - w
                     while (sx < cx + w) {
                         shapeRenderer.rect(sx, cy - he, 0.05f, he * 2f)
                         sx += 0.2f
                     }
                     // Triangular spike shapes along the top edge
-                    shapeRenderer.color = HAZARD_SPIKE
+                    shapeRenderer.color = palette.HAZARD_SPIKE
                     var spx = cx - w + 0.04f
                     while (spx < cx + w - 0.04f) {
                         shapeRenderer.triangle(spx - 0.04f, cy + he, spx + 0.04f, cy + he, spx, cy + he + 0.12f)
@@ -201,8 +320,8 @@ class LevelRenderer(
                     val required  = Level0_0.portalUnlockRequirement(ud)
                     val completed = SaveManager.loadGame().completedLevels
                     val unlocked  = required.all { it in completed }
-                    val baseCol   = if (unlocked) PORTAL_UNLOCKED else PORTAL_LOCKED
-                    val edgeCol   = if (unlocked) PORTAL_UNLOCKED_EDGE else PORTAL_LOCKED_EDGE
+                    val baseCol   = if (unlocked) palette.PORTAL_UNLOCKED else PORTAL_LOCKED
+                    val edgeCol   = if (unlocked) palette.PORTAL_UNLOCKED_EDGE else PORTAL_LOCKED_EDGE
                     shapeRenderer.color = baseCol
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
                     shapeRenderer.color = edgeCol
@@ -211,9 +330,9 @@ class LevelRenderer(
                     shapeRenderer.rect(cx - w, cy + he - 0.04f, w * 2f, 0.04f)
                 }
                 rect.kind == ObstacleKind.EXIT -> {
-                    shapeRenderer.color = EXIT_BASE
+                    shapeRenderer.color = palette.EXIT_BASE
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
-                    shapeRenderer.color = EXIT_EDGE
+                    shapeRenderer.color = palette.EXIT_EDGE
                     shapeRenderer.rect(cx - w, cy - he, 0.05f, he * 2f)
                     shapeRenderer.rect(cx + w - 0.05f, cy - he, 0.05f, he * 2f)
                 }
@@ -223,7 +342,7 @@ class LevelRenderer(
                     shapeRenderer.color = GROUND_TOP
                     shapeRenderer.rect(cx - w, cy + he - 0.05f, w * 2f, 0.05f)
                     // Grass tufts along the top surface — height varies with position
-                    shapeRenderer.color = GRASS_TUFT
+                    shapeRenderer.color = palette.GRASS_TUFT
                     var gx = cx - w + 0.04f
                     while (gx < cx + w - 0.04f) {
                         val bh = 0.062f + MathUtils.sin(gx * 19.1f + cx * 4.3f) * 0.024f
@@ -255,16 +374,16 @@ class LevelRenderer(
         for (cp in obstacleManager.checkpoints()) {
             val activated = cp.fixture.userData as? String == "checkpoint_activated"
             val r = cp.radiusPx / Constants.PPM
-            shapeRenderer.color = if (activated) CP_GLOW_ACTIVE else CP_GLOW_INACTIVE
+            shapeRenderer.color = if (activated) palette.CP_GLOW_ACTIVE else palette.CP_GLOW_INACTIVE
             shapeRenderer.circle(cp.body.position.x, cp.body.position.y, r * 1.5f)
-            shapeRenderer.color = if (activated) CP_BODY_ACTIVE else CP_BODY_INACTIVE
+            shapeRenderer.color = if (activated) palette.CP_BODY_ACTIVE else palette.CP_BODY_INACTIVE
             shapeRenderer.circle(cp.body.position.x, cp.body.position.y, r)
             shapeRenderer.color = Color.WHITE
             shapeRenderer.circle(cp.body.position.x, cp.body.position.y, r * 0.35f)
         }
 
         // Eco-tokens
-        shapeRenderer.color = TOKEN
+        shapeRenderer.color = palette.TOKEN
         for (token in ecoTokens) {
             if (!token.isCollected) {
                 val p = token.body.position
@@ -278,9 +397,9 @@ class LevelRenderer(
                 val p  = snap.body.position
                 val r  = snap.getAnimatedRadius()
                 val ri = r * 0.45f
-                shapeRenderer.color = SNAPSHOT_GLOW
+                shapeRenderer.color = palette.SNAPSHOT_GLOW
                 shapeRenderer.circle(p.x, p.y, r * 1.4f)
-                shapeRenderer.color = SNAPSHOT_BODY
+                shapeRenderer.color = palette.SNAPSHOT_BODY
                 shapeRenderer.triangle(p.x, p.y + r,  p.x + ri, p.y,      p.x, p.y - r)
                 shapeRenderer.triangle(p.x, p.y + r,  p.x - ri, p.y,      p.x, p.y - r)
                 shapeRenderer.triangle(p.x - r, p.y,  p.x, p.y + ri,  p.x + r, p.y)
@@ -454,7 +573,7 @@ class LevelRenderer(
                 vy      = (0.8 + Math.random() * 0.4).toFloat(),
                 radius  = 0.05f,
                 life    = (0.35 + Math.random() * 0.10).toFloat(),
-                color   = SPARKLE_TOKEN,
+                color   = palette.SPARKLE_TOKEN,
                 gravity = -2f
             )
         }
@@ -470,7 +589,7 @@ class LevelRenderer(
                 vy      = (0.8 + Math.random() * 0.4).toFloat(),
                 radius  = 0.07f,
                 life    = 0.5f,
-                color   = SPARKLE_SNAPSHOT,
+                color   = palette.SPARKLE_SNAPSHOT,
                 gravity = -2f
             )
         }
