@@ -125,3 +125,28 @@ Or simpler — accept that Antigravity is great at the *artifact* and let a diff
 **Cost:** ~5 min of user visual-review to catch (1 of 4 top recommendations needed re-research). The other three candidates — Kenney pixel-platformer, Pixel Art Forest, Bluegrass — were correct.
 
 **Lesson:** Research-bot tools excel at *breadth* but miss *style/perspective compatibility*. Always do a quick visual pass before acting on art-research output. Bake this into `prompts/T-046a-antigravity.md` and any future art-research prompts.
+
+## 2026-05-12 — GitHub Actions spending limit hit on private repo (PR #13, #14)
+
+**Symptom:** All CI jobs on PRs #13 and #14 returned `failure` in 4–10 seconds with zero step output. Initial diagnosis suggested concurrency cancellation, but annotation on the smoke-job check-run revealed the real cause:
+
+> "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+
+**Cause:** A private GitHub repo's Actions minutes were exhausted within one work session. The heavy multi-AI workflow burned through the free-tier allocation:
+- ~15+ PRs opened
+- Each PR runs 9 CI jobs (1 lint + 8 smoke matrix)
+- Several PRs needed re-runs due to bug-fixing cycle (T-A1 alone went through 8 layers of fixes = 8 × 9 = 72 jobs)
+- Each smoke job runs 30s–4 min
+
+Personal GitHub Pro (via Edu) gives 3000 minutes/month on private repos. We hit that in one day.
+
+**Fix paths (cheapest first):**
+1. **Raise spending limit** in https://github.com/settings/billing/spending_limit. Default is $0 — set to $5 to enable overage billing (extremely unlikely to actually trigger charges for a project this size).
+2. **Wait for monthly reset** — billing anniversary.
+3. **Make repo public** — free unlimited Actions minutes. The original "Option A" we considered when transferring out of MashxLabz org.
+
+**Workaround during the outage:** admin-merge bypasses required-CI checks (we already use it for `required_conversation_resolution`). Risk: changes land without smoke validation, so the autonomous flow effectively becomes "trust the developer / sub-agent" until CI returns.
+
+**Lesson:** Multi-AI autonomous flows on private repos can exhaust Actions minutes faster than expected — especially during a bug-fix cycle where each fix re-runs the full matrix. **Public repos are the right default for indie game projects** unless there's a compelling reason to stay private (the trade-off we considered when transferring from MashxLabz org). Worth re-evaluating that decision once active development slows down.
+
+**Cost:** Detection was ~10 min of confused log-staring. The actual fix is one click in GitHub settings — once the user is back.

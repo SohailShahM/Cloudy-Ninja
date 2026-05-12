@@ -41,6 +41,7 @@ import com.sohai.platformer.rendering.ParallaxTheme
 import com.sohai.platformer.rendering.ParticleSystem
 import com.sohai.platformer.rendering.ScreenFade
 import com.sohai.platformer.rendering.SpriteFactory
+import com.sohai.platformer.rendering.TileRenderer
 import com.sohai.platformer.world.ObstacleKind
 import com.sohai.platformer.world.ObstacleManager
 
@@ -98,6 +99,9 @@ class GameScreen(
     private val screenFade: ScreenFade
     private val particles = ParticleSystem(maxParticles = 200)
     private val achievementToast: AchievementToast
+
+    // ── Tile renderer ─────────────────────────────────────────────────────────
+    private val tileRenderer: TileRenderer
 
     // ── Subsystems ────────────────────────────────────────────────────────────
     private val renderer: LevelRenderer
@@ -229,12 +233,22 @@ class GameScreen(
             }
         }
 
+        tileRenderer = TileRenderer(spriteBatch, camera)
+
+        val parallaxTheme = when (level.id) {
+            "level2" -> ParallaxTheme.WIND
+            "level3" -> ParallaxTheme.ECO
+            else     -> ParallaxTheme.ARID
+        }
+
         renderer = LevelRenderer(
             shapeRenderer, spriteBatch, camera, parallaxBg, particles,
             eboAbility, layaAbility, zephyrAbility,
             obstacleManager, movingPlatforms, ecoTokens, snapshotPickups,
             enemies, player, eboAnimator, layaAnimator, footstepColor,
-            sentinel = sentinel
+            sentinel      = sentinel,
+            tileRenderer  = tileRenderer,
+            parallaxTheme = parallaxTheme
         )
 
         player.onJump = {
@@ -466,6 +480,7 @@ class GameScreen(
         ecoTokens.forEach { world.destroyBody(it.body) }
         ecoTokens.clear()
         obstacleManager.clear()
+        tileRenderer.dispose()
         world.dispose()
         shapeRenderer.dispose()
         spriteBatch.dispose()

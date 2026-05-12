@@ -45,7 +45,12 @@ data class Settings(
     // Assist mode (Celeste-inspired) — flags relax difficulty for accessibility
     val assistInfiniteSpirits: Boolean = false,
     val assistSlowSpeed: Float = 1f,        // 1.0 = normal; 0.5 = half-speed
-    val assistInvincible: Boolean = false
+    val assistInvincible: Boolean = false,
+
+    // Art style: id of the active TilesetPack (see TilesetRegistry).
+    // Default keeps existing saves backward-compatible (kotlinx-serialization
+    // returns this value when loading older settings.json files that lack the field).
+    val tilesetPackId: String = "kenney_pixel_platformer"
 )
 
 /**
