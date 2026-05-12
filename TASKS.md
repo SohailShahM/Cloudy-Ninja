@@ -183,12 +183,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 
 
 ### T-047 — Audio asset research: CC0 music + SFX supplements  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
+- **Status:** In Progress
+- **Tool:** `antigravity` *(re-routed 2026-05-12 → `claude-code-sub-agent` while Antigravity works T-049 in parallel; research-only ticket, no production code)*
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-047-audio-research`
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-047-audio-research`
+- **Started:** 2026-05-12
 - **Depends on:** _none_
 - **GDD ref:** GDD_ADDENDUM §5 ("Audio Architecture")
 - **Files:** `art-research/audio-candidates.md` (new)
@@ -197,12 +198,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Constraints:** Markdown research only — do NOT download audio files. Antigravity must NOT touch any file outside `art-research/`.
 
 ### T-048 — Marketing research: itch.io listing style guide  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
+- **Status:** In Progress
+- **Tool:** `antigravity` *(re-routed 2026-05-12 → `claude-code-sub-agent` while Antigravity works T-049 in parallel; research-only ticket, no production code)*
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-048-marketing-research`
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-048-marketing-research`
+- **Started:** 2026-05-12
 - **Depends on:** _none_
 - **GDD ref:** GAME_PLAN.md (monetization + platforms decision)
 - **Files:** `marketing/itch-listing-style-guide.md` (new)
