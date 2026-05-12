@@ -180,12 +180,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 
 
 ### T-059 — String extraction scaffolding (i18n prep)  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** M
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-059-i18n-strings`
+- **Started:** 2026-05-12
 - **Depends on:** _none_
 - **GDD ref:** GAME_PLAN.md (localization future-proofing)
 - **Files:** `i18n/Strings.kt` (new), all `screens/*.kt` files that contain hardcoded user-facing strings
@@ -206,18 +207,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Extend smoke matrix from 9 (level × default-character) to 27 (level × {ebo, laya, zephyr}). Add `cloudy.smokeCharacter` system property to `Main.kt` that pre-selects the starting character before `GameScreen` init. Update workflow to include a `character` axis.
 - **Done when:** All 27 smoke jobs pass on a PR; CI duration acceptable (parallel jobs, should still finish under 6 min).
 
-### T-063 — Pause menu visual polish + fade-in  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-063-pause-polish`
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (polish for itch.io alpha)
-- **Files:** `screens/PauseScreen.kt` (or wherever the pause overlay lives), `screens/LevelRenderer.kt` (backdrop dim)
-- **Goal:** Add a 0.2s fade-in to the pause overlay (alpha 0 → 0.7 on Esc-press), darken the backdrop behind the menu (~55% black overlay over gameplay), and right-align a tiny "press Esc to resume" hint at the bottom. Keep input handling identical.
 - **Done when:** Fade-in visible at 60 FPS without input lag, hint visible, smoke CI passes.
 
 ### T-066 — Achievement icons (16×16 pixel art)  [P3]
@@ -494,6 +483,13 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Completed:** 2026-05-12
 - **Outcome:** `screens/SettingsScreen.kt` reorganized into 4 sections: Display (resolution, fullscreen, FPS) / Audio (music/SFX/UI sliders) / Controls (5 keybinds + reset) / Accessibility (color-blind mode, reduced motion, screen shake, death flash, assist mode group). Pattern: section headers + `Separator` divider (rejected `VisTabbedPane` since it isn't used elsewhere). Save/Load/Delete moved to footer below sections (no header, per pattern). No widget added/removed/renamed/rewired; `Settings.kt` not touched. Judgment calls: "Show FPS" → Display (output toggle, not comfort); screen shake + death flash → Accessibility (gates same comfort-vs-juice trade-off as Reduce Motion).
 - **Commit/PR:** PR #39 (squashed merge `6707ca5`)
+- **Tool:** `claude-code-sub-agent`
+
+### T-063 — Pause menu visual polish + fade-in
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** `screens/PauseOverlay.kt` + `screens/GameScreen.kt`: 0.2s fade-in driven by manual smoothstep lerp (`t²(3-2t)`, matches `Interpolation.fade` feel) — one `fadeT` variable drives both ShapeRenderer backdrop alpha and `stage.root.color.a` in lockstep. 55% black backdrop dim (`Color(0, 0, 0, 0.55)`) filled rect across viewport. "Press Esc to resume" hint at bottom-right (`FontManager.getShared(14)`, light grey `(0.6, 0.6, 0.6, 0.8)`, 12px padded). Hint reads `SettingsManager.load().keybinds["pause"]` for the display name, falls back to `"Esc"`. **Follow-up flagged:** no `"pause"` default in `Settings.keybinds` today (ESC hardcoded in `GameScreen`); sub-agent left a code comment for a future ticket to add it. No fade-out on un-pause — instant snap-back matches expected responsiveness.
+- **Commit/PR:** PR #41 (squashed merge `483fc95`)
 - **Tool:** `claude-code-sub-agent`
 
 ### T-049 — Climate-source compilation for NotebookLM
