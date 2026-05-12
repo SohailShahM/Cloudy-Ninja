@@ -197,19 +197,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Fade-in visible at 60 FPS without input lag, hint visible, smoke CI passes.
 
 
-### T-073 — User research: pixel-platformer default keyboard layouts  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
-- **Tier:** S  *(research-only, no code)*
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-073-keyboard-layouts`
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (default input scheme)
-- **Files:** `research/keyboard-layout-conventions.md` (new)
-- **Goal:** Catalog default keyboard bindings across 10–15 popular indie pixel platformers (Celeste, Hollow Knight, Hyper Light Drifter, Hades, Dead Cells, Risk of Rain, Stardew Valley, Owlboy, Shovel Knight, etc.). Capture for each: jump key, action key, dash key, alt-action key, pause key, inventory key, accessibility-mode key (if any). Synthesize a most-common default + a recommended Cloudy-Ninja default that maximizes "feels familiar to platformer players."
-- **Done when:** `research/keyboard-layout-conventions.md` exists with a comparison table + a recommended default mapping for Cloudy Ninja's 5 actions (left/right/jump/action/swap), plus a 2-sentence rationale per binding.
-
 ### T-075 — Steam tags + keyword research  [P3]
 - **Status:** Todo
 - **Tool:** `antigravity`
@@ -500,6 +487,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-073 — User research: pixel-platformer default keyboard layouts  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from antigravity — autonomous-run velocity)*
+- **Tier:** S  *(research-only, no code)*
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-073-keyboard-layout-research
+- **Started:** 2026-05-12
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (default input scheme)
+- **Files:** `research/keyboard-layout-conventions.md` (new)
+- **Goal:** Catalog default keyboard bindings across 10–15 popular indie pixel platformers (Celeste, Hollow Knight, Hyper Light Drifter, Hades, Dead Cells, Risk of Rain, Stardew Valley, Owlboy, Shovel Knight, etc.). Capture for each: jump key, action key, dash key, alt-action key, pause key, inventory key, accessibility-mode key (if any). Synthesize a most-common default + a recommended Cloudy-Ninja default that maximizes "feels familiar to platformer players."
+- **Done when:** `research/keyboard-layout-conventions.md` exists with a comparison table + a recommended default mapping for Cloudy Ninja's 5 actions (left/right/jump/action/swap), plus a 2-sentence rationale per binding.
 
 ### T-114 — itch.io deploy workflow (butler)  [P2]
 - **Status:** In Progress
