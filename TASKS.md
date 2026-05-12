@@ -317,7 +317,7 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Status:** Done
 - **Completed:** 2026-05-12
 - **Outcome:** Antigravity researched CC0/CC-BY 32×32 character sprite candidates from Kenney.nl and OpenGameArt.org. All candidates verified as side-scrolling perspective. Results documented in `art-research/character-sprite-candidates.md` with ≥2 candidates per character (Ebo/Laya/Zephyr), each with name, source URL, license, frame count, palette match, perspective verification, and art style match score.
-- **Commit/PR:** PR (branch `antigravity/T-046b-character-sprites`)
+- **Commit/PR:** PR #37
 - **Tool:** `antigravity`
 
 
