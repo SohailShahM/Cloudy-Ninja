@@ -320,55 +320,14 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Either: (A) Android APK builds locally + CI step passes + a one-line "Mobile build OK as of 2026-05-12" note in LEARNINGS.md. Or: (B) `BUILD-LOG.md` + `QUESTIONS.md` entry documents the blocker; ticket marked blocked. Either outcome is a success — clarity is the goal.
 - **Constraints:** Do NOT attempt risky toolchain bumps (AGP > 1 minor, Kotlin > 1 minor, Java target changes). Do NOT publish APK to anywhere. Do NOT change signing config.
 
-### T-088 — Kotest specs for SaveManager round-trip + back-compat  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-088-savemanager-tests`
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** save-data integrity (T-004 lineage)
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/persist/SaveManagerTest.kt` (new)
-- **Goal:** Verify save→load round-trips return an equal `GameState`. Cover every field on `GameState` (completedLevels, bestScores, bestTimes, totalStomps, unlockedAchievements, etc.). Test backwards-compat: a JSON file with missing fields (e.g. legacy save without `unlockedAchievements`, without `colorBlindMode`, without `reducedMotion`) deserializes with the default values. Use a temporary file in `Gdx.files.local()` or a stubbable path so tests don't write to the real save slots. Mirror `CloudAtlasLibraryTest` style.
-- **Done when:** ≥12 tests pass — at least one round-trip per major field group, ≥3 back-compat scenarios.
-
-### T-089 — Kotest specs for ParallaxBackground theme + reducedMotion  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-089-parallax-tests`
-- **Started:** 2026-05-12
-- **Depends on:** T-026, T-058
-- **GDD ref:** T-026 (per-level theming) + T-058 (reduced-motion outcome)
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/rendering/ParallaxBackgroundTest.kt` (new)
-- **Goal:** Pure-logic tests for `ParallaxBackground`. Cover: (a) `ParallaxTheme` enum switching changes the color palette correctly (Arid/Wind/Eco distinct), (b) per-layer `scrollFactor` lerps the camera position as expected (mock camera, assert layer offset), (c) reduced-motion path forces `effectiveScroll = 1f` for every layer (T-058 invariant), (d) star-fade by `cleanseRatio` works at endpoints (0.0 → max alpha, 0.5 → min alpha). No live GL required — pure math + state.
-- **Done when:** ≥10 tests pass. No live LibGDX rendering.
-
-### T-090 — Kotest specs for LevelManager  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-090-levelmanager-tests`
-- **Started:** 2026-05-12
-- **Depends on:** T-016
-- **GDD ref:** T-016 (data-driven level registry)
-- **Files:** `core/src/test/kotlin/com/sohai/platformer/levels/LevelManagerTest.kt` (new)
-- **Goal:** Pure-logic tests for `LevelManager`. Cover: (a) `getLevel(id)` returns expected level / null for unknown ids, (b) `getNextLevel(currentId)` advances correctly through the canonical sequence, returns null at the end, (c) `getAllLevels()` returns the full ordered sequence with the expected count (8: hub + 4 tutorial + 3 campaign), (d) locked-world checks against `GameState.completedLevels` work (World 1 portal locked until World 0 done). Mirror `CloudAtlasLibraryTest` style.
-- **Done when:** ≥12 tests pass.
-
 ### T-091 — `Strings.format(key, *args)` API for compositional strings  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** M
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-091-strings-format`
+- **Started:** 2026-05-12
 - **Depends on:** T-059
 - **GDD ref:** GAME_PLAN.md (localization future-proofing — T-059 follow-up)
 - **Files:** `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`, all `screens/*.kt` with `${...}` interpolation
@@ -541,6 +500,34 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Commit/PR:** PR #42 (squashed merge `87f5097`)
 - **Tool:** `claude-code-sub-agent`
 - **Follow-up:** `Strings.format(key, *args)` API for interpolated/compositional strings.
+
+### T-088 — Kotest specs for SaveManager round-trip + back-compat
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** 23 tests in `core/src/test/kotlin/com/sohai/platformer/persist/SaveManagerTest.kt`. Strict round-trip equality for every `GameState` field (incl. nested `Checkpoint`, `PlayerStats`, all Sets/Maps, Float times). Back-compat: legacy JSON without `unlockedAchievements`/`totalStomps`/`collectedAtlasIds`/`bestScores`/`bestTimes` deserializes to safe defaults. Forward-compat: unknown future keys ignored. Isolation via MockK on `Gdx.app`/`Gdx.files.local` + per-spec tmpdir under `${java.io.tmpdir}/cloudy_savemgr_<uuid>/` + UUID-suffixed slot filenames; `afterSpec` cleans up. **No source-side test hooks added.**
+- **Commit/PR:** PR #44 (squashed merge `8f531e8`)
+- **Tool:** `claude-code-sub-agent`
+
+### T-089 — Kotest specs for ParallaxBackground theme + reducedMotion
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** 23 then-blocks in `core/src/test/kotlin/com/sohai/platformer/rendering/ParallaxBackgroundTest.kt`. Pairwise theme-palette distinctness (ARID/WIND/ECO), strict-increasing scrollFactor ordering, parallax law `Δ(baseX) = Δcam · (1 − scrollFactor)` verified by driving a real `OrthographicCamera` + MockK `ShapeRenderer`, T-058 reduced-motion invariant (camera-translation-invariant x-coords), star-fade by `cleanseRatio` follows `((0.5−t)·2)·0.9` with hard cutoff at `t ≥ 0.5`. Identifies per-layer geometry by `Color.equals` filter, not positional indexing — robust to viewport culling. Only `ShapeRenderer` mocked; cameras + Settings are real (latter seeded via reflection).
+- **Commit/PR:** PR #47 (squashed merge `964273d`)
+- **Tool:** `claude-code-sub-agent`
+
+### T-090 — Kotest specs for LevelManager
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** 17 tests in `core/src/test/kotlin/com/sohai/platformer/levels/LevelManagerTest.kt`. Covers `getLevel(id)` (returns expected for canonical ids, null otherwise), `getNextLevel(id)` (advances through `level0_0 → level0_1..4 → level1 → level2 → level3 → null`), `getAllLevels()` (returns 8 in canonical order, no duplicates). Sub-agent correctly mapped locked-world / portal-unlock logic to `Level0_0`'s companion (not `LevelManager`) and flagged for follow-up — see T-092.
+- **Commit/PR:** PR #43 (squashed merge `a98b817`)
+- **Tool:** `claude-code-sub-agent`
+
+### T-092 — Kotest specs for Level0_0 portal-unlock companion
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** 17 tests covering `Level0_0.portalUnlockRequirement(portalId)` and `Level0_0.portalTargetLevel(portalId)`. Spawned via `mcp__ccd_session__spawn_task` chip after T-090's sub-agent flagged this as a discrete follow-up.
+- **Commit/PR:** PR #46 (squashed merge `faaf1a3`)
+- **Tool:** `claude-code-sub-agent` (spawned-task chip from session)
 
 ### T-049 — Climate-source compilation for NotebookLM
 - **Status:** Done
