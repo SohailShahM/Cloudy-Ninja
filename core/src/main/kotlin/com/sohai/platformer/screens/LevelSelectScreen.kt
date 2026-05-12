@@ -65,14 +65,14 @@ class LevelSelectScreen(private val game: Game) : Screen {
                 isCompleted -> "[+] "
                 else        -> "[ ] "
             }
-            innerTable.add(Label("$badge World ${idx + 1}: ${level.name}", nameStyle)).left().row()
+            innerTable.add(Label(Strings.format(StringKey.WORLD_PORTAL, badge, idx + 1, level.name), nameStyle)).left().row()
 
             if (best != null) {
-                innerTable.add(Label("Best score: $best", bestStyle)).left().padTop(2f).row()
+                innerTable.add(Label(Strings.format(StringKey.BEST_SCORE_VALUE, best), bestStyle)).left().padTop(2f).row()
             } else if (unlocked) {
                 innerTable.add(Label(Strings.get(StringKey.LEVEL_SELECT_NOT_CLEARED), infoStyle)).left().padTop(2f).row()
             } else {
-                innerTable.add(Label("Complete World ${idx} first", infoStyle)).left().padTop(2f).row()
+                innerTable.add(Label(Strings.format(StringKey.COMPLETE_WORLD_FIRST, idx), infoStyle)).left().padTop(2f).row()
             }
 
             val btnPlay = VisTextButton(if (unlocked) Strings.get(StringKey.LEVEL_SELECT_BTN_PLAY) else Strings.get(StringKey.LEVEL_SELECT_BTN_LOCKED))

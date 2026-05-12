@@ -55,7 +55,7 @@ class CloudAtlasScreen(private val game: Game) : Screen {
         root.top().pad(40f)
 
         root.add(Label(Strings.get(StringKey.ATLAS_TITLE), rootStyle)).colspan(2).padBottom(8f).row()
-        root.add(Label("${collected.size} / ${CloudAtlasLibrary.entries.size} snapshots discovered", countStyle))
+        root.add(Label(Strings.format(StringKey.ATLAS_SNAPSHOTS_DISCOVERED, collected.size, CloudAtlasLibrary.entries.size), countStyle))
             .colspan(2).padBottom(28f).row()
 
         // Left: list of entries
@@ -114,7 +114,7 @@ class CloudAtlasScreen(private val game: Game) : Screen {
         }
         detailContainer.add(Label(entry.title, titleStyle)).left().padBottom(6f).row()
         detailContainer.add(Label(entry.subtitle, subtitleStyle)).left().padBottom(12f).row()
-        detailContainer.add(Label("Discovered by: ${entry.character}", infoStyle)).left().padBottom(20f).row()
+        detailContainer.add(Label(Strings.format(StringKey.ATLAS_DISCOVERED_BY, entry.character), infoStyle)).left().padBottom(20f).row()
         val body = Label(entry.body, bodyStyle)
         body.wrap = true
         detailContainer.add(body).left().width(660f)

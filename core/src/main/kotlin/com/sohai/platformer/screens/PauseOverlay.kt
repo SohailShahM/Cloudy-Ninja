@@ -87,7 +87,7 @@ class PauseOverlay(
         val hintTable = VisTable()
         hintTable.setFillParent(true)
         hintTable.bottom().right()
-        hintTable.add(Label("Press ${pauseKeyName()} to resume", hintStyle)).pad(12f)
+        hintTable.add(Label(Strings.format(StringKey.PAUSE_HINT, pauseKeyName()), hintStyle)).pad(12f)
         stage.addActor(hintTable)
     }
 

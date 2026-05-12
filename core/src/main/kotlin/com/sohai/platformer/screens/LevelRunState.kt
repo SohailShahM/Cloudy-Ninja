@@ -231,7 +231,7 @@ class LevelRunState(
             else   -> Color(0.72f, 0.55f, 1.00f, 0.9f)
         }
         renderer.spawnCollectSparkle(player.body.position.x, player.body.position.y, burstColor)
-        hud.showTransientMessage("$currentCharacter: ${player.ability?.getAbilityName() ?: ""}", 0.8f)
+        hud.showTransientMessage(Strings.format(StringKey.CHARACTER_ABILITY_SWAP, currentCharacter, player.ability?.getAbilityName() ?: ""), 0.8f)
     }
 
     /** Creates a new projectile at world coordinates (x, y) with velocity (vx, vy). */
@@ -498,7 +498,7 @@ class LevelRunState(
                 hud.showTransientMessage(Strings.get(StringKey.RUN_SPIRIT_EXHAUSTED), 2f)
                 onGameOverStart?.invoke()
             } else {
-                hud.showTransientMessage("$currentCharacter fell ($spiritHealth spirits left)", 1.2f)
+                hud.showTransientMessage(Strings.format(StringKey.SPIRIT_DEATH, currentCharacter, spiritHealth), 1.2f)
             }
 
             val cpSave    = SaveManager.loadGame(checkpointAutosaveFile)

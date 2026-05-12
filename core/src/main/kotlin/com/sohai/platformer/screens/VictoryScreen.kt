@@ -44,7 +44,7 @@ class VictoryScreen(
 
         table.add(Label(Strings.get(StringKey.VICTORY_TITLE), titleStyle)).padBottom(20f).row()
         table.add(Label(Strings.get(StringKey.VICTORY_SUBTITLE), bodyStyle)).padBottom(12f).row()
-        table.add(Label("Final Score: $finalScore", scoreStyle)).padBottom(40f).row()
+        table.add(Label(Strings.format(StringKey.VICTORY_FINAL_SCORE, finalScore), scoreStyle)).padBottom(40f).row()
 
         if (bestTrialTime != null) {
             val mins  = (bestTrialTime / 60f).toInt()
@@ -52,7 +52,7 @@ class VictoryScreen(
             val tenth = ((bestTrialTime % 1f) * 10f).toInt()
             val timeStr = "%d:%02d.%d".format(mins, secs, tenth)
             val timeColor = if (isNewTimeBest) Color(0.1f, 0.95f, 0.85f, 1f) else Color(0.75f, 0.75f, 1f, 1f)
-            table.add(Label("Trial Time: $timeStr", Label.LabelStyle(bodyFont, timeColor)))
+            table.add(Label(Strings.format(StringKey.VICTORY_TRIAL_TIME, timeStr), Label.LabelStyle(bodyFont, timeColor)))
                 .padBottom(8f).row()
             if (priorBestTime != null) {
                 val delta = bestTrialTime - priorBestTime

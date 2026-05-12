@@ -239,7 +239,7 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
     }
 
     fun showCombo(multiplier: Int) {
-        comboLabel.setText("x$multiplier COMBO!")
+        comboLabel.setText(Strings.format(StringKey.COMBO_MULTIPLIER, multiplier))
         comboLabel.isVisible = true
         comboLabelTimer = 1.2f
     }
@@ -265,7 +265,7 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
     }
 
     fun updateScore(score: Int) {
-        scoreLabel.setText("Score: $score")
+        scoreLabel.setText(Strings.format(StringKey.SCORE_VALUE, score))
     }
 
     fun updateTimer(seconds: Float) {
@@ -287,7 +287,7 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
 
     fun updateSpiritHealth(lives: Int, maxLives: Int = 3) {
         val pips = "*".repeat(lives.coerceAtLeast(0)) + "-".repeat((maxLives - lives).coerceAtLeast(0))
-        spiritLabel.setText("Spirit: $pips")
+        spiritLabel.setText(Strings.format(StringKey.SPIRIT_VALUE, pips))
         spiritLabel.color = when {
             lives >= maxLives -> Color(0.3f, 1f, 0.4f, 1f)
             lives == 2        -> Color(1f, 0.85f, 0.1f, 1f)
@@ -297,7 +297,7 @@ class Hud(private val viewportWidth: Float, private val viewportHeight: Float) :
     }
 
     fun updateAbilityState(cooldownRatio: Float, characterName: String, abilityName: String) {
-        charLabel.setText("$characterName — $abilityName")
+        charLabel.setText(Strings.format(StringKey.CHAR_ABILITY, characterName, abilityName))
         cooldownBarImage.width = 120f * cooldownRatio
         cooldownBarImage.color = when {
             cooldownRatio > 0.9f -> Color.RED

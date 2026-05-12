@@ -95,7 +95,7 @@ class MainMenuScreen(private val game: Game) : Screen {
         card.top()
 
         // --- Header ---
-        val header = VisLabel("Slot ${slotIndex + 1}")
+        val header = VisLabel(Strings.format(StringKey.SLOT_LABEL, slotIndex + 1))
         card.add(header).padBottom(10f).row()
 
         if (state != null) {
@@ -153,14 +153,14 @@ class MainMenuScreen(private val game: Game) : Screen {
 
         // Atlas %
         val atlasPct = (state.collectedAtlasIds.size * 100) / TOTAL_ATLAS_ENTRIES
-        card.add(VisLabel("Atlas: $atlasPct%")).padBottom(4f).row()
+        card.add(VisLabel(Strings.format(StringKey.ATLAS_PCT, atlasPct))).padBottom(4f).row()
 
         // Total deaths
-        card.add(VisLabel("Deaths: ${state.totalDeaths}")).padBottom(4f).row()
+        card.add(VisLabel(Strings.format(StringKey.DEATHS_COUNT, state.totalDeaths))).padBottom(4f).row()
 
         // Last played date (only shown when non-empty)
         if (state.lastPlayed.isNotEmpty()) {
-            card.add(VisLabel("Last: ${state.lastPlayed}")).padBottom(4f).row()
+            card.add(VisLabel(Strings.format(StringKey.LAST_PLAYED, state.lastPlayed))).padBottom(4f).row()
         }
     }
 
