@@ -327,21 +327,6 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 
 ## In Progress
 
-### T-050 — Press/journalist outreach list  [P3]
-- **Status:** In Progress
-- **Tool:** `antigravity`
-- **Tier:** S  *(research-only, no code)*
-- **Autonomous-eligible:** yes
-- **Agent:** antigravity
-- **Branch:** `antigravity/T-050-press-outreach`
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (launch/marketing decisions)
-- **Files:** `marketing/press-outreach-list.md` (new)
-- **Goal:** Compile a curated list of indie-game journalists, blogs, YouTubers, podcasters, and Mastodon/Bluesky accounts who cover 2D pixel-art platformers, eco/climate-themed games, or accessibility-first indie titles. For each contact capture: name, outlet, beat (what they cover), contact channel + verified URL (form, public email, DM-open social), 2–3 recent coverage examples with dates, tier (S = 1M+ audience, M = 100k–1M, L = <100k but high engagement), notes on what hooks them (character-switching, climate, accessibility, etc.).
-- **Done when:** `marketing/press-outreach-list.md` exists with ≥30 contacts (target mix: 5–8 tier-S, 10–15 tier-M, 10+ tier-L), spanning YouTube/written/podcast/social. Every URL WebFetched + confirmed alive.
-- **Constraints:** Markdown only. Do NOT touch any file outside `marketing/`. Do NOT include private email addresses you can't verify are intended for outreach — only contact forms or publicly-posted addresses.
-
-
 ### T-XXX — <title>
 - **Status:** In Progress
 - **Agent:** <your-identity-from-START_HERE.md-section-1>
@@ -360,6 +345,13 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## Done
+
+### T-050 — Press/journalist outreach list
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Generated curated outreach list of 30 journalists, creators, and advocates across S, M, and L tiers with tailored hooks.
+- **Commit/PR:** Merged PR for T-050
+- **Tool:** ntigravity
 
 ### T-052 — Indie game festival + showcase eligibility research
 - **Status:** Done
