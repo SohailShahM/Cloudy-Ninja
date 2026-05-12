@@ -220,6 +220,113 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** `research/eco-game-design-study.md` exists with: (a) comparison table (one row per game, columns above), (b) per-game 1-paragraph deep dive citing 1–2 specific reviews/press articles with URLs, (c) final "Lessons for Cloudy Ninja" section with 3–5 actionable recommendations tied to our existing systems (water-cycle abilities, hub world, Cloud Atlas, character-switching).
 - **Constraints:** Markdown only. Do NOT touch any file outside `research/`. Cite sources for any claim — no unsourced editorializing.
 
+### T-054 — Kotest specs for StormSentinel boss state machine  [P2]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-054-stormsentinel-tests`
+- **Started:** 2026-05-12
+- **Depends on:** T-034
+- **GDD ref:** §20 ("Boss Design Spec")
+- **Files:** `core/src/test/kotlin/com/sohai/platformer/entities/StormSentinelTest.kt` (new)
+- **Goal:** Add Kotest coverage for the boss state machine (REST → LIGHTNING_TELEGRAPH → LIGHTNING → SWEEP_TELEGRAPH → SWEEP → REST cycle). Cover: phase transitions on timer tick, HP decrement on Seed-Slam hit, defeat at HP=0, projectile spawn count in LIGHTNING phase, sweep direction alternation across cycles. Use the seeded `GameRandom` wrapper (commit `c408e02`) for determinism. Mirror style of existing pure-math tests (`MapLevelLoaderCoordTest.kt`, `ParticleSystemTest.kt`) — no live Box2D required.
+- **Done when:** ≥10 deterministic tests passing across all 5 phase transitions + HP/defeat + ≥2 randomization sites; flake-free across 5 consecutive runs; compiles clean.
+
+### T-055 — Kotest specs for Enemy + SmogSprite + Projectile  [P2]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-055-enemy-tests`
+- **Started:** 2026-05-12
+- **Depends on:** T-029, T-040
+- **GDD ref:** §17 ("Enemy Design Spec"), §17.3 ("Projectile entity")
+- **Files:** `core/src/test/kotlin/com/sohai/platformer/entities/SmogSpriteTest.kt` (new), `core/src/test/kotlin/com/sohai/platformer/entities/ProjectileTest.kt` (new), `core/src/test/kotlin/com/sohai/platformer/entities/EnemyTest.kt` (new — optional if Enemy is sufficiently abstract that SmogSprite tests cover it)
+- **Goal:** Cover the newer entity layer: SmogSprite patrol direction reversal at waypoints, takeDamage HP decrement, defeat at HP=0; Projectile lifetime tick-down + expiry on wall-hit (mocked) + kinematic velocity invariant; Enemy abstract contract (update/draw/takeDamage). Mirror pure-math test style.
+- **Done when:** ≥15 tests total across the files passing; no Box2D runtime required; compiles clean.
+
+### T-056 — Kotest specs for AchievementRegistry + unlock conditions  [P2]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-056-achievement-tests`
+- **Started:** 2026-05-12
+- **Depends on:** T-037
+- **GDD ref:** §22 ("atlas_full achievement + unlock spec")
+- **Files:** `core/src/test/kotlin/com/sohai/platformer/progression/AchievementTest.kt` (new)
+- **Goal:** Verify all 12 achievements have unique IDs and non-blank metadata (id, name, description). Test each unlock-condition predicate fires correctly against representative `GameState` snapshots (e.g. `totalStomps >= 10` unlocks `stomp_master`; `completedLevels.size == 8` unlocks `all_levels`; `unlockedAchievements.size == 11` does NOT prematurely unlock `atlas_full`). Mirror `CloudAtlasLibraryTest.kt` style.
+- **Done when:** ≥15 tests covering all 12 achievements + the uniqueness + non-blank invariants; compiles clean.
+
+### T-057 — Color-blind palette toggle  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (accessibility-first design)
+- **Files:** `persist/Settings.kt`, `screens/SettingsScreen.kt`, `screens/LevelRenderer.kt` (Palette)
+- **Goal:** Add `colorBlindMode: ColorBlindMode = OFF` to `Settings` (enum: OFF, DEUTERANOPIA, PROTANOPIA, TRITANOPIA). In `SettingsScreen` accessibility section, add a VisSelectBox. In `LevelRenderer.Palette`, define alternate palettes per mode (research-backed safe colors — green/red distinction shifts to blue/orange for deuteranopia, etc.). Apply via `Palette.current(settings.colorBlindMode)`. Persist immediately.
+- **Done when:** Toggle works in Settings, palette swap is visible at runtime, persists across sessions, smoke CI passes.
+
+### T-058 — Reduced-motion mode toggle  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (accessibility-first design)
+- **Files:** `persist/Settings.kt`, `screens/SettingsScreen.kt`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `rendering/ParallaxBackground.kt`
+- **Goal:** Add `reducedMotion: Boolean = false` to `Settings`. When enabled: disable screen shake on damage/boss-stomp, cap particle bursts to 1 (vs 6–10), set `ParallaxBackground` scrollFactor to 0 (background stays still). UI toggle in SettingsScreen.
+- **Done when:** Toggle works, all three effect dampenings visible in runtime, persists, smoke CI passes.
+
+### T-059 — String extraction scaffolding (i18n prep)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (localization future-proofing)
+- **Files:** `i18n/Strings.kt` (new), all `screens/*.kt` files that contain hardcoded user-facing strings
+- **Goal:** Create `i18n/Strings.kt` with `enum class StringKey` covering every hardcoded user-facing string in the project. Add `object Strings { fun get(key: StringKey): String }` returning English defaults (locale support comes later). Sweep every `screens/*.kt` and replace string literals with `Strings.get(StringKey.X)`. **No new translations** — just centralization. Keep English text byte-identical so visual diff is zero.
+- **Done when:** All user-facing string literals in `screens/` route through `Strings.get(...)`. ≥40 keys defined. AI smoke CI passes (verifies no visual regressions).
+
+### T-060 — Best-times row in StatsScreen  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-024, T-041
+- **GDD ref:** §23 (time-trial spec) + StatsScreen (T-041 outcome)
+- **Files:** `screens/StatsScreen.kt`
+- **Goal:** Add a "Best times" sub-section per slot in `StatsScreen` showing `GameState.bestTimes` map (level → ms) formatted as `MM:SS.mmm`. Sort by level order. Skip levels with no recorded time.
+- **Done when:** Best-times row visible on stats screen for each slot; correctly formats and sorts; smoke CI passes.
+
+### T-061 — AI smoke: per-character autopilot matrix  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(touches CI workflow — supervise / not fully autonomous)*
+- **Tier:** S
+- **Autonomous-eligible:** no  *(CI changes warrant a human review per START_HERE.md §7)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-A1
+- **GDD ref:** T-A1 outcome
+- **Files:** `.github/workflows/ai-smoke.yml`, `core/src/main/kotlin/com/sohai/platformer/Main.kt` (cloudy.smokeCharacter property)
+- **Goal:** Extend smoke matrix from 9 (level × default-character) to 27 (level × {ebo, laya, zephyr}). Add `cloudy.smokeCharacter` system property to `Main.kt` that pre-selects the starting character before `GameScreen` init. Update workflow to include a `character` axis.
+- **Done when:** All 27 smoke jobs pass on a PR; CI duration acceptable (parallel jobs, should still finish under 6 min).
+
 ---
 
 ## Backlog — AI testing v2 (planned, after MVP T-A1/T-A2 lands)
