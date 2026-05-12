@@ -354,19 +354,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
      (shake/duck), mute shortcut, slot-delete confirm, i18n audit.
 ═══════════════════════════════════════════════════════════════ -->
 
-### T-109 — FontManager testability seam  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** HANDOFF.md source-side quirk #2 — `FontManager.create()` is unreachable headlessly; needs a factory seam for end-to-end testability
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/FontManager.kt`, `core/src/test/kotlin/com/sohai/platformer/FontManagerTest.kt`
-- **Goal:** Extract the font-loading codepath inside `FontManager.create()` into a small delegate (e.g. `interface FontLoader { fun load(handle: FileHandle): BitmapFont }`) with a default `Gdx.files`-backed implementation. Expose a package-private setter so tests can inject a no-op loader without mocking `Gdx.files`. Runtime behavior unchanged.
-- **Done when:** Existing `FontManagerTest` no longer needs to mock `Gdx.files` for the loader path; the `create()` codepath becomes reachable in headless tests; no behavioral regression in-game; smoke CI passes.
-
 ### T-110 — ScreenFade semantics: rename or doc  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -557,6 +544,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-109 — FontManager testability seam  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-109-fontmanager-seam
+- **Started:** 2026-05-12
+- **Depends on:** _none_
+- **GDD ref:** HANDOFF.md source-side quirk #2 — `FontManager.create()` is unreachable headlessly; needs a factory seam for end-to-end testability
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/FontManager.kt`, `core/src/test/kotlin/com/sohai/platformer/FontManagerTest.kt`
+- **Goal:** Extract the font-loading codepath inside `FontManager.create()` into a small delegate (e.g. `interface FontLoader { fun load(handle: FileHandle): BitmapFont }`) with a default `Gdx.files`-backed implementation. Expose a package-private setter so tests can inject a no-op loader without mocking `Gdx.files`. Runtime behavior unchanged.
+- **Done when:** Existing `FontManagerTest` no longer needs to mock `Gdx.files` for the loader path; the `create()` codepath becomes reachable in headless tests; no behavioral regression in-game; smoke CI passes.
 
 ### T-101 — Credits screen  [P3]
 - **Status:** In Progress
