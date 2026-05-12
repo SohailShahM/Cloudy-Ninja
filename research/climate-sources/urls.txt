@@ -1,0 +1,17 @@
+https://gpm.nasa.gov/education/water-cycle # water_cycle
+https://oceanservice.noaa.gov/facts/watercycle.html # water_cycle
+https://pubchem.ncbi.nlm.nih.gov/compound/Silver-iodide # silver_iodide
+https://www.dri.edu/cloud-seeding-program/what-is-cloud-seeding/ # silver_iodide
+https://climate.nasa.gov/explore/ask-nasa-climate/3266/how-albedo-affects-the-earths-climate/ # albedo_effect
+https://nsidc.org/cryosphere/seaice/processes/albedo.html # albedo_effect
+https://earthobservatory.nasa.gov/images/84499/measuring-earths-albedo # albedo_effect
+https://earthobservatory.nasa.gov/features/Water/page2.php # transpiration
+https://water.ca.gov/Programs/Groundwater-Management/SGMA-Groundwater-Management/Groundwater-Recharge # groundwater_recharge
+https://www.nssl.noaa.gov/education/svrwx101/thunderstorms/ # storm_system
+https://www.weather.gov/jetstream/tstorms_intro # storm_system
+https://scied.ucar.edu/learning-zone/storms # storm_system
+https://www.noaa.gov/education/resource-collections/ocean-coasts/ocean-acidification # ocean_acidification
+https://oceanservice.noaa.gov/facts/acidification.html # ocean_acidification
+https://pmel.noaa.gov/co2/story/Ocean+Acidification # ocean_acidification
+https://www.dri.edu/cloud-seeding-program/ # cloud_seeding
+https://www.energy.gov/fecm/carbon-dioxide-removal # carbon_sequestration
