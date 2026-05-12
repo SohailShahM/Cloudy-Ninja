@@ -21,10 +21,10 @@ This document inventories every source of non-determinism in `core/src/main/kotl
 
 | Site (file:line) | Category | Deterministic? | Needs fix? | Notes |
 |---|---|---|---|---|
-| `entities/StormSentinel.kt:183` | Gameplay | No | **Yes** | `MathUtils.random(...)` picks X positions for lightning strikes inside `startLightningTelegraph()`. Called every time the boss enters its lightning phase — affects projectile spawn positions directly. |
-| `entities/StormSentinel.kt:190` | Gameplay | No | **Yes** | `MathUtils.randomBoolean()` picks sweep direction inside `startSweepTelegraph()`. Affects sweep beam path and player dodge requirement. |
-| `abilities/EboAbility.kt:108` | Gameplay | No | **Yes** | `MathUtils.random(15f, 40f)` for raindrop spawn jitter. Called on Ebo ability use (hot-path per activation). Affects Box2D body positions, which feed physics — replay-breaking. |
-| `abilities/EboAbility.kt:112` | Gameplay | No | **Yes** | `MathUtils.random(6f, 10f)` for raindrop speed. Same activation path as line 108; affects Box2D velocity, directly gameplay. |
+| `entities/StormSentinel.kt:183` | Gameplay | No | Fixed via GameRandom (this commit) | `MathUtils.random(...)` picks X positions for lightning strikes inside `startLightningTelegraph()`. Called every time the boss enters its lightning phase — affects projectile spawn positions directly. |
+| `entities/StormSentinel.kt:190` | Gameplay | No | Fixed via GameRandom (this commit) | `MathUtils.randomBoolean()` picks sweep direction inside `startSweepTelegraph()`. Affects sweep beam path and player dodge requirement. |
+| `abilities/EboAbility.kt:108` | Gameplay | No | Fixed via GameRandom (this commit) | `MathUtils.random(15f, 40f)` for raindrop spawn jitter. Called on Ebo ability use (hot-path per activation). Affects Box2D body positions, which feed physics — replay-breaking. |
+| `abilities/EboAbility.kt:112` | Gameplay | No | Fixed via GameRandom (this commit) | `MathUtils.random(6f, 10f)` for raindrop speed. Same activation path as line 108; affects Box2D velocity, directly gameplay. |
 | `screens/LevelRunState.kt:456` | Cosmetic | No | No | `MathUtils.random(0.9f, 1.1f)` pitch variation on hazard-cleansed sound. Audio only; no gameplay state affected. |
 | `screens/LevelRenderer.kt:344–352` | Cosmetic | No | No | `MathUtils.random` × 6 in `spawnJumpPuff()`. Visual particles only. |
 | `screens/LevelRenderer.kt:366–372` | Cosmetic | No | No | `MathUtils.random` × 5 in `spawnLandingDust()`. Visual particles only. |

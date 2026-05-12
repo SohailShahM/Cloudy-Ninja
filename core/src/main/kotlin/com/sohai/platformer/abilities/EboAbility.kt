@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.MathUtils
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.World
 import com.sohai.platformer.audio.SoundManager
+import com.sohai.platformer.util.GameRandom
 import com.sohai.platformer.effects.WaterDroplet
 import com.sohai.platformer.entities.PlayerController
 
@@ -105,11 +106,11 @@ class EboAbility(
             val angle = baseAngle + (t - 0.5f) * halfSpread * 2f
 
             // Spawn clustered near player feet with small jitter (pixels)
-            val dist = MathUtils.random(15f, 40f)
+            val dist = GameRandom.range(15f, 40f)
             val spawnX = epicenter.x * 100f + MathUtils.cos(angle) * dist
             val spawnY = feetY * 100f + MathUtils.sin(angle) * dist
 
-            val speed = MathUtils.random(6f, 10f)
+            val speed = GameRandom.range(6f, 10f)
             val vx = MathUtils.cos(angle) * speed
             val vy = MathUtils.sin(angle) * speed  // negative (downward)
 

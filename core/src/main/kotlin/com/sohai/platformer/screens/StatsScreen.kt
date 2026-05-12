@@ -19,7 +19,7 @@ import com.sohai.platformer.levels.LevelManager
 import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
 
-private val STATS_SLOT_FILES = arrayOf("save_0.json", "save_1.json", "save_2.json")
+internal val STATS_SLOT_FILES = arrayOf("save_slot_0.json", "save_slot_1.json", "save_slot_2.json")
 private const val TOTAL_ACHIEVEMENTS = 12
 private const val STATS_CARD_CONTENT_WIDTH = 1120f
 
