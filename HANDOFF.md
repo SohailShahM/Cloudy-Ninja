@@ -2,7 +2,7 @@
 
 > Read this **before** anything else if you are picking up where a previous Claude Code session left off. Then read `START_HERE.md` for the normal onboarding. Update this file at the end of your session to capture state the next agent will need. Keep it short — under 200 lines.
 
-**Last updated:** 2026-05-12 by Claude Opus — a single multi-hour session that shipped **~30 tickets**, **~327 new Kotest tests**, **130+ i18n keys**, **5 a11y/UX features**, **1 new enemy archetype**, **2 new screens**, and the full **cc-agv-bridge** (separate repo). Main HEAD `6087037`. Session ended for context cleanup.
+**Last updated:** 2026-05-12 by Claude Opus — a single multi-hour session that shipped **~31 tickets**, **~327 new Kotest tests**, **130+ i18n keys**, **5 a11y/UX features**, **1 new enemy archetype**, **2 new screens**, the full **cc-agv-bridge** (separate repo), and **T-079 v2 CI optimization** (doc-PR skip filter + cache key fix + concurrency cancel — v1 was reverted because matrix-packing didn't deliver). Main HEAD `fe307de`. Session ended for context cleanup. **This very PR is the empirical test of the doc-PR skip — if you see this commit landed on `main`, the smoke matrix correctly skipped on a doc-only diff.**
 
 ---
 
