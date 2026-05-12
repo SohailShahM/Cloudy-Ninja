@@ -433,6 +433,94 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Tapping Delete on a save slot now opens a modal: `Delete slot {N}? This cannot be undone.` with `Cancel` / `Delete`. Default-focus is `Cancel`. `Esc` cancels. Only `Delete` fires `SaveManager.deleteSlot()`. Empty slots hide (or disable) the delete affordance to match existing slot-card style.
 - **Done when:** No path deletes a slot without the confirm modal; Cancel preserves the slot; smoke CI passes (verify autopilot doesn't open the modal — that path stays unaffected).
 
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D — "Follow-ups + Alpha legal/discovery"
+     T-121..T-125 batch (planned 2026-05-12 by claude-code-opus,
+     mid-autonomous-run).
+     T-121 derives from T-073's keyboard research finding.
+     T-122 derives from T-120's i18n audit hits.
+     T-123 is the HTML5/web-demo viability spike (Sprint D discovery).
+     T-124 turns T-075's Steam tag research into a concrete itch.io page.
+     T-125 is the alpha-blocking asset attribution audit (legal).
+═══════════════════════════════════════════════════════════════ -->
+
+### T-121 — Default `swap` keybind: S → Q (T-073 follow-up)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-118  *(Settings.kt + keybind table contention with mute-key ticket)*
+- **GDD ref:** `research/keyboard-layout-conventions.md` (T-073 deliverable) — every Layout-A platformer surveyed (Hades, Dead Cells, Risk of Rain 2, Ori, Terraria, The Messenger) reserves S for downward movement; Q is the strongest "cycle/switch" precedent.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/SettingsManager.kt`, `core/src/test/kotlin/com/sohai/platformer/persist/SettingsManagerTest.kt`
+- **Goal:** Change `defaultKeybinds()` for `"swap"` from `Input.Keys.S` to `Input.Keys.Q`. In `SettingsManager.load()` add a tiny migration: if a loaded `Settings` has `swap = Input.Keys.S` AND the user has never opened the Controls panel (track a new `keybindsCustomized: Boolean = false` flag), upgrade to `Q`. If the user HAS opened Controls, respect their saved binding even if it's still S. Add `keybindsCustomized` setter to fire on any rebind in `SettingsScreen`.
+- **Done when:** Fresh installs default to Q for swap; players who already touched Controls keep their bindings; players who never touched Controls auto-upgrade on next launch; test covers all three cases.
+- **Constraints:** Save-data-adjacent. Existing saves without `keybindsCustomized` field treated as `false` (i.e., legacy user gets the upgrade — they wouldn't be filing bug reports about S working). Cite T-073 research in the PR description.
+
+### T-122 — Wire 3 high-confidence i18n strings to StringKey (T-120 follow-up)  [P3]
+- **Status:** Todo
+- **Tool:** `copilot-agent`  *(Copilot dogfood — single-purpose, file-isolated)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-098, T-101  *(LevelRenderer + Strings contention)*
+- **GDD ref:** `research/i18n-coverage.md` (T-120 deliverable) — 3 high-confidence hardcoded English-phrase hits
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/VictoryScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`
+- **Goal:** Add 3 new `StringKey` entries and replace the literals at:
+  - `VictoryScreen.kt:61` — `"−%.2fs under best"` → `StringKey.VICTORY_DELTA_UNDER` (format arg: seconds)
+  - `VictoryScreen.kt:62` — `"+%.2fs slower"` → `StringKey.VICTORY_DELTA_OVER`
+  - `LevelRenderer.kt:500` — `"[Locked]"` → `StringKey.HUB_PORTAL_LOCKED`
+  Use `Strings.format(key, ...)` consistently with the existing 130+ keys pattern.
+- **Done when:** The 3 literals are gone from source; smoke CI passes; existing tests pass.
+- **Constraints:** Only these 3 strings. Do NOT broaden scope to the 7 numeric format templates from the audit — those are deferred until a second locale lands.
+
+### T-123 — HTML5 / web-demo viability spike  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(research-only, but technical — needs codebase-aware judgement)*
+- **Tier:** S
+- **Autonomous-eligible:** yes-with-review  *(go/no-go memo informs whether to invest in a real port)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (alpha discovery — itch.io HTML5 embed dramatically increases play-through rate vs. download)
+- **Files:** `research/html5-web-demo-viability.md` (new)
+- **Goal:** Investigate whether Cloudy-Ninja can be ported to an HTML5 / GWT (libGDX-Teavm) target. Assess: (a) does our current libGDX version support GWT/Teavm backends? (b) which deps are GWT-hostile (Box2D-native, Kotlin stdlib reflection, GSON/Jackson)? (c) what's the rough effort estimate (S/M/L/XL)? (d) which game systems would need refactor or graceful-degrade (save serialization, audio formats, font baking)? Produce a go/no-go memo with options: (1) ship desktop-only alpha + web demo deferred; (2) cut a stripped web demo (1-2 levels, no save); (3) full web port.
+- **Done when:** Memo exists with the 4 questions answered, a clear recommendation (one of the 3 options), and a rough effort estimate.
+- **Constraints:** **Research-only.** Do NOT add a Teavm/GWT module, do NOT touch gradle build files, do NOT modify any deps. Read-only investigation. Use `WebSearch` for libGDX-Teavm / libGDX-html status circa 2025.
+
+### T-124 — itch.io page draft + Tag Wizard order (T-075 follow-up)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(or human if the user wants to author)*
+- **Tier:** S
+- **Autonomous-eligible:** yes-with-review  *(marketing copy benefits from user voice — surface the draft for editing)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-075, T-077  *(uses Steam-tag research + presskit scaffold)*
+- **GDD ref:** `marketing/steam-tags-research.md` + `marketing/presskit/` — Sprint D launch needs an itch.io page
+- **Files:** `marketing/itch-page-draft.md` (new)
+- **Goal:** Draft the full itch.io page content: short description (160 chars), long description (~500 words, plain markdown, no autolinks), feature list (5-8 bullets), system requirements, controls reference (refer to T-073 default mapping), genre + tag list (primary tags first per T-075 — `Pixel Graphics`, `Platformer`, `2D`, `Nature`, then stretch). Also draft the Tag Wizard order (Steam-style — itch uses a similar discovery mechanism). Embed placeholders for screenshots + a future trailer.
+- **Done when:** Markdown draft exists; tag order matches T-075's primary→stretch recommendation; no accidental Steam-specific terminology bleed-through; ready for the user to copy-paste into itch.io's CMS.
+- **Constraints:** Marketing copy — do not invent feature claims. Every bullet must reflect what's actually shipped (cross-check with TASKS.md `## Done`). No promised features in "coming soon" section.
+
+### T-125 — Asset attribution audit (alpha-blocking legal)  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(research-only; auditor reads NOTICE.md + every asset license)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** `LICENSE` + `NOTICE.md` — alpha launch must not ship with an under-attributed or mis-licensed asset
+- **Files:** `research/asset-attribution-audit.md` (new), append entries to `QUESTIONS.md` if any gaps found
+- **Goal:** Walk every file under `assets/` (and `core/src/main/resources/` if any). For each: identify the source, license (CC0, CC-BY, custom), author/attribution string, and compare to what `NOTICE.md` actually declares. Flag (a) assets used but not credited, (b) assets credited but not used (stale entries), (c) any license that requires more than NOTICE.md provides (e.g. CC-BY needs visible in-game credit, not just NOTICE). Cross-reference Kenney CC0 declarations + any audio files generated by `ProceduralMusicGenerator` (those are own-IP).
+- **Done when:** Audit report exists; mismatches are documented; if any (a) or (c) gaps exist, a high-priority `QUESTIONS.md` entry is filed BEFORE the alpha can ship.
+- **Constraints:** **Research-only.** Do NOT modify `NOTICE.md` or `LICENSE` in this PR — surface gaps for human resolution. Do NOT modify any asset files.
+
+
+
 ---
 
 ## Backlog — AI testing v2 (planned, after MVP T-A1/T-A2 lands)
