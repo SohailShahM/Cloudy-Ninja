@@ -152,10 +152,12 @@ class WorldContactListener : ContactListener {
         }
 
         // Portal sensors (hub world) — userData starts with "portal_"
-        val portalA = (udA as? String)?.startsWith("portal_") == true
-        val portalB = (udB as? String)?.startsWith("portal_") == true
+        val portalStrA = udA as? String
+        val portalStrB = udB as? String
+        val portalA = portalStrA?.startsWith("portal_") == true
+        val portalB = portalStrB?.startsWith("portal_") == true
         if (portalA || portalB) {
-            val portalId      = if (portalA) udA as String else udB as String
+            val portalId      = if (portalA) portalStrA else portalStrB
             val playerFixture = if (portalA) fixB else fixA
             val player = playerFixture.body.userData as? PlayerController
             if (player != null) {
