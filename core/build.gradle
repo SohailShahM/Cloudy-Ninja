@@ -39,3 +39,26 @@ test {
   useJUnitPlatform()
 }
 
+// T-078: include the standalone tools/ Kotlin source in the test source set so the
+// procedural icon generator can be compiled and invoked without a dedicated gradle
+// module. The tool is pure-JDK (BufferedImage + ImageIO) and has no libGDX deps.
+sourceSets {
+  test {
+    kotlin {
+      srcDirs += file('../tools')
+    }
+  }
+}
+
+// `./gradlew :core:generateAchievementIcons` (re)generates the 12 achievement PNGs
+// under assets/icons/achievements/. Output is deterministic — re-running produces
+// byte-identical files.
+task generateAchievementIcons(type: JavaExec, dependsOn: testClasses) {
+  description = 'Regenerate 16x16 achievement icon PNGs (T-078).'
+  group = 'tools'
+  classpath = sourceSets.test.runtimeClasspath
+  mainClass = 'com.sohai.platformer.tools.IconGenerator'
+  workingDir = rootDir
+  args = ['assets/icons/achievements']
+}
+
