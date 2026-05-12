@@ -367,19 +367,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Pick ONE and apply consistently: **(A)** rename `fadeIn` → `fadeFromBlack` and `fadeOut` → `fadeToBlack`, update all callers + tests; **(B)** add a KDoc paragraph above each function explaining the reversed-from-intuition semantics. Default to (A) unless caller count exceeds 20.
 - **Done when:** No caller is left ambiguous; existing `ScreenFadeTest` passes (renamed if (A) chosen); smoke CI passes.
 
-### T-111 — SoundManager unknown-id: log → error  [P3]
-- **Status:** Todo
-- **Tool:** `copilot-agent`  *(autonomous from GitHub Issue)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** HANDOFF.md source-side quirk #1 — `SoundManager` unknown-id uses `Gdx.app.log` not `Gdx.app.error`; IS an error state
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/audio/SoundManager.kt`, `core/src/test/kotlin/com/sohai/platformer/audio/SoundManagerTest.kt`
-- **Goal:** In the unknown-sound-id branch of `SoundManager.play()` (search for `Gdx.app.log` referring to unknown ids), switch to `Gdx.app.error(...)`. Update the existing test to assert error-level logging instead of info.
-- **Done when:** Unknown sound id triggers an error-level log; existing tests pass; smoke CI passes.
-
 ### T-112 — Auto-pause on window focus loss  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -544,6 +531,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-111 — SoundManager unknown-id: log → error  [P3]
+- **Status:** In Progress
+- **Tool:** `copilot-agent`  *(autonomous from GitHub Issue)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** copilot-agent
+- **Branch:** copilot/T-111-soundmanager-error-level
+- **Started:** 2026-05-12
+- **Depends on:** _none_
+- **GDD ref:** HANDOFF.md source-side quirk #1 — `SoundManager` unknown-id uses `Gdx.app.log` not `Gdx.app.error`; IS an error state
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/audio/SoundManager.kt`, `core/src/test/kotlin/com/sohai/platformer/audio/SoundManagerTest.kt`
+- **Goal:** In the unknown-sound-id branch of `SoundManager.play()` (search for `Gdx.app.log` referring to unknown ids), switch to `Gdx.app.error(...)`. Update the existing test to assert error-level logging instead of info.
+- **Done when:** Unknown sound id triggers an error-level log; existing tests pass; smoke CI passes.
 
 ### T-109 — FontManager testability seam  [P3]
 - **Status:** In Progress
