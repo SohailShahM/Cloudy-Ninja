@@ -18,6 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.badlogic.gdx.utils.Array as GdxArray
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.kotcrab.vis.ui.VisUI
+import com.kotcrab.vis.ui.widget.Separator
 import com.kotcrab.vis.ui.widget.VisScrollPane
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
@@ -72,8 +73,17 @@ class SettingsScreen(
         val inner = VisTable()
         inner.top().left().pad(10f)
 
-        // ── Display ───────────────────────────────────────────────────────
-        inner.add(Label("Display", sectionStyle)).left().padBottom(8f).row()
+        // Helper: render a visually distinct section header with an underline.
+        fun sectionHeader(text: String, topPad: Float = 0f) {
+            inner.add(Label(text, sectionStyle))
+                .left().padTop(topPad).padBottom(4f).row()
+            inner.add(Separator()).left().fillX().width(560f).padBottom(10f).row()
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        // SECTION 1 — DISPLAY
+        // ══════════════════════════════════════════════════════════════════
+        sectionHeader("Display")
 
         // Resolution presets  (width × height — physical pixels)
         data class ResPreset(val label: String, val w: Int, val h: Int) {
@@ -116,10 +126,21 @@ class SettingsScreen(
         inner.add(chkFullscreen).left().padBottom(4f).row()
 
         inner.add(Label("Sprites sharpen fully at next launch.", bodyStyle)).left()
-            .padBottom(16f).row()
+            .padBottom(8f).row()
 
-        // ── Audio ──────────────────────────────────────────────────────────
-        inner.add(Label("Audio", sectionStyle)).left().padBottom(8f).row()
+        val chkFps = CheckBox(" Show FPS (console)", skin)
+        chkFps.isChecked = settings.showFps
+        chkFps.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(showFps = chkFps.isChecked) }
+            }
+        })
+        inner.add(chkFps).left().padBottom(20f).row()
+
+        // ══════════════════════════════════════════════════════════════════
+        // SECTION 2 — AUDIO
+        // ══════════════════════════════════════════════════════════════════
+        sectionHeader("Audio", topPad = 12f)
 
         inner.add(Label("Music", bodyStyle)).left().padRight(16f)
         val sliderMusic = Slider(0f, 1f, 0.05f, false, skin)
@@ -152,98 +173,12 @@ class SettingsScreen(
                 SoundManager.setUiVolume(sliderUi.value)
             }
         })
-        inner.add(sliderUi).width(260f).padBottom(16f).row()
+        inner.add(sliderUi).width(260f).padBottom(20f).row()
 
-        // ── Visual / Feel ─────────────────────────────────────────────────
-        inner.add(Label("Visual / Feel", sectionStyle)).left().padBottom(8f).row()
-
-        val chkShake = CheckBox(" Screen Shake", skin)
-        chkShake.isChecked = settings.screenShake
-        chkShake.addListener(object : ChangeListener() {
-            override fun changed(event: ChangeEvent?, actor: Actor?) {
-                settings = SettingsManager.update { it.copy(screenShake = chkShake.isChecked) }
-            }
-        })
-        inner.add(chkShake).left().row()
-
-        val chkFlash = CheckBox(" Death Flash", skin)
-        chkFlash.isChecked = settings.deathFlash
-        chkFlash.addListener(object : ChangeListener() {
-            override fun changed(event: ChangeEvent?, actor: Actor?) {
-                settings = SettingsManager.update { it.copy(deathFlash = chkFlash.isChecked) }
-            }
-        })
-        inner.add(chkFlash).left().row()
-
-        val chkFps = CheckBox(" Show FPS (console)", skin)
-        chkFps.isChecked = settings.showFps
-        chkFps.addListener(object : ChangeListener() {
-            override fun changed(event: ChangeEvent?, actor: Actor?) {
-                settings = SettingsManager.update { it.copy(showFps = chkFps.isChecked) }
-            }
-        })
-        inner.add(chkFps).left().padBottom(16f).row()
-
-        // ── Accessibility ─────────────────────────────────────────────────
-        inner.add(Label("Accessibility", sectionStyle)).left().padBottom(8f).row()
-
-        inner.add(Label("Color-blind mode", bodyStyle)).left().padRight(16f)
-        val cbBox = SelectBox<ColorBlindMode>(skin)
-        val cbItems = GdxArray<ColorBlindMode>()
-        ColorBlindMode.values().forEach { cbItems.add(it) }
-        cbBox.items = cbItems
-        cbBox.selected = settings.colorBlindMode
-        cbBox.addListener(object : ChangeListener() {
-            override fun changed(event: ChangeEvent?, actor: Actor?) {
-                val m = cbBox.selected ?: return
-                settings = SettingsManager.update { it.copy(colorBlindMode = m) }
-            }
-        })
-        inner.add(cbBox).width(300f).padBottom(8f).row()
-
-        val chkReducedMotion = CheckBox(" Reduce motion (disable shake, limit particles, freeze background)", skin)
-        chkReducedMotion.isChecked = settings.reducedMotion
-        chkReducedMotion.addListener(object : ChangeListener() {
-            override fun changed(event: ChangeEvent?, actor: Actor?) {
-                settings = SettingsManager.update { it.copy(reducedMotion = chkReducedMotion.isChecked) }
-            }
-        })
-        inner.add(chkReducedMotion).left().padBottom(16f).row()
-
-        // ── Assist Mode ───────────────────────────────────────────────────
-        inner.add(Label("Assist Mode", sectionStyle)).left().padBottom(8f).row()
-        inner.add(Label("Accessibility options — relax the challenge as needed.", bodyStyle)).left().padBottom(6f).row()
-
-        val chkInfiniteSpirits = CheckBox(" Infinite Spirits (no game over)", skin)
-        chkInfiniteSpirits.isChecked = settings.assistInfiniteSpirits
-        chkInfiniteSpirits.addListener(object : ChangeListener() {
-            override fun changed(event: ChangeEvent?, actor: Actor?) {
-                settings = SettingsManager.update { it.copy(assistInfiniteSpirits = chkInfiniteSpirits.isChecked) }
-            }
-        })
-        inner.add(chkInfiniteSpirits).left().row()
-
-        val chkInvincible = CheckBox(" Invincible (no damage)", skin)
-        chkInvincible.isChecked = settings.assistInvincible
-        chkInvincible.addListener(object : ChangeListener() {
-            override fun changed(event: ChangeEvent?, actor: Actor?) {
-                settings = SettingsManager.update { it.copy(assistInvincible = chkInvincible.isChecked) }
-            }
-        })
-        inner.add(chkInvincible).left().padBottom(16f).row()
-
-        inner.add(Label("Slow Speed", bodyStyle)).left().padRight(16f)
-        val sliderSpeed = Slider(0.25f, 1f, 0.05f, false, skin)
-        sliderSpeed.value = settings.assistSlowSpeed
-        sliderSpeed.addListener(object : ChangeListener() {
-            override fun changed(event: ChangeEvent?, actor: Actor?) {
-                settings = SettingsManager.update { it.copy(assistSlowSpeed = sliderSpeed.value) }
-            }
-        })
-        inner.add(sliderSpeed).width(260f).padBottom(16f).row()
-
-        // ── Controls (Key Rebinding) ──────────────────────────────────────
-        inner.add(Label("Controls", sectionStyle)).left().padTop(20f).padBottom(8f).row()
+        // ══════════════════════════════════════════════════════════════════
+        // SECTION 3 — CONTROLS
+        // ══════════════════════════════════════════════════════════════════
+        sectionHeader("Controls", topPad = 12f)
 
         val actionNames = listOf("left", "right", "jump", "action", "swap")
         val displayNames = mapOf(
@@ -308,11 +243,88 @@ class SettingsScreen(
                 showToast("Controls reset!")
             }
         })
-        inner.add(btnResetKeys).left().padTop(8f).padBottom(16f).row()
+        inner.add(btnResetKeys).left().padTop(8f).padBottom(20f).row()
+
+        // ══════════════════════════════════════════════════════════════════
+        // SECTION 4 — ACCESSIBILITY
+        // ══════════════════════════════════════════════════════════════════
+        sectionHeader("Accessibility", topPad = 12f)
+
+        inner.add(Label("Color-blind mode", bodyStyle)).left().padRight(16f)
+        val cbBox = SelectBox<ColorBlindMode>(skin)
+        val cbItems = GdxArray<ColorBlindMode>()
+        ColorBlindMode.values().forEach { cbItems.add(it) }
+        cbBox.items = cbItems
+        cbBox.selected = settings.colorBlindMode
+        cbBox.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                val m = cbBox.selected ?: return
+                settings = SettingsManager.update { it.copy(colorBlindMode = m) }
+            }
+        })
+        inner.add(cbBox).width(300f).padBottom(8f).row()
+
+        val chkReducedMotion = CheckBox(" Reduce motion (disable shake, limit particles, freeze background)", skin)
+        chkReducedMotion.isChecked = settings.reducedMotion
+        chkReducedMotion.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(reducedMotion = chkReducedMotion.isChecked) }
+            }
+        })
+        inner.add(chkReducedMotion).left().padBottom(8f).row()
+
+        val chkShake = CheckBox(" Screen Shake", skin)
+        chkShake.isChecked = settings.screenShake
+        chkShake.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(screenShake = chkShake.isChecked) }
+            }
+        })
+        inner.add(chkShake).left().row()
+
+        val chkFlash = CheckBox(" Death Flash", skin)
+        chkFlash.isChecked = settings.deathFlash
+        chkFlash.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(deathFlash = chkFlash.isChecked) }
+            }
+        })
+        inner.add(chkFlash).left().padBottom(12f).row()
+
+        // Assist Mode lives inside Accessibility — relaxes the challenge.
+        inner.add(Label("Assist Mode — relax the challenge as needed.", bodyStyle)).left().padBottom(6f).row()
+
+        val chkInfiniteSpirits = CheckBox(" Infinite Spirits (no game over)", skin)
+        chkInfiniteSpirits.isChecked = settings.assistInfiniteSpirits
+        chkInfiniteSpirits.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(assistInfiniteSpirits = chkInfiniteSpirits.isChecked) }
+            }
+        })
+        inner.add(chkInfiniteSpirits).left().row()
+
+        val chkInvincible = CheckBox(" Invincible (no damage)", skin)
+        chkInvincible.isChecked = settings.assistInvincible
+        chkInvincible.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(assistInvincible = chkInvincible.isChecked) }
+            }
+        })
+        inner.add(chkInvincible).left().padBottom(16f).row()
+
+        inner.add(Label("Slow Speed", bodyStyle)).left().padRight(16f)
+        val sliderSpeed = Slider(0.25f, 1f, 0.05f, false, skin)
+        sliderSpeed.value = settings.assistSlowSpeed
+        sliderSpeed.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(assistSlowSpeed = sliderSpeed.value) }
+            }
+        })
+        inner.add(sliderSpeed).width(260f).padBottom(20f).row()
 
         // ── Save / Load / Delete ──────────────────────────────────────────
-        inner.add(Label("Save Data", sectionStyle)).left().padTop(20f).padBottom(8f).row()
-
+        // Per the categorized-layout brief, save controls sit at the bottom
+        // without their own section header — they're a footer action group.
         val saveRow = VisTable()
         val btnSave = VisTextButton("Save")
         btnSave.addListener(object : ChangeListener() {
