@@ -11,6 +11,7 @@ import com.sohai.platformer.Constants
 import com.sohai.platformer.abilities.EboAbility
 import com.sohai.platformer.abilities.LayaAbility
 import com.sohai.platformer.abilities.ZephyrAbility
+import com.sohai.platformer.entities.DriftHusk
 import com.sohai.platformer.entities.EcoToken
 import com.sohai.platformer.entities.Enemy
 import com.sohai.platformer.entities.MovingPlatform
@@ -58,7 +59,9 @@ class LevelRenderer(
     private val footstepColor: Color,
     private val sentinel: StormSentinel? = null,
     private val tileRenderer: TileRenderer? = null,
-    private val parallaxTheme: ParallaxTheme = ParallaxTheme.ARID
+    private val parallaxTheme: ParallaxTheme = ParallaxTheme.ARID,
+    /** T-062: Drift Husk enemies, drawn after [enemies] so their trail wisps overlay terrain. */
+    private val driftHusks: List<DriftHusk> = emptyList()
 ) {
 
     // ── Hot-path colour constants (hoisted to avoid per-frame allocation) ─────
@@ -417,6 +420,12 @@ class LevelRenderer(
         // Enemies
         for (enemy in enemies) {
             enemy.draw(shapeRenderer)
+        }
+
+        // T-062: Drift Husks (drop-from-above) -- draw() handles its own
+        // visibility (skips while in COOLDOWN state).
+        for (husk in driftHusks) {
+            husk.draw(shapeRenderer)
         }
 
         // Boss sentinel (drawn after enemies so telegraph rings appear on top)

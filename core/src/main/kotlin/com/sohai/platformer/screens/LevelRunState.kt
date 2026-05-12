@@ -14,6 +14,7 @@ import com.sohai.platformer.abilities.EboAbility
 import com.sohai.platformer.abilities.LayaAbility
 import com.sohai.platformer.abilities.ZephyrAbility
 import com.sohai.platformer.audio.SoundManager
+import com.sohai.platformer.entities.DriftHusk
 import com.sohai.platformer.entities.EcoToken
 import com.sohai.platformer.entities.Enemy
 import com.sohai.platformer.entities.MovingPlatform
@@ -68,7 +69,13 @@ class LevelRunState(
     val isTimeTrial: Boolean = false,
     private val achievementToast: AchievementToast? = null,
     /** Save slot filename used for achievement persistence (must match the slot used in GameScreen). */
-    private val saveSlotFile: String = "save_slot_1.json"
+    private val saveSlotFile: String = "save_slot_1.json",
+    /**
+     * T-062: Drift Husks (drop-from-above enemies). Held parallel to [enemies]
+     * because they require per-frame `setPlayerX(...)` to evaluate their
+     * trigger band. Defeat is handled identically to SmogSprite.
+     */
+    val driftHusks: MutableList<DriftHusk> = mutableListOf()
 ) {
 
     // ── Game-session state ────────────────────────────────────────────────────
@@ -384,6 +391,37 @@ class LevelRunState(
 
             pendingBodyDestroy.add(dead.body)
             enemies.remove(dead)
+        }
+
+        // T-062: Drift Husks update -- mirrors the SmogSprite defeat flow
+        // but also feeds the current player x into each husk so its trigger
+        // band can fire deterministically.
+        if (driftHusks.isNotEmpty()) {
+            val playerX = player.body.position.x
+            val deadHusks = mutableListOf<DriftHusk>()
+            for (husk in driftHusks) {
+                husk.setPlayerX(playerX)
+                husk.update(delta)
+                if (husk.isDead) deadHusks.add(husk)
+            }
+            for (dead in deadHusks) {
+                if (dead.wasStomped) {
+                    val pos = dead.body.position
+                    renderer.spawnStompSmokeBurst(pos.x, pos.y)
+                    SoundManager.play("land")
+
+                    val stompState = SaveManager.loadGame(saveSlotFile)
+                    val newTotalStomps = stompState.totalStomps + 1
+                    SaveManager.saveGame(stompState.copy(totalStomps = newTotalStomps), saveSlotFile)
+                    if (newTotalStomps >= 10) tryUnlock("stomp_10")
+                }
+                if (!achievFirstEnemyFired) {
+                    achievFirstEnemyFired = true
+                    tryUnlock("first_enemy")
+                }
+                pendingBodyDestroy.add(dead.body)
+                driftHusks.remove(dead)
+            }
         }
 
         // Boss update (before physics step so attack spawns queue up correctly)
