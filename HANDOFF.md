@@ -2,14 +2,31 @@
 
 > Read this **before** anything else if you are picking up where a previous Claude Code session left off. Then read `START_HERE.md` for the normal onboarding. Update this file at the end of your session to capture state the next agent will need. Keep it short — under 200 lines.
 
-**Last updated:** 2026-05-12 by Claude Opus — a single multi-hour session that shipped **~31 tickets**, **~327 new Kotest tests**, **130+ i18n keys**, **5 a11y/UX features**, **1 new enemy archetype**, **2 new screens**, the full **cc-agv-bridge** (separate repo), and **T-079 v2 CI optimization** (doc-PR skip filter + cache key fix + concurrency cancel — v1 was reverted because matrix-packing didn't deliver). Main HEAD `fe307de`. Session ended for context cleanup. **This very PR is the empirical test of the doc-PR skip — if you see this commit landed on `main`, the smoke matrix correctly skipped on a doc-only diff.**
+**Last updated:** 2026-05-12 by Claude Opus — a single multi-hour session that shipped **~32 tickets**, **~327 new Kotest tests**, **130+ i18n keys**, **5 a11y/UX features**, **1 new enemy archetype**, **2 new screens**, the full **cc-agv-bridge** (separate repo), **T-079 v2 CI optimization** (doc-PR skip filter empirically validated by PR #63 — smoke skipped on doc-only diff; 2m31s wall vs ~5min code-PR baseline), and **flipped the repo to PRIVATE**. Main HEAD at flip: `9a1342d`.
+
+### ⚠ Repo is now PRIVATE — CI cost is metered
+
+Flipped from `public` → `private` at session end via `gh repo edit … --visibility private --accept-visibility-change-consequences`. Actions minutes now bill against the personal account's GitHub Free plan: **2,000 min/mo on Linux runners**, then ~$0.008/min overage.
+
+**Expected per-PR cost on private (with T-079 v2 active):**
+- **Code PR:** ~38–42 min compute, ~5 min wall. Matrix unchanged at 8 parallel jobs; cache warms over the first few PRs.
+- **Doc-only PR:** ~2.5 min total. Gate job ~6s + Compile/Test/Lint ~2m25s; all 8 smoke jobs skipped via gate `if: needs.gate.outputs.run_smoke == 'true'`. **~36 min saved/PR.**
+
+At ~30 PRs/month (~⅓ doc-only): expect ~600–800 min consumed/month. Comfortable within the 2,000 free quota.
+
+### Cost-management knobs (unused; on hand if you ever blow the quota)
+- Pre-built JAR caching (compile once, reuse across 8 smoke jobs — biggest unrealized optimization).
+- Drop `cloudyAutopilotSeconds` from 8 → 6 (~16s/PR).
+- Self-hosted runner (your dev machine — 0 Actions minutes consumed).
+- Skip smoke on `draft: true` PRs.
+- Upgrade personal Pro plan ($4/mo → 3,000 min/mo).
 
 ---
 
 ## What you absolutely need to know
 
 ### Repo / environment
-- **Repo:** https://github.com/SohailShahM/Cloudy-Ninja (public — Actions minutes unlimited)
+- **Repo:** https://github.com/SohailShahM/Cloudy-Ninja — **PRIVATE as of 2026-05-12 end-of-session**. Actions metered against personal Free plan (2,000 min/mo on Linux). See "⚠ Repo is now PRIVATE" section above.
 - **JDK for local builds:** `C:\Program Files\Android\Android Studio\jbr`
   - Bash: `export JAVA_HOME='/c/Program Files/Android/Android Studio/jbr' && export PATH="$JAVA_HOME/bin:$PATH"`
   - PowerShell: `$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"; $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"`
@@ -69,7 +86,7 @@ When AGV is quiet on a critical-path ticket, **re-tag it to `claude-code-sub-age
 
 ## Live state of the project
 
-**Main HEAD at handoff:** `6087037` "T-108 → Done"
+**Main HEAD at handoff:** `9a1342d` "handoff: T-079 v2 landed; doc-only test" (post repo private-flip)
 
 **What's playable / built (this session's additions in bold):**
 - 8 levels + Storm Sentinel boss
