@@ -2,6 +2,7 @@ package com.sohai.platformer
 
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.BitmapFont
 import com.sohai.platformer.rendering.DisplayScale
 import io.kotest.core.spec.style.BehaviorSpec
@@ -13,8 +14,9 @@ import kotlin.math.roundToInt
 /**
  * Pure-logic tests for [FontManager].
  *
- * ## libGDX constraint
- * Both branches of [FontManager.create] touch real GPU resources:
+ * ## libGDX constraint (pre-T-109)
+ * Both branches of the original inline [FontManager.create] body touched real
+ * GPU resources:
  *   - File-present path → `FreeTypeFontGenerator(...).generateFont(...)` which
  *     pulls in the libGDX `gdx-freetype` JNI natives (not on the `:core` test
  *     classpath — same constraint described in
@@ -23,20 +25,13 @@ import kotlin.math.roundToInt
  *     and constructs a [com.badlogic.gdx.graphics.Texture], which requires a
  *     live OpenGL context.
  *
- * The source exposes no headless / factory hook (see follow-up note in the
- * task report). To stay purely in-process we never invoke `create()`. Instead
- * we exercise the parts of [FontManager] whose behaviour is independent of GL:
- *
- *   1. Cache identity & invalidation by pre-populating the private
- *      `sharedCache` map via reflection with MockK-mocked [BitmapFont]
- *      instances (a relaxed mock of [BitmapFont] is constructed by MockK
- *      via Objenesis without invoking the real ctor, so no GL is touched).
- *   2. The size → physicalSize scaling formula is asserted as a pure-math
- *      check that mirrors line 40 of `FontManager.kt`
- *      (`(size * DisplayScale.fontScale).roundToInt().coerceAtLeast(size)`),
- *      using a reflection-seeded [DisplayScale.fontScale]. This pins the
- *      DPI-aware sizing contract documented on the class.
- *   3. `dispose()` propagation on `clearSharedCache` is verified by MockK.
+ * ## T-109 seam
+ * `FontManager.create()` now delegates the GL/native-dependent step to an
+ * internal `FontLoader` (see `setLoaderForTesting`). Tests inject a no-op
+ * loader to exercise the `create()` codepath end-to-end in pure JVM — see the
+ * final two `given` blocks. The earlier reflection-based cache tests are
+ * retained as black-box coverage of the cache layer (independent of the
+ * loader seam).
  */
 class FontManagerTest : BehaviorSpec({
 
@@ -349,5 +344,107 @@ class FontManagerTest : BehaviorSpec({
         }
 
         rawClearSharedCache()
+    }
+
+    // ── 13. T-109 seam — create() is reachable headlessly via an injected loader ─
+
+    given("a test FontLoader injected via setLoaderForTesting") {
+        val captured = mutableListOf<Pair<Int, Color>>()
+        val produced = mockk<BitmapFont>(relaxed = true)
+        val testLoader = object : FontManager.FontLoader {
+            override fun load(physicalSize: Int, color: Color): BitmapFont {
+                captured += physicalSize to color
+                return produced
+            }
+        }
+        val savedScale = DisplayScale.fontScale
+        setFontScale(2.0f)
+        FontManager.setLoaderForTesting(testLoader)
+
+        `when`("create(22) is called with the default WHITE color") {
+            captured.clear()
+            val result = FontManager.create(22)
+
+            then("the loader is invoked exactly once") {
+                captured.size shouldBe 1
+            }
+            then("the loader receives the DPI-scaled physical size (22 * 2.0 = 44)") {
+                captured.single().first shouldBe 44
+            }
+            then("the loader receives Color.WHITE as the default tint") {
+                (captured.single().second === Color.WHITE) shouldBe true
+            }
+            then("create() returns exactly the BitmapFont the loader produced") {
+                (result === produced) shouldBe true
+            }
+        }
+
+        `when`("create(size, color) is called with a non-default color") {
+            captured.clear()
+            val custom = Color(0.1f, 0.2f, 0.3f, 0.4f)
+            FontManager.create(16, custom)
+
+            then("the loader receives the requested color verbatim") {
+                (captured.single().second === custom) shouldBe true
+            }
+            then("the loader receives the DPI-scaled physical size for the request") {
+                captured.single().first shouldBe 32 // 16 * 2.0
+            }
+        }
+
+        // Restore production state.
+        FontManager.setLoaderForTesting(null)
+        setFontScale(savedScale)
+        rawClearSharedCache()
+    }
+
+    // ── 14. T-109 seam — getShared() routes through the injected loader & caches ─
+
+    given("the injected loader and an empty shared cache") {
+        val callCount = intArrayOf(0)
+        val produced = mockk<BitmapFont>(relaxed = true)
+        val testLoader = object : FontManager.FontLoader {
+            override fun load(physicalSize: Int, color: Color): BitmapFont {
+                callCount[0]++
+                return produced
+            }
+        }
+        rawClearSharedCache()
+        FontManager.setLoaderForTesting(testLoader)
+
+        `when`("getShared(18) is called twice on a cold cache") {
+            val a = FontManager.getShared(18)
+            val b = FontManager.getShared(18)
+
+            then("the loader is invoked exactly once (second call is a cache hit)") {
+                callCount[0] shouldBe 1
+            }
+            then("both calls return the same instance produced by the loader") {
+                (a === b) shouldBe true
+                (a === produced) shouldBe true
+            }
+        }
+
+        FontManager.setLoaderForTesting(null)
+        rawClearSharedCache()
+    }
+
+    // ── 15. T-109 seam — setLoaderForTesting(null) restores the default loader ──
+
+    given("a custom loader installed then explicitly removed") {
+        val sentinel = mockk<BitmapFont>(relaxed = true)
+        FontManager.setLoaderForTesting(object : FontManager.FontLoader {
+            override fun load(physicalSize: Int, color: Color): BitmapFont = sentinel
+        })
+        FontManager.setLoaderForTesting(null)
+
+        `when`("we inspect the FontManager's internal loader field") {
+            val field = FontManager.javaClass.getDeclaredField("loader").apply { isAccessible = true }
+            val current = field.get(FontManager)
+
+            then("the active loader is the production DefaultFontLoader") {
+                (current === FontManager.DefaultFontLoader) shouldBe true
+            }
+        }
     }
 })
