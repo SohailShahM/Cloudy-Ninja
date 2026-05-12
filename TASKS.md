@@ -238,12 +238,13 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Constraints:** One upgrade = one PR. Don't combine. If the audit lists 5 LOW upgrades, that's 5 PRs. Don't bypass CI. Don't touch source code beyond what each version bump strictly requires.
 
 ### T-079 — CI duration optimization (smoke matrix)  [P3]
-- **Status:** Todo
-- **Tool:** `antigravity`
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from `antigravity` — pre-condition for flipping repo to private; user wants cheaper CI in place before going private)*
 - **Tier:** M
 - **Autonomous-eligible:** yes-with-review  *(touches CI workflow — let a human eyeball the workflow diff before admin-merge)*
-- **Agent:** _unclaimed_
-- **Branch:** `antigravity/T-079-ci-optimization`
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-079-ci-optimization`
+- **Started:** 2026-05-12
 - **Depends on:** T-A1
 - **GDD ref:** `.github/workflows/ai-smoke.yml` (current 9-job matrix; ~4.5 min per job)
 - **Files:** `.github/workflows/ai-smoke.yml`, `.github/workflows/ci.yml`
