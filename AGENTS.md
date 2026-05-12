@@ -21,7 +21,7 @@ Required reading before claiming a task:
 - **Engine:** libGDX 1.14.0 + Box2D, Kotlin, multi-module Gradle
 - **Modules:** `core` (shared gameplay), `lwjgl3` (desktop launcher), `android` (Android launcher) — see `settings.gradle`
 - **Resolution:** 1280×720 virtual, PPM = 100, y-up world coords; 4K/HiDPI supported via `DisplayScale`
-- **Levels shipped:** 7 (4 tutorial rooms in World 0, 3 campaign in Worlds 1–3); Level 3 has boss arena
+- **Levels shipped:** 8 (5 tutorial rooms in World 0, 3 campaign in Worlds 1–3); Level 3 has boss arena
 - **Characters:** 3 (Ebo / Laya / Zephyr) — switch with Swap button or `S` keyboard
 - **Tests:** 9 specs covering player movement, persistence, contacts, particles, atlas, TMX coords
 - **Audio:** 8 SFX + 3 looping ambient music tracks (procedurally generated); crossfade between levels
@@ -42,10 +42,12 @@ core/src/main/kotlin/com/sohai/platformer/
 │   ├── LayaAbility.kt       # Wind Dash — forward+up impulse, brief gravity reduction
 │   └── ZephyrAbility.kt     # Float — 0.2× gravity for 1.5 s on cooldown
 ├── atlas/
-│   └── CloudAtlasLibrary.kt # Registry of educational snapshot entries (id → entry)
+│   └── CloudAtlasEntry.kt   # Data class CloudAtlasEntry + CloudAtlasLibrary registry (id → entry)
 ├── audio/
 │   ├── SoundManager.kt      # SFX playback singleton (8 canonical sounds)
-│   └── ProceduralSoundGenerator.kt  # Generates WAVs at first run if assets missing
+│   ├── ProceduralSoundGenerator.kt  # Generates SFX WAVs at first run if assets missing
+│   ├── MusicManager.kt      # Singleton; looping background music with 1.5 s crossfade (T-030)
+│   └── ProceduralMusicGenerator.kt  # Generates 60-second ambient music WAVs at first run (T-030)
 ├── effects/
 │   ├── WaterDroplet.kt      # Box2D droplet body w/ lifetime — managed by EboAbility
 │   └── WindTrail.kt         # Visual-only fading particle — Laya feedback
@@ -53,21 +55,23 @@ core/src/main/kotlin/com/sohai/platformer/
 │   ├── PlayerController.kt  # Movement, coyote/buffer, wall-jump, corner-correct, ability hooks
 │   ├── EcoToken.kt          # Floating collectible
 │   ├── SnapshotPickup.kt    # Cloud Atlas pickup (educational reward)
-│   └── MovingPlatform.kt    # Kinematic platform; player carry via friction
+│   ├── MovingPlatform.kt    # Kinematic platform; player carry via friction
+│   ├── Enemy.kt             # Abstract base for all enemies; deferred Box2D body destruction
+│   ├── SmogSprite.kt        # Ground-patrolling enemy; reverses at waypoints; 2 hits to defeat
+│   ├── Projectile.kt        # Kinematic hazard projectile (lightning bolt etc.); auto-expires
+│   └── StormSentinel.kt     # Level 3 boss; sensor body, spawns projectiles, defeated by 3 droplets
 ├── input/
 │   └── InputManager.kt      # Single input gate: keyboard + HUD button flags + debug overrides
 ├── levels/
 │   ├── Level.kt             # Abstract base — id, spawn, setup, getCheckpoints, etc.
 │   ├── LevelManager.kt      # Static registry, ordered traversal, getNextLevel
-│   ├── LevelRegistry.kt     # Aliased re-export of TmxLevelDefinition.LevelRegistry
-│   ├── TmxLevelDefinition.kt # Data class + TmxLevel concrete + LevelRegistry.ALL
-│   ├── Level0_1.kt … 0_4.kt # Hand-built tutorial rooms (no TMX)
+│   ├── TmxLevelDefinition.kt # Data class + TmxLevel concrete + LevelRegistry.ALL (nested object)
+│   ├── Level0_0.kt … 0_4.kt # Hand-built tutorial rooms (no TMX) — 5 rooms in World 0
 │   └── (Level1/2/3 are data-driven via LevelRegistry)
 ├── persist/
 │   ├── GameState.kt         # @Serializable save model: completedLevels, bestScores, bestTimes
 │   ├── SaveManager.kt       # Atomic JSON read/write, listSaves, deleteSave
-│   ├── Settings.kt          # @Serializable settings: volume, screenShake, assist flags
-│   └── SettingsManager.kt   # Settings load/save (separate file from GameState)
+│   └── Settings.kt          # @Serializable settings + SettingsManager object (load/save)
 ├── physics/
 │   ├── WorldContactListener.kt  # Maps fixture userData → gameplay state
 │   └── CleanseEventQueue.kt    # Buffers hazard-cleanse events for the renderer
@@ -77,7 +81,11 @@ core/src/main/kotlin/com/sohai/platformer/
 │   ├── SpriteFactory.kt        # createEbo / createLaya / createZephyr atlas builders
 │   ├── ParallaxBackground.kt   # 3-layer parallax (mountains/midground hills/trees), 3-band sky gradient, stars in corrupted sky; ParallaxTheme = ARID/WIND/ECO
 │   ├── ParticleSystem.kt       # 200-particle pool, additive blend, gravity per particle
-│   └── ScreenFade.kt           # Async fade-in/out with completion callback
+│   ├── ScreenFade.kt           # Async fade-in/out with completion callback
+│   ├── DisplayScale.kt         # DPI scale helper (fontScale/spriteScale) for 4K/HiDPI rendering (T-042)
+│   ├── TilesetPack.kt          # Pure-data description of a tileset pack: metadata + tile-index mappings (T-031)
+│   ├── TilesetRegistry.kt      # Central registry for TilesetPack instances; resolves active pack from Settings (T-031)
+│   └── TileRenderer.kt         # Renders terrain obstacles as tiled sprites using the active TilesetPack (T-031)
 ├── screens/
 │   ├── MainMenuScreen.kt       # Title + 3 save slots + settings/atlas/quit
 │   ├── LevelSelectScreen.kt    # Pick level, locked indicator
@@ -88,10 +96,15 @@ core/src/main/kotlin/com/sohai/platformer/
 │   ├── Hud.kt                  # On-screen buttons + status/score/timer/stopwatch labels
 │   ├── PauseOverlay.kt, GameOverOverlay.kt, LevelCompleteOverlay.kt, CloudAtlasOverlay.kt
 │   ├── SettingsScreen.kt, CloudAtlasScreen.kt, VictoryScreen.kt
-│   └── ...
+│   ├── AchievementToast.kt     # Slide-in toast notification for newly unlocked achievements
+│   └── StatsScreen.kt          # Per-slot lifetime stats: deaths, completions, achievements
+├── progression/
+│   ├── Achievement.kt          # @Serializable data class: id, title, desc
+│   └── AchievementRegistry.kt  # ALL list of 12 achievements + get(id) lookup
+├── util/
+│   └── GameRandom.kt           # Seeded RNG singleton (RandomXS128) for deterministic replay (T-A3)
 └── world/
-    ├── ObstacleManager.kt      # Owns all static-obstacle Box2D bodies (rect / checkpoint / exit)
-    ├── ObstacleKind.kt         # Enum: GROUND, WALL, HAZARD, CHECKPOINT, EXIT
+    ├── ObstacleManager.kt      # Owns all static-obstacle Box2D bodies + ObstacleKind enum
     └── MapLevelLoader.kt       # Loads .tmx into ObstacleManager + MovingPlatforms (flipY = true for TmxLevels — see Levels section)
 ```
 
@@ -130,7 +143,7 @@ When adding gameplay logic, decide which subsystem owns it. Drawing → Renderer
 All abilities implement `CharacterAbility`. Swap by character (Ebo / Laya / Zephyr) via the Swap button — `LevelRunState.switchCharacter()` cycles them and triggers a colored sparkle burst. `PlayerController.update()` invokes `onActionPressed/Held/Released` and `update(dt)` automatically.
 
 ### Levels
-- **Tutorial rooms (World 0):** hand-built — `Level0_1.kt` through `Level0_4.kt` extend `Level` directly and override `setup()` to build geometry programmatically.
+- **Tutorial rooms (World 0):** hand-built — `Level0_0.kt` through `Level0_4.kt` extend `Level` directly and override `setup()` to build geometry programmatically.
 - **Campaign (Worlds 1–3):** data-driven — `LevelRegistry.ALL` is a list of `TmxLevelDefinition(id, name, mapPath, spawnX, spawnY, levelWidthPx, exitXPx, ecoTokens, snapshots, checkpoints)`. Adding a campaign level = appending one entry. The shared `TmxLevel` class loads the `.tmx` via `MapLevelLoader` with `flipY = true`. **Why `flipY=true`:** libGDX's `TmxMapLoader` already flips rectangle Y coords internally (`r.y = mapHeight - tiledY - height`), producing y-up values. `MapLevelLoader`'s own flip with `flipY=true` undoes that, correctly placing objects so that Tiled Y=0 (ground) maps to Box2D Y≈0 (bottom of world). Without the second flip, ground ends up at the top of the screen and players spawn-die immediately.
 
 ### Persistence
