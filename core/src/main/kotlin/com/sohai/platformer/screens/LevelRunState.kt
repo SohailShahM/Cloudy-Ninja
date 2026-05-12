@@ -141,6 +141,20 @@ class LevelRunState(
     private var shakeDuration  = 0f
     private var shakeT         = 0f
 
+    // ── Death animation (T-097) ───────────────────────────────────────────────
+    // While [deathAnimT] is in (0, DEATH_ANIM_DURATION) the player is "dying":
+    // its sprite fades out, the camera zooms out, and physics is frozen.
+    // At completion we run the existing checkpoint-respawn logic and trigger a
+    // brief screen-flash via [screenFade]. Gated behind reducedMotion + SMOKE_MODE
+    // for byte-identical behaviour when accessibility is enabled or under CI.
+    private companion object {
+        const val DEATH_ANIM_DURATION = 0.5f
+        const val DEATH_ZOOM_AMOUNT   = 0.2f      // camera.zoom goes 1.0 → 1.2
+        const val DEATH_FLASH_SPEED   = 5f        // ScreenFade.fadeOut: 0→1 in 0.2s
+    }
+    private var deathAnimT: Float = 0f
+    private var deathAnimActive = false
+
     // ── Physics accumulator ───────────────────────────────────────────────────
 
     var physicsAccum = 0f
@@ -331,7 +345,13 @@ class LevelRunState(
             }
         }
 
-        player.update(delta)
+        // T-097: while the death animation is playing, freeze player physics
+        // so the dead body cannot drift or jump. We skip player.update so
+        // input/jump-handling does not run; velocity is zeroed in the death
+        // block below anyway.
+        if (!deathAnimActive) {
+            player.update(delta)
+        }
 
         // Achievement: first_jump — fires once when any jump is performed
         if (!achievFirstJumpFired && player.jumpFiredThisFrame) {
@@ -480,7 +500,39 @@ class LevelRunState(
 
         val playerDied = !isGameOver && !assistSettings.assistInvincible &&
             (player.isDead || player.body.position.y < -10f / Constants.PPM)
-        if (playerDied) {
+
+        // T-097: Death-animation gate.
+        // When [animateDeath] is true we fade the player + zoom the camera over
+        // [DEATH_ANIM_DURATION], then run the respawn flow. Otherwise we use
+        // the original instant-respawn path (byte-identical to pre-T-097).
+        val animateDeath = !assistSettings.reducedMotion && !Constants.SMOKE_MODE
+
+        if (deathAnimActive) {
+            // Drive the animation. Suppress player physics so the body cannot
+            // drift past the killplane or into another hazard mid-fade.
+            deathAnimT += delta
+            player.body.linearVelocity = Vector2.Zero
+            val t  = (deathAnimT / DEATH_ANIM_DURATION).coerceIn(0f, 1f)
+            // Cubic ease-out: 1 - (1-t)^3 — matches the feel of libgdx's
+            // Interpolation.pow3Out without pulling in another import.
+            val ease = 1f - (1f - t) * (1f - t) * (1f - t)
+            renderer.playerAlpha = 1f - ease
+            camera.zoom          = 1f + DEATH_ZOOM_AMOUNT * ease
+
+            if (deathAnimT >= DEATH_ANIM_DURATION) {
+                // Animation complete: restore camera + sprite, do respawn, flash.
+                deathAnimActive      = false
+                deathAnimT           = 0f
+                camera.zoom          = 1f
+                renderer.playerAlpha = 1f
+                performDeathRespawn(assistSettings)
+                // Brief 0.2s screen flash (0 → 1 alpha at speed 5/s).
+                screenFade.fadeOut(speed = DEATH_FLASH_SPEED)
+            }
+        } else if (playerDied) {
+            // Instant feedback (sfx, shake, hitstop, sparkle, spirit-health
+            // decrement) fires the moment death is detected, regardless of
+            // whether we animate or respawn instantly.
             SoundManager.play("death")
             triggerShake(0.18f, 0.25f)
             triggerHitstop(5)
@@ -497,19 +549,23 @@ class LevelRunState(
                 gameOverTimer = 4f
                 hud.showTransientMessage(Strings.get(StringKey.RUN_SPIRIT_EXHAUSTED), 2f)
                 onGameOverStart?.invoke()
+                // Game over: no respawn, no animation. (Existing semantics.)
             } else {
                 hud.showTransientMessage(Strings.format(StringKey.SPIRIT_DEATH, currentCharacter, spiritHealth), 1.2f)
+                if (animateDeath) {
+                    // Begin the death-animation state machine; the respawn
+                    // itself runs at completion above. Freeze gravity + velocity
+                    // so the body stays put while the camera zooms and the
+                    // sprite fades. [player.respawn] restores gravityScale to 1f.
+                    deathAnimActive = true
+                    deathAnimT      = 0f
+                    player.body.linearVelocity = Vector2.Zero
+                    player.body.gravityScale   = 0f
+                } else {
+                    // reducedMotion or SMOKE_MODE → original instant-respawn path.
+                    performDeathRespawn(assistSettings)
+                }
             }
-
-            val cpSave    = SaveManager.loadGame(checkpointAutosaveFile)
-            val hasCpSave = SaveManager.listSaves().contains(checkpointAutosaveFile)
-            if (hasCpSave && cpSave.checkpoint.levelName == level.id &&
-                (cpSave.checkpoint.x != 0f || cpSave.checkpoint.y != 0f)) {
-                player.setSpawn(Vector2(cpSave.checkpoint.x, cpSave.checkpoint.y))
-                score = cpSave.bestScores[level.id]?.coerceAtMost(score) ?: score
-                hud.updateScore(score)
-            }
-            player.respawn()
         } else if (!isGameOver && assistSettings.assistInvincible &&
                    player.body.position.y < -10f / Constants.PPM) {
             player.respawn()
@@ -696,6 +752,23 @@ class LevelRunState(
             for (b in pendingBodyDestroy) world.destroyBody(b)
             pendingBodyDestroy.clear()
         }
+    }
+
+    /**
+     * Loads the checkpoint autosave (if any) and respawns the player.
+     * Extracted so both the instant-respawn path (reducedMotion / SMOKE_MODE)
+     * and the post-animation path can share the exact same flow.
+     */
+    private fun performDeathRespawn(assistSettings: com.sohai.platformer.persist.Settings) {
+        val cpSave    = SaveManager.loadGame(checkpointAutosaveFile)
+        val hasCpSave = SaveManager.listSaves().contains(checkpointAutosaveFile)
+        if (hasCpSave && cpSave.checkpoint.levelName == level.id &&
+            (cpSave.checkpoint.x != 0f || cpSave.checkpoint.y != 0f)) {
+            player.setSpawn(Vector2(cpSave.checkpoint.x, cpSave.checkpoint.y))
+            score = cpSave.bestScores[level.id]?.coerceAtMost(score) ?: score
+            hud.updateScore(score)
+        }
+        player.respawn()
     }
 
     private fun computeP99(times: FloatArray, count: Int): Float {

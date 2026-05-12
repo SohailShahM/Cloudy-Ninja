@@ -210,6 +210,14 @@ class LevelRenderer(
     private var palette: Palette = Palette.forMode(SettingsManager.load().colorBlindMode)
     private var paletteMode: ColorBlindMode = SettingsManager.load().colorBlindMode
 
+    /**
+     * Alpha multiplier applied to the player sprite during the T-097 death
+     * animation. Written by [LevelRunState] each frame while the player is
+     * dying; restored to 1f on respawn. Outside the death animation this is
+     * always 1f, so default rendering is byte-identical to pre-T-097 behaviour.
+     */
+    var playerAlpha: Float = 1f
+
     private fun refreshPalette() {
         val m = SettingsManager.load().colorBlindMode
         if (m != paletteMode) {
@@ -444,6 +452,10 @@ class LevelRenderer(
     fun renderPlayer(currentCharacter: String) {
         val flashVisible = !player.isFlashing || (player.deathFlashTimer * 8).toInt() % 2 == 0
         if (!flashVisible) return
+        // T-097: skip the draw entirely once the death-fade is essentially invisible
+        // so we don't issue a no-op batch call. Outside the death animation
+        // [playerAlpha] is 1f so this is a no-op.
+        if (playerAlpha <= 0.002f) return
 
         val playerPos = player.body.position
         val animator  = if (currentCharacter == "Ebo") eboAnimator else layaAnimator
@@ -457,13 +469,18 @@ class LevelRenderer(
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
         spriteBatch.projectionMatrix = camera.combined
         spriteBatch.begin()
+        // T-097: multiply the per-character tint by [playerAlpha] so the sprite
+        // fades out during death. With playerAlpha == 1f the tints match the
+        // pre-T-097 values exactly.
+        val a = playerAlpha
         when {
-            player.isFlashing              -> spriteBatch.setColor(1f, 0.35f, 0.35f, 0.85f)
-            currentCharacter == "Zephyr"   -> spriteBatch.setColor(0.72f, 0.55f, 1f, 1f)
+            player.isFlashing              -> spriteBatch.setColor(1f, 0.35f, 0.35f, 0.85f * a)
+            currentCharacter == "Zephyr"   -> spriteBatch.setColor(0.72f, 0.55f, 1f, 1f * a)
+            a < 1f                          -> spriteBatch.setColor(1f, 1f, 1f, a)
         }
         if (player.isFacingRight) spriteBatch.draw(frame, sx, sy, sw, sh)
         else                      spriteBatch.draw(frame, sx + sw, sy, -sw, sh)
-        if (player.isFlashing || currentCharacter == "Zephyr") spriteBatch.setColor(Color.WHITE)
+        if (player.isFlashing || currentCharacter == "Zephyr" || a < 1f) spriteBatch.setColor(Color.WHITE)
         spriteBatch.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
     }
