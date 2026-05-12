@@ -106,18 +106,20 @@ class StatsScreen(private val game: Game) : Screen {
         }
         card.add(Label("Eco-tokens collected: $ecoCollected", bodyStyle)).left().padBottom(6f).row()
 
-        val bestTimesDisplay = if (state.bestTimes.isEmpty()) {
-            "—"
+        if (state.bestTimes.isEmpty()) {
+            card.add(Label("Best times: (no times recorded)", mutedStyle))
+                .left().padBottom(6f).row()
         } else {
-            state.bestTimes.entries
-                .sortedBy { it.key }
-                .joinToString(", ") { (levelId, timeSec) ->
-                    "${LevelManager.getLevel(levelId)?.name ?: levelId}: ${"%.2f".format(timeSec)}s"
-                }
+            card.add(Label("Best times:", sectionStyle)).left().padBottom(2f).row()
+            // Iterate levels in canonical LevelManager order; skip levels with no recorded time.
+            for (level in LevelManager.getAllLevels()) {
+                val timeSec = state.bestTimes[level.id] ?: continue
+                val line = "${level.name}: ${formatBestTime(timeSec)}"
+                card.add(Label(line, bodyStyle)).left().padBottom(2f).row()
+            }
+            // Spacer below the section
+            card.add(Label("", bodyStyle)).left().padBottom(4f).row()
         }
-        val bestTimesLabel = Label("Best times: $bestTimesDisplay", bodyStyle)
-        bestTimesLabel.wrap = true
-        card.add(bestTimesLabel).left().width(STATS_CARD_CONTENT_WIDTH).padBottom(6f).row()
 
         val unlockedAchievements = readUnlockedAchievements(state)
         if (unlockedAchievements == null) {
@@ -140,6 +142,21 @@ class StatsScreen(private val game: Game) : Screen {
             val getter = state.javaClass.methods.firstOrNull { it.name == "getUnlockedAchievements" }
             getter?.invoke(state) as? Set<String>
         }.getOrNull()
+    }
+
+    /**
+     * Format a best-time value (stored in seconds as a Float) as MM:SS.mmm,
+     * e.g. 83.45f -> "01:23.450". Negative or NaN inputs clamp to "00:00.000".
+     */
+    private fun formatBestTime(timeSec: Float): String {
+        if (timeSec.isNaN() || timeSec <= 0f) return "00:00.000"
+        val totalMillis = (timeSec * 1000f).toLong()
+        val minutes = (totalMillis / 60_000L)
+        val seconds = (totalMillis / 1000L) % 60L
+        val millis  = totalMillis % 1000L
+        return "${minutes.toString().padStart(2, '0')}:" +
+               "${seconds.toString().padStart(2, '0')}." +
+               millis.toString().padStart(3, '0')
     }
 
     override fun render(delta: Float) {
