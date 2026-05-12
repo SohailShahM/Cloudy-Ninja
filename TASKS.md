@@ -178,31 +178,18 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** 12 entries in registry, all reachable in gameplay, atlas screen displays all 12 cards with correct text. Compile clean.
 - **Updated dependency (2026-05-12):** T-045 now depends on **T-049** (climate-source compilation). The climate.gov URLs in the original prompt are dead (site archived to noaa.gov). T-049 produces a `research/climate-sources/` folder with verified-live URLs + downloaded PDFs, ready to feed NotebookLM in one step.
 
-### T-057 — Color-blind palette toggle  [P3]
+### T-058 — Reduced-motion mode toggle  [P3]
 - **Status:** In Progress
 - **Tool:** `claude-code-sub-agent`
 - **Tier:** S
 - **Autonomous-eligible:** yes
 - **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-057-colorblind-palette`
+- **Branch:** `claude/T-058-reduced-motion`
 - **Started:** 2026-05-12
 - **Depends on:** _none_
 - **GDD ref:** GAME_PLAN.md (accessibility-first design)
-- **Files:** `persist/Settings.kt`, `screens/SettingsScreen.kt`, `screens/LevelRenderer.kt` (Palette)
-- **Goal:** Add `colorBlindMode: ColorBlindMode = OFF` to `Settings` (enum: OFF, DEUTERANOPIA, PROTANOPIA, TRITANOPIA). In `SettingsScreen` accessibility section, add a VisSelectBox. In `LevelRenderer.Palette`, define alternate palettes per mode (research-backed safe colors — green/red distinction shifts to blue/orange for deuteranopia, etc.). Apply via `Palette.current(settings.colorBlindMode)`. Persist immediately.
-- **Done when:** Toggle works in Settings, palette swap is visible at runtime, persists across sessions, smoke CI passes.
-
-### T-058 — Reduced-motion mode toggle  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (accessibility-first design)
 - **Files:** `persist/Settings.kt`, `screens/SettingsScreen.kt`, `screens/LevelRunState.kt`, `screens/LevelRenderer.kt`, `rendering/ParallaxBackground.kt`
-- **Goal:** Add `reducedMotion: Boolean = false` to `Settings`. When enabled: disable screen shake on damage/boss-stomp, cap particle bursts to 1 (vs 6–10), set `ParallaxBackground` scrollFactor to 0 (background stays still). UI toggle in SettingsScreen.
+- **Goal:** Add `reducedMotion: Boolean = false` to `Settings`. When enabled: disable screen shake on damage/boss-stomp, cap particle bursts to 1 (vs 6–10), set `ParallaxBackground` scrollFactor to 0 (background stays still). UI toggle in SettingsScreen accessibility section (same section as T-057).
 - **Done when:** Toggle works, all three effect dampenings visible in runtime, persists, smoke CI passes.
 
 ### T-059 — String extraction scaffolding (i18n prep)  [P3]
@@ -218,19 +205,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Create `i18n/Strings.kt` with `enum class StringKey` covering every hardcoded user-facing string in the project. Add `object Strings { fun get(key: StringKey): String }` returning English defaults (locale support comes later). Sweep every `screens/*.kt` and replace string literals with `Strings.get(StringKey.X)`. **No new translations** — just centralization. Keep English text byte-identical so visual diff is zero.
 - **Done when:** All user-facing string literals in `screens/` route through `Strings.get(...)`. ≥40 keys defined. AI smoke CI passes (verifies no visual regressions).
 
-### T-060 — Best-times row in StatsScreen  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-060-stats-best-times`
-- **Started:** 2026-05-12
-- **Depends on:** T-024, T-041
-- **GDD ref:** §23 (time-trial spec) + StatsScreen (T-041 outcome)
-- **Files:** `screens/StatsScreen.kt`
-- **Goal:** Add a "Best times" sub-section per slot in `StatsScreen` showing `GameState.bestTimes` map (level → ms) formatted as `MM:SS.mmm`. Sort by level order. Skip levels with no recorded time.
-- **Done when:** Best-times row visible on stats screen for each slot; correctly formats and sorts; smoke CI passes.
 
 ### T-061 — AI smoke: per-character autopilot matrix  [P3]
 - **Status:** Todo
@@ -272,16 +246,17 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Fade-in visible at 60 FPS without input lag, hint visible, smoke CI passes.
 
 ### T-064 — Victory screen best-time delta indicator  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-064-victory-delta`
+- **Started:** 2026-05-12
 - **Depends on:** T-024
 - **GDD ref:** §23 (time-trial spec)
 - **Files:** `screens/VictoryScreen.kt`
-- **Goal:** When the run completes a time-trial AND there's a prior best, display the delta below the current time: `−2.31s under best` (green) or `+0.42s slower` (grey). Use `GameState.bestTimes[levelId]` for the comparison. No delta shown if no prior best.
+- **Goal:** When the run completes a time-trial AND there's a prior best, display the delta below the current time: `−2.31s under best` (green) or `+0.42s slower` (grey). Use `GameState.bestTimes[levelId]` for the comparison. No delta shown if no prior best. **Note:** `bestTimes` is `Map<String, Float>` (seconds), per T-060 discovery.
 - **Done when:** Delta displays correctly on the second+ time-trial completion of a level; formatting matches existing screen typography.
 
 ### T-066 — Achievement icons (16×16 pixel art)  [P3]
@@ -528,6 +503,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Completed:** 2026-05-12
 - **Outcome:** `core/src/test/kotlin/com/sohai/platformer/progression/AchievementTest.kt` — Kotest BehaviorSpec, 23 tests, 0.26s. Covers `AchievementRegistry.get()` (known/unknown/empty/idempotent for 5 ids), `ALL`-list invariants (size 12, non-blank id/title/desc, unique ids + titles, canonical id set, round-trip), threshold-string drift checks (`stomp_10`→"10", `atlas_half`→"6", `atlas_full`→"12" not "11"). **Predicate-firing tests skipped** — unlock logic is inlined in screen code, not pure functions; flagged as follow-up via spawn_task chip.
 - **Commit/PR:** PR #30 (squashed merge `9e5a4a9`)
+- **Tool:** `claude-code-sub-agent`
+
+### T-057 — Color-blind palette toggle
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** 4-mode toggle (`OFF` / `DEUTERANOPIA` / `PROTANOPIA` / `TRITANOPIA`) added to Settings + new SettingsScreen accessibility section. `LevelRenderer` palette split into mode-sensitive `Palette` value class + unchanged `SharedPalette` companion. Color choices grounded in Brettel/Viénot/Mollon (1997) dichromat simulation framework + IBM Design Language guidance — red-green ↔ blue-orange for deuteranopia/protanopia, blue-yellow ↔ magenta-cyan for tritanopia. `OFF` is byte-identical to pre-change render. Save-compat via kotlinx-serialization default-value (same pattern as `tilesetPackId`).
+- **Commit/PR:** PR #35 (squashed merge `3a6b146`)
+- **Tool:** `claude-code-sub-agent`
+
+### T-060 — Best-times row in StatsScreen
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Per-slot best-times section in `StatsScreen` — header + one `MM:SS.mmm` line per recorded level in canonical level order (via `LevelManager.getAllLevels()`, which covers full sequence including tutorial rooms — `LevelRegistry.ALL` would have missed those). Empty state renders a muted "(no times recorded)". `Label` + `FontManager.getShared` per the T-044 lesson. Sub-agent caught spec drift: `bestTimes` is actually `Map<String, Float>` (seconds, written by `LevelTransitionController`), not `Map<String, Long>` (ms) as the brief claimed — matched the codebase rather than fabricate.
+- **Commit/PR:** PR #34 (squashed merge `f6e34a8`)
 - **Tool:** `claude-code-sub-agent`
 
 ### T-049 — Climate-source compilation for NotebookLM
