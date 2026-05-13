@@ -33,6 +33,13 @@ When claiming any task, set `Agent:` to your handle from this list (pick the clo
 5. **`GAME_PLAN.md`** — vision and scope (skim for context)
 6. **`GDD_ADDENDUM.md`** — technical reference. Only read sections relevant to your ticket.
 
+## Visual review on session start
+
+If the previous `HANDOFF.md` mentions visual rendering changes, run
+[Session-start visual review](docs/SESSION_START_VISUAL_REVIEW.md) before
+tackling new feature work. The smoke autopilot tests gameplay invariants;
+the visual review tests rendering. Both are cheap; both catch real bugs.
+
 ## 3. Capability gates — what you ARE and AREN'T allowed to do
 
 Hard rules. The user routes tickets to specific tools. If your identity isn't on the ticket's `Tool:` line, **do not claim that ticket**, even if it's unclaimed and looks easy. Routing wrong tools at tasks is the primary failure mode of multi-AI systems — these gates exist to prevent it.
