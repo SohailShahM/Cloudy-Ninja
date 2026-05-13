@@ -28,7 +28,14 @@ class SmogSprite private constructor(
     /** True when moving toward patrolRightX. */
     private var movingRight: Boolean = true
 
+    /** T-098: scratch Color reused per draw call to avoid allocation on the hit-flash lerp. */
+    private val tmpColor: Color = Color()
+
     override fun update(delta: Float) {
+        // T-098: tick the hit-flash even before the dead-guard so a flash
+        // armed by the killing blow's predecessor frame still decays cleanly.
+        tickHitFlash(delta)
+
         if (isDead) {
             body.linearVelocity = Vector2.Zero
             return
@@ -53,8 +60,8 @@ class SmogSprite private constructor(
         val px = body.position.x
         val py = body.position.y
 
-        // Dark-grey oval body
-        renderer.color = BODY_COLOR
+        // Dark-grey oval body (T-098: tinted toward white for [hitFlashTimer] frames after a hit).
+        renderer.color = applyHitFlash(BODY_COLOR, tmpColor)
         renderer.ellipse(px - HALF_W, py - HALF_H, HALF_W * 2f, HALF_H * 2f)
 
         // Small red "eyes" -- direction indicator
