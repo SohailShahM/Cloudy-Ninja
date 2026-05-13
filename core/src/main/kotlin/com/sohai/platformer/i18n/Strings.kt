@@ -77,6 +77,7 @@ enum class StringKey {
     // ── Settings: Accessibility ──────────────────────────────────────────────
     SETTINGS_COLORBLIND_MODE,
     SETTINGS_REDUCED_MOTION,
+    SETTINGS_HIGH_CONTRAST,
     SETTINGS_SCREEN_SHAKE,
     SETTINGS_DEATH_FLASH,
     SETTINGS_ASSIST_MODE_HINT,
@@ -339,6 +340,7 @@ object Strings {
         // Settings: Accessibility
         StringKey.SETTINGS_COLORBLIND_MODE        to "Color-blind mode",
         StringKey.SETTINGS_REDUCED_MOTION         to " Reduce motion (disable shake, limit particles, freeze background)",
+        StringKey.SETTINGS_HIGH_CONTRAST          to " High-contrast mode (max-contrast gameplay colors)",
         StringKey.SETTINGS_SCREEN_SHAKE           to " Screen Shake",
         StringKey.SETTINGS_DEATH_FLASH            to " Death Flash",
         StringKey.SETTINGS_ASSIST_MODE_HINT       to "Assist Mode — relax the challenge as needed.",

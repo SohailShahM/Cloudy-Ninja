@@ -275,6 +275,18 @@ class SettingsScreen(
         })
         inner.add(chkReducedMotion).left().padBottom(8f).row()
 
+        // T-132: high-contrast mode toggle. Independent from color-blind mode
+        // — both can be on; the high-contrast palette overrides at the same
+        // role when both apply (see HighContrastPalette docs).
+        val chkHighContrast = CheckBox(Strings.get(StringKey.SETTINGS_HIGH_CONTRAST), skin)
+        chkHighContrast.isChecked = settings.highContrast
+        chkHighContrast.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(highContrast = chkHighContrast.isChecked) }
+            }
+        })
+        inner.add(chkHighContrast).left().padBottom(8f).row()
+
         val chkShake = CheckBox(Strings.get(StringKey.SETTINGS_SCREEN_SHAKE), skin)
         chkShake.isChecked = settings.screenShake
         chkShake.addListener(object : ChangeListener() {

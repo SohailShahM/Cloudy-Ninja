@@ -68,7 +68,15 @@ data class Settings(
     // Accessibility: reduced-motion mode. When true, disables screen shake,
     // clamps particle bursts to a single particle, and freezes the parallax
     // background scroll. Default false keeps existing saves byte-identical.
-    val reducedMotion: Boolean = false
+    val reducedMotion: Boolean = false,
+
+    // Accessibility: high-contrast mode (T-132). When true, gameplay rendering
+    // remaps every colour role to a maximum-contrast variant via
+    // [com.sohai.platformer.rendering.HighContrastPalette]. Coexists with
+    // [colorBlindMode] (both can be on; high-contrast wins when both apply to
+    // the same role). Default false keeps existing saves byte-identical and
+    // renders byte-identically to pre-T-132.
+    val highContrast: Boolean = false
 )
 
 /**
