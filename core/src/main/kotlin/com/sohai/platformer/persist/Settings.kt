@@ -20,7 +20,11 @@ fun defaultKeybinds(): Map<String, Int> = mapOf(
     "right" to Input.Keys.D,
     "jump" to Input.Keys.SPACE,
     "action" to Input.Keys.E,
-    "swap" to Input.Keys.S
+    "swap" to Input.Keys.S,
+    // T-133: hold-R-to-restart hotkey. Bound to R by default; rebindable in
+    // Settings → Controls. The 0.5s hold threshold is enforced at the call
+    // site (GameScreen) — InputManager only reports raw held state.
+    "restart" to Input.Keys.R
 )
 
 /**
