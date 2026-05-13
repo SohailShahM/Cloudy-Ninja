@@ -71,6 +71,17 @@ class GameScreen(
     private companion object {
         const val CHECKPOINT_AUTOSAVE_FILE = "checkpoint_autosave.json"
         const val SAVE_SLOT_FILE           = "save_slot_1.json"
+
+        /**
+         * Ambient light RGB + alpha for the [RayHandler] dynamic-lighting layer.
+         * The ambient color is MULTIPLIED with the scene under the lighting pass —
+         * (0.15, 0.18, 0.25) reads as cave-dark; (0.45, 0.50, 0.60) reads as
+         * dim-daytime, the eco-platformer's intended mood. Tune by play-testing.
+         */
+        const val AMBIENT_LIGHT_R = 0.45f
+        const val AMBIENT_LIGHT_G = 0.50f
+        const val AMBIENT_LIGHT_B = 0.60f
+        const val AMBIENT_LIGHT_A = 0.9f
     }
 
     // ── Core rendering resources ──────────────────────────────────────────────
@@ -182,7 +193,9 @@ class GameScreen(
 
         RayHandler.setGammaCorrection(true)
         RayHandler.useDiffuseLight(true)
-        rayHandler = RayHandler(world).apply { setAmbientLight(0.15f, 0.18f, 0.25f, 0.7f) }
+        rayHandler = RayHandler(world).apply {
+            setAmbientLight(AMBIENT_LIGHT_R, AMBIENT_LIGHT_G, AMBIENT_LIGHT_B, AMBIENT_LIGHT_A)
+        }
 
         level.setup(world, obstacleManager, movingPlatforms)
 
