@@ -5,6 +5,7 @@ import com.badlogic.gdx.physics.box2d.World
 import com.sohai.platformer.Constants
 import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.SnapshotPickup
+import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.world.ObstacleKind
 import com.sohai.platformer.world.ObstacleManager
 
@@ -91,6 +92,26 @@ class Level0_0 : Level() {
             "portal_world3" -> setOf("level2")            // must complete World 2
             else -> setOf("__impossible__")
         }
+
+        /**
+         * T-137: Returns true if [HubTutorialOverlay] should be shown for a
+         * player whose save reads [state]. Pure function — no I/O — so the
+         * gate is unit-testable without touching libGDX. The host screen
+         * (`GameScreen`) calls this on Level0_0 construction; on a true
+         * result, it builds the overlay and persists `tutorialSeen=true`
+         * once the player dismisses it.
+         *
+         * **Smoke-mode bypass (T-137 fixup):** when `Constants.SMOKE_MODE` is
+         * set, return false unconditionally. The smoke autopilot drives the
+         * player Body directly via Box2D forces (see `LevelRunState`'s
+         * `debugSmokeMode` path) — it does NOT route through `Gdx.input`,
+         * so `HubTutorialOverlay`'s `isKeyJustPressed` / `justTouched`
+         * dismiss check never fires in smoke. Without this guard the
+         * `smoke (level0_0)` job hangs indefinitely waiting on a keypress
+         * the autopilot will never produce. Production behavior unchanged.
+         */
+        fun shouldShowFirstRunTutorial(state: GameState): Boolean =
+            !state.tutorialSeen && !com.sohai.platformer.Constants.SMOKE_MODE
     }
 
     override fun setup(

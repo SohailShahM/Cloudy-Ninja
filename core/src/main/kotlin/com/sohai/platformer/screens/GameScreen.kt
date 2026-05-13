@@ -120,6 +120,10 @@ class GameScreen(
     private var gameOverOverlay: GameOverOverlay? = null
     /** T-130: shown after the T-097 death animation completes. Re-created per death. */
     private var deathRecapOverlay: DeathRecapOverlay? = null
+    // T-137: first-run tutorial overlay on Sky Sanctuary hub. Created only on
+    // a fresh save (tutorialSeen=false) for Level0_0. Disposed + nulled on
+    // dismiss; never recreated within this GameScreen lifetime.
+    private var hubTutorialOverlay: HubTutorialOverlay? = null
 
     // ── Boss ─────────────────────────────────────────────────────────────────
     private var sentinel: StormSentinel? = null
@@ -350,6 +354,31 @@ class GameScreen(
 
         // Start background music for this level
         MusicManager.play(level.musicTrack, fadeIn = true)
+
+        // T-137: First-run hub tutorial overlay. Only constructed on Level0_0
+        // when the slot has never seen it before. Dismissal flips
+        // tutorialSeen=true and persists, so subsequent entries (this slot)
+        // skip construction entirely. Smoke mode honors the same path — the
+        // autopilot's first keypress within ~1s closes the overlay; rendering
+        // continues underneath unchanged.
+        if (level is com.sohai.platformer.levels.Level0_0) {
+            val saved = com.sohai.platformer.persist.SaveManager.loadGame(SAVE_SLOT_FILE)
+            if (com.sohai.platformer.levels.Level0_0.shouldShowFirstRunTutorial(saved)) {
+                hubTutorialOverlay = HubTutorialOverlay(
+                    onDismiss     = {
+                        // Persist the dismissal so the overlay never reappears
+                        // for this slot. Re-load to avoid clobbering writes
+                        // that landed after our cached snapshot (e.g. an
+                        // achievement unlock between overlay-open and dismiss).
+                        val cur = com.sohai.platformer.persist.SaveManager.loadGame(SAVE_SLOT_FILE)
+                        com.sohai.platformer.persist.SaveManager.saveGame(
+                            cur.copy(tutorialSeen = true), SAVE_SLOT_FILE
+                        )
+                    },
+                    reducedMotion = settings.reducedMotion
+                )
+            }
+        }
     }
 
     private fun setPaused(paused: Boolean) {
@@ -473,6 +502,18 @@ class GameScreen(
         // Layer 7: pause overlay
         if (isPaused) pauseOverlay.render()
 
+        // Layer 7b: first-run hub tutorial overlay (T-137).
+        // Rendered above the pause overlay so a player who hits ESC the moment
+        // they spawn still sees the tutorial; dispose + null once dismissed so
+        // resize / dispose paths don't have to special-case it.
+        hubTutorialOverlay?.let { overlay ->
+            overlay.render()
+            if (overlay.isDismissed) {
+                overlay.dispose()
+                hubTutorialOverlay = null
+            }
+        }
+
         // Layer 8: level-complete card
         if (runState.levelCompleted && levelCompleteOverlay == null) {
             levelCompleteOverlay = transitionCtrl.startLevelComplete(
@@ -580,6 +621,7 @@ class GameScreen(
         levelCompleteOverlay?.resize(width, height)
         gameOverOverlay?.resize(width, height)
         deathRecapOverlay?.resize(width, height)
+        hubTutorialOverlay?.resize(width, height)
         achievementToast.resize(width, height)
     }
 
@@ -623,6 +665,7 @@ class GameScreen(
         levelCompleteOverlay?.dispose(); levelCompleteOverlay = null
         gameOverOverlay?.dispose();     gameOverOverlay      = null
         deathRecapOverlay?.dispose();   deathRecapOverlay    = null
+        hubTutorialOverlay?.dispose();  hubTutorialOverlay   = null
         ecoTokens.forEach { world.destroyBody(it.body) }
         ecoTokens.clear()
         obstacleManager.clear()

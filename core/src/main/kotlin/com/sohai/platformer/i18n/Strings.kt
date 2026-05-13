@@ -163,6 +163,13 @@ enum class StringKey {
     PAUSE_ENTER_TIME_TRIAL,
     PAUSE_KEY_ESC,
 
+    // ── Hub tutorial overlay (T-137) ─────────────────────────────────────────
+    TUTORIAL_TITLE,
+    TUTORIAL_HINT_MOVE,
+    TUTORIAL_HINT_SWAP,
+    TUTORIAL_HINT_PORTAL,
+    TUTORIAL_DISMISS_HINT,
+
     // ── Stats screen ─────────────────────────────────────────────────────────
     STATS_TITLE,
     STATS_BACK,
@@ -450,6 +457,13 @@ object Strings {
         StringKey.PAUSE_EXIT_TIME_TRIAL   to "Exit Time Trial",
         StringKey.PAUSE_ENTER_TIME_TRIAL  to "▶ Time Trial",
         StringKey.PAUSE_KEY_ESC           to "Esc",
+
+        // Hub tutorial overlay (T-137) — shown once on first Sky Sanctuary entry
+        StringKey.TUTORIAL_TITLE          to "WELCOME",
+        StringKey.TUTORIAL_HINT_MOVE      to "Move with A/D, Jump with SPACE",
+        StringKey.TUTORIAL_HINT_SWAP      to "Swap character with Q to use water-cycle abilities",
+        StringKey.TUTORIAL_HINT_PORTAL    to "Walk into a portal to enter a world",
+        StringKey.TUTORIAL_DISMISS_HINT   to "[ press any key to continue ]",
 
         // Stats screen
         StringKey.STATS_TITLE                 to "STATS",
