@@ -28,6 +28,7 @@ import com.sohai.platformer.FontManager
 import com.sohai.platformer.rendering.ParallaxBackground
 import com.sohai.platformer.rendering.ParallaxTheme
 import com.sohai.platformer.rendering.ParticleSystem
+import com.sohai.platformer.rendering.ScreenShake
 import com.sohai.platformer.rendering.SpriteFactory
 import com.sohai.platformer.rendering.TileRenderer
 import com.sohai.platformer.rendering.TilesetRegistry
@@ -233,6 +234,23 @@ class LevelRenderer(
      */
     fun renderWorld(cleanseRatio: Float, currentCharacter: String, projectiles: List<Projectile> = emptyList()) {
         refreshPalette()
+
+        // T-116: advance the screen-shake clock and offset the camera in-place
+        // before computing the projection matrix. The offset is reverted at the
+        // end of this method so [camera.position] is byte-identical to its
+        // pre-render value (no drift over repeated frames; game logic that
+        // reads camera.position sees an unaffected world).
+        ScreenShake.update(Gdx.graphics.deltaTime)
+        val shakeOffset   = ScreenShake.offset()
+        val shakeOffsetX  = shakeOffset.x
+        val shakeOffsetY  = shakeOffset.y
+        val hasShake      = shakeOffsetX != 0f || shakeOffsetY != 0f
+        if (hasShake) {
+            camera.position.x += shakeOffsetX
+            camera.position.y += shakeOffsetY
+            camera.update()
+        }
+
         shapeRenderer.projectionMatrix = camera.combined
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
 
@@ -450,6 +468,14 @@ class LevelRenderer(
 
         shapeRenderer.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
+
+        // T-116: revert the shake offset so camera.position never drifts
+        // across frames. Pair with the apply at the top of renderWorld.
+        if (hasShake) {
+            camera.position.x -= shakeOffsetX
+            camera.position.y -= shakeOffsetY
+            camera.update()
+        }
     }
 
     /** Draws the player sprite using [SpriteBatch]. Handles flashing and Zephyr tint. */

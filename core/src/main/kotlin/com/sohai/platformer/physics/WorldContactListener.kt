@@ -11,7 +11,15 @@ import com.sohai.platformer.entities.PlayerController
 import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.entities.StormSentinel
+import com.sohai.platformer.rendering.ScreenShake
 import com.sohai.platformer.Constants
+
+/**
+ * Tunable constants for screen-shake feedback (T-116). Kept here so the
+ * contact callbacks read as plain magic-number-free trigger calls.
+ */
+private const val SHAKE_AMPLITUDE = 4f
+private const val SHAKE_DURATION  = 0.15f
 
 class WorldContactListener : ContactListener {
     override fun beginContact(contact: Contact) {
@@ -55,10 +63,14 @@ class WorldContactListener : ContactListener {
             when {
                 udA is WaterDroplet && udB == "boss_sentinel" -> {
                     (fixB.body.userData as? StormSentinel)?.takeDamage()
+                    // T-116: boss hit-confirm — small kick on every damage tick.
+                    // ScreenShake.trigger() honours reducedMotion internally.
+                    ScreenShake.trigger(SHAKE_AMPLITUDE, SHAKE_DURATION)
                     udA.destroy()
                 }
                 udB is WaterDroplet && udA == "boss_sentinel" -> {
                     (fixA.body.userData as? StormSentinel)?.takeDamage()
+                    ScreenShake.trigger(SHAKE_AMPLITUDE, SHAKE_DURATION)
                     udB.destroy()
                 }
             }
@@ -102,6 +114,9 @@ class WorldContactListener : ContactListener {
                     enemy.takeDamage(enemy.hp)
                     enemy.wasStomped = true
                     player.body.setLinearVelocity(player.body.linearVelocity.x, 5f)
+                    // T-116: stomp-defeat kick — pairs with T-098 hit-flash for
+                    // full hit-feedback. trigger() honours reducedMotion internally.
+                    ScreenShake.trigger(SHAKE_AMPLITUDE, SHAKE_DURATION)
                 } else if (!player.isFlashing) {
                     // Lateral contact: kill the player
                     player.isDead = true
