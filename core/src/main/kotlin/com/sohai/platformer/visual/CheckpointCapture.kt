@@ -70,6 +70,7 @@ object CheckpointCapture {
         // a live GL context; in the unlikely event Gdx.graphics is null (e.g.
         // headless test harness flips the flag on) we still want to swallow.
         var pixmap: Pixmap? = null
+        var flipped: Pixmap? = null
         try {
             @Suppress("DEPRECATION")  // mirrors ScreenshotWriter — pinned 1.x libGDX.
             pixmap = ScreenUtils.getFrameBufferPixmap(
@@ -77,13 +78,18 @@ object CheckpointCapture {
                 Gdx.graphics.backBufferWidth,
                 Gdx.graphics.backBufferHeight,
             )
+            // GL framebuffer is bottom-up; Pixmap/PNG are top-down. Without
+            // this flip the saved PNG renders upside down. Verified empirically
+            // 2026-05-14 — the smoke-capture's mid-jump output had its HUD text
+            // inverted ("dewS" / "noitcA") until this flip was added.
+            flipped = flipY(pixmap)
             val dir = File(OUT_DIR_PATH)
             if (!dir.exists() && !dir.mkdirs()) {
                 Gdx.app?.error("CheckpointCapture", "mkdirs failed for ${dir.absolutePath}")
                 return
             }
             val out = File(dir, "$sanitized.png")
-            PixmapIO.writePNG(FileHandle(out), pixmap)
+            PixmapIO.writePNG(FileHandle(out), flipped)
             Gdx.app?.log("CheckpointCapture", "captured \"$name\" -> ${out.absolutePath}")
         } catch (t: Throwable) {
             try {
@@ -97,7 +103,27 @@ object CheckpointCapture {
             } catch (_: Throwable) {
                 // Tolerate double-dispose or mock disposal.
             }
+            try {
+                flipped?.dispose()
+            } catch (_: Throwable) {
+                // Tolerate double-dispose.
+            }
         }
+    }
+
+    /**
+     * Vertically flip a Pixmap. Returns a new Pixmap; caller owns the disposal.
+     * Used to convert OpenGL bottom-up framebuffer pixels to PNG top-down rows.
+     */
+    private fun flipY(src: Pixmap): Pixmap {
+        val w = src.width
+        val h = src.height
+        val out = Pixmap(w, h, src.format)
+        out.blending = Pixmap.Blending.None
+        for (y in 0 until h) {
+            out.drawPixmap(src, 0, h - 1 - y, 0, y, w, 1)
+        }
+        return out
     }
 
     /**
