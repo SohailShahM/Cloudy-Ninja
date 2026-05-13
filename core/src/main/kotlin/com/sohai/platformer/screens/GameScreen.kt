@@ -356,6 +356,9 @@ class GameScreen(
         isPaused = paused
         // T-063: replay the 0.2s fade-in each time the overlay is shown.
         if (paused) pauseOverlay.resetFade()
+        // T-117: dip music while the pause overlay is up so the menu reads cleanly,
+        // restore on close. duck()/unduck() are idempotent — rapid toggles collapse.
+        if (paused) MusicManager.duck() else MusicManager.unduck()
         Gdx.input.inputProcessor = if (paused) pauseOverlay.stage else hud.stage
     }
 
