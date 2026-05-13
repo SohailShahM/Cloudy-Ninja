@@ -175,3 +175,93 @@ Quick session-end record:
 - Education Pack provides Pro = 3,000 min/mo for private, but the user had already burned the full 3,000 this cycle via this session's ~30 PRs of CI activity.
 - Resolution: added proprietary LICENSE + NOTICE.md (acknowledging Kenney CC0), flipped back to public. Public repos have unlimited Actions, so the wall is gone.
 - `docs/SELF_HOSTED_RUNNER.md` setup guide is on main as reference for future privacy moves — if going private again, set up self-hosted before flipping.
+
+---
+
+## 2026-05-13: gh issue edit --add-assignee falls back to repo owner
+
+**Symptom:** Trying to assign a Copilot issue via `gh issue edit --add-assignee @copilot` (or `Copilot`) silently re-assigns the issue creator (SohailShahM) instead.
+
+**Cause:** `gh` resolves the unknown handle, fails the lookup quietly, and defaults to the repo owner rather than erroring out.
+
+**Fix:** Use the exact bot handle: `gh issue edit N --add-assignee copilot-swe-agent`, then `gh issue edit N --remove-assignee SohailShahM` to clean up the wrong fallback. Or assign via the GitHub web UI.
+
+---
+
+## 2026-05-13: gh pr close && reopen deletes in-flight CI on bot PRs
+
+**Symptom:** Closing then reopening a Copilot-authored PR (to "kick" CI) makes the existing `action_required` runs vanish and does not trigger a fresh CI run.
+
+**Cause:** `pull_request.reopened` workflow trigger does not fire for bot actors on same-repo PRs, while the close still tears down the queued/required runs.
+
+**Fix:** Don't close/reopen Copilot PRs. If CI is gated on first-time-contributor approval, surface to the user for UI-side approval instead.
+
+---
+
+## 2026-05-13: ai-smoke.yml doesn't trigger on draft → ready_for_review
+
+**Symptom:** Promoting a Copilot draft PR to "ready for review" doesn't kick CI; no checks queue.
+
+**Cause:** `.github/workflows/ai-smoke.yml`'s `pull_request` trigger uses default activity types (`opened, synchronize, reopened`) and omits `ready_for_review`.
+
+**Fix:** Have the bot push a new commit to retrigger via `synchronize`, or add `ready_for_review` to the workflow's `on.pull_request.types` (CI-policy change — surface to user).
+
+---
+
+## 2026-05-13: Worktree sub-agents must edit under the worktree path
+
+**Symptom:** Sub-agent dispatched with `isolation: worktree` made edits that silently missed recently-merged work; diffs looked stale.
+
+**Cause:** Worktree sub-agents run under `.claude/worktrees/agent-<id>/...`, but the main-repo working copy can be dozens of commits behind. Editing the main-repo path bypasses the worktree's up-to-date checkout. T-117 agent hit this and recovered.
+
+**Fix:** Always operate under the worktree path the harness gave you. Verify with `pwd` + `git log -1` at session start before editing.
+
+---
+
+## 2026-05-13: Dead sub-agents — claim without implementation
+
+**Symptom:** Three sub-agents this session (predicates refactor, T-098, T-104) pushed a `claim T-XXX` commit to main but never pushed any implementation work. Branch exists on origin with only the claim commit, hours old.
+
+**Cause:** Sub-agent processes die silently mid-task — no error surfaced to the parent, no BLOCKER.md written.
+
+**Fix:** On re-dispatch, brief the agent explicitly that this is a re-dispatch, instruct it NOT to re-claim (update the Agent line on the existing `In Progress` block instead), and force-remove the dead worktree if its lock blocks branch reuse.
+
+---
+
+## 2026-05-13: actions/runs/{id}/approve returns 404 for same-repo bot PRs
+
+**Symptom:** `gh api repos/.../actions/runs/{id}/approve -X POST` returns 404 on Copilot PRs stuck in `action_required`.
+
+**Cause:** The approve endpoint only works for fork PRs. Same-repo bot PRs (Copilot) aren't covered by this API.
+
+**Fix:** Approve runs in the Actions UI tab on each run, or change repo Settings → Actions → "Require approval for first-time contributors" policy. There is no CLI path.
+
+---
+
+## 2026-05-13: gh pr merge --admin --squash is silent on success
+
+**Symptom:** `gh pr merge N --admin --squash --delete-branch` returns with no stdout/stderr; looks like nothing happened.
+
+**Cause:** Expected `gh` behavior — admin-merge prints nothing on success.
+
+**Fix:** Verify with `git log -1 origin/main` after running. Don't retry the merge based on silent output.
+
+---
+
+## 2026-05-13: TASKS.md is a contention point under parallel claims
+
+**Symptom:** When 4+ sub-agents claim simultaneously, several rebase rounds happen during the `claim T-XXX` push.
+
+**Cause:** All claim commits target the same file (`TASKS.md`); concurrent pushes race for the same line range.
+
+**Fix:** Expected behavior — each agent re-syncs main, re-applies their claim block, force-pushes. Conflicts almost always resolve cleanly because each edits a different block. No mitigation needed beyond patience.
+
+---
+
+## 2026-05-13: Manual exception verification leaves crash artifacts
+
+**Symptom:** T-115's sub-agent threw a real exception to verify the crash handler, producing `C:\Users\Radmin\.cloudy-ninja\crashes\crash-20260513-085452.log` (512 bytes).
+
+**Cause:** Crash reporter writes to user-home; manual verification paths aren't sandboxed.
+
+**Fix:** Harmless; safe to delete. Future verifications should prefer unit tests over live exception throws, or clean up the artifact after.
