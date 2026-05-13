@@ -280,13 +280,30 @@ class LevelRenderer(
      * the zoom-out, not just Laya. This is by design — Ebo's double-jump
      * could also clear the top of small rooms.
      *
-     * Like the shake + look-ahead offsets, the zoom is applied at the top of
-     * [renderWorld] and reverted at the bottom so [camera.viewportHeight] is
-     * byte-identical to its caller-set value between frames (matters for
-     * [LevelRunState.update]'s position clamping which reads
-     * `camera.viewportHeight`).
+     * T-209: zoom is applied at the top of [renderWorld] and reverted by
+     * [revertCameraZoom], which the caller MUST invoke after all
+     * world-space rendering (player sprite, portal labels, dynamic
+     * lighting). Pre-T-209 the revert happened inside [renderWorld], which
+     * meant the player sprite and lighting were drawn at the BASE viewport
+     * projection while the world geometry was drawn zoomed — the player
+     * sprite would clip out of the visible area during a high Wind Dash
+     * even though the world correctly zoomed out to keep its surroundings
+     * on-screen. Deferring the revert keeps the zoomed projection active
+     * across the whole world-space stack so all layers stay in sync.
      */
     private var currentZoomMultiplier: Float = 1f
+
+    /**
+     * T-209: tracks whether the dynamic zoom-out is currently applied to
+     * [camera] but not yet reverted. Set inside [renderWorld] when the
+     * zoom multiplier is non-1, cleared by [revertCameraZoom]. Guards
+     * against a double-revert if a caller forgets the ordering, and lets
+     * tests query the renderer's intent without inspecting Box2D state.
+     */
+    private var zoomApplied: Boolean = false
+
+    /** T-209: test-only readout of the deferred-revert flag. */
+    internal fun isZoomAppliedForTest(): Boolean = zoomApplied
 
     private fun refreshPalette() {
         val s = SettingsManager.load()
@@ -373,6 +390,13 @@ class LevelRenderer(
         if (hasZoom) {
             camera.viewportWidth  *= currentZoomMultiplier
             camera.viewportHeight *= currentZoomMultiplier
+            // T-209: flag the deferred revert so [revertCameraZoom] knows to
+            // restore the viewport at end-of-frame. Without the deferral,
+            // the player sprite (drawn after this method by the caller)
+            // would use the BASE projection while the world used the zoomed
+            // projection — making the sprite clip out of view exactly when
+            // the zoom was supposed to keep it visible.
+            zoomApplied = true
         }
 
         if (hasOffset || hasZoom) {
@@ -627,24 +651,54 @@ class LevelRenderer(
         shapeRenderer.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
-        // T-116 + T-144 + T-176: revert the combined (look-ahead + shake)
-        // offset AND the dynamic zoom-out so camera.position and
-        // camera.viewport* never drift across frames. Pair with the apply at
-        // the top of renderWorld.
+        // T-116 + T-144: revert the combined (look-ahead + shake) offset
+        // so camera.position doesn't drift across frames. Pair with the
+        // apply at the top of renderWorld. (Note: pre-T-209 the dynamic
+        // zoom was reverted here too — that was a bug; see [renderWorld]'s
+        // zoom block above and [revertCameraZoom]'s docs for why the zoom
+        // revert is now deferred until the caller has finished the
+        // world-space stack.)
         if (hasOffset) {
             camera.position.x -= totalOffsetX
             camera.position.y -= totalOffsetY
-        }
-        if (hasZoom) {
-            // Divide by the same multiplier we multiplied by — exactly
-            // reverses the operation so the next frame's snapshot reads the
-            // original baseline.
-            camera.viewportWidth  /= currentZoomMultiplier
-            camera.viewportHeight /= currentZoomMultiplier
-        }
-        if (hasOffset || hasZoom) {
             camera.update()
         }
+    }
+
+    /**
+     * T-209: revert the dynamic zoom-out applied by [renderWorld]. The
+     * caller MUST invoke this exactly once per frame, after every
+     * world-space draw that needs to share the zoomed projection — that
+     * means after the player sprite, portal labels, and dynamic lighting.
+     * Reverts `camera.viewportWidth/Height` to the values they had when
+     * [renderWorld] was called and re-runs `camera.update()` so the next
+     * frame's [LevelRunState] position-clamping sees the pre-zoom viewport.
+     *
+     * If [renderWorld] did not zoom this frame (player nowhere near the
+     * viewport edge), this is a cheap no-op gated on [zoomApplied].
+     *
+     * Before T-209 the revert happened at the bottom of [renderWorld]
+     * itself, which meant the player sprite and the rayHandler lighting —
+     * both drawn after [renderWorld] returns — used the BASE projection
+     * while the world geometry inside [renderWorld] used the ZOOMED
+     * projection. Concretely: when Laya's Wind Dash launched the player
+     * ~8m above the camera centre, the world correctly zoomed out (to
+     * keep its surroundings visible) but the player sprite kept the
+     * un-zoomed projection — so the sprite clipped out of the visible
+     * area even though the zoom-out was specifically intended to keep
+     * the player on-screen. That made the T-176 slow-descent glide look
+     * "not implemented yet" to the user (it was happening, just above
+     * the visible area).
+     */
+    fun revertCameraZoom() {
+        if (!zoomApplied) return
+        // Divide by the same multiplier we multiplied by — exactly reverses
+        // the operation so the next frame's snapshot reads the original
+        // baseline.
+        camera.viewportWidth  /= currentZoomMultiplier
+        camera.viewportHeight /= currentZoomMultiplier
+        camera.update()
+        zoomApplied = false
     }
 
     /**
