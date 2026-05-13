@@ -266,19 +266,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add `volMaster: Float = 1.0f` to `Settings`. In the Audio section, render this as the FIRST slider (above the existing Music/SFX/UI sliders). Effective volume becomes `volMaster * volBus` — both managers multiply through. Add a small "mute" toggle next to the master slider (clamp to 0).
 - **Done when:** Master slider visible above per-bus; dragging it scales all three buses; mute toggle works; persists; smoke CI passes.
 
-### T-106 — Extract `LevelEntityFactory` from GameScreen  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** Code health — `GameScreen.kt` grew by 30+ lines per new entity type (T-029 SmogSprite, T-034 StormSentinel, T-062 DriftHusk all added parallel instantiation blocks)
-- **Files:** `screens/GameScreen.kt`, `levels/LevelEntityFactory.kt` (new)
-- **Goal:** Extract the entity-instantiation logic out of `GameScreen.init` (currently lines ~194–250 with three parallel `if (level is TmxLevel) { for (def in level.getXxx()) { … } }` blocks for enemies + boss + drift husks) into a new `LevelEntityFactory.spawn(level, world): SpawnedEntities` data class. `GameScreen` becomes a one-liner: `val spawned = LevelEntityFactory.spawn(level, world)`. Future enemy types (T-046's sprite work, future ticket additions) plug in via the factory, not via more parallel blocks in `GameScreen`.
-- **Done when:** `GameScreen.init` is shorter; entity behavior unchanged; smoke CI passes; future entity additions need no GameScreen edit.
-
 <!-- ═══════════════════════════════════════════════════════════════
      SPRINT D — "Alpha launch readiness"
      T-109..T-120 batch (planned 2026-05-12 by claude-code-opus).
@@ -437,6 +424,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-106 — Extract `LevelEntityFactory` from GameScreen  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-106-level-entity-factory
+- **Started:** 2026-05-13
+- **Depends on:** _none_
+- **GDD ref:** Code health — `GameScreen.kt` grew by 30+ lines per new entity type (T-029 SmogSprite, T-034 StormSentinel, T-062 DriftHusk all added parallel instantiation blocks)
+- **Files:** `screens/GameScreen.kt`, `levels/LevelEntityFactory.kt` (new)
+- **Goal:** Extract the entity-instantiation logic out of `GameScreen.init` (currently lines ~194–250 with three parallel `if (level is TmxLevel) { for (def in level.getXxx()) { … } }` blocks for enemies + boss + drift husks) into a new `LevelEntityFactory.spawn(level, world): SpawnedEntities` data class. `GameScreen` becomes a one-liner: `val spawned = LevelEntityFactory.spawn(level, world)`. Future enemy types (T-046's sprite work, future ticket additions) plug in via the factory, not via more parallel blocks in `GameScreen`.
+- **Done when:** `GameScreen.init` is shorter; entity behavior unchanged; smoke CI passes; future entity additions need no GameScreen edit.
 
 ### T-112 — Auto-pause on window focus loss  [P3]
 - **Status:** In Progress
