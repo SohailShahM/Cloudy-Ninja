@@ -7,8 +7,17 @@ import com.sohai.platformer.Constants
 /**
  * A collectible eco-token placed in the world.
  * The player walks through the sensor to collect it; score is tracked in GameScreen.
+ *
+ * @param isHidden T-107: hidden ("golden") token. Rendered with a golden tint
+ *                 and tracked separately in
+ *                 [com.sohai.platformer.persist.GameState.collectedHiddenTokens].
  */
-class EcoToken(world: World, xMeters: Float, yMeters: Float) {
+class EcoToken(
+    world: World,
+    xMeters: Float,
+    yMeters: Float,
+    val isHidden: Boolean = false
+) {
     val body: Body
     var isCollected = false
     private var animTime = 0f

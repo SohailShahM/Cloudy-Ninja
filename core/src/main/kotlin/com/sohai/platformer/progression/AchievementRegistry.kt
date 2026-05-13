@@ -13,7 +13,8 @@ object AchievementRegistry {
         Achievement("stomp_10",        "Stomper",         "Stomp 10 enemies"),
         Achievement("boss_defeated",   "Storm Breaker",   "Defeat the Storm Sentinel"),
         Achievement("world_1_clear",   "The First Rain",  "Complete World 1"),
-        Achievement("all_clear",       "Eco Restored",    "Complete all worlds")
+        Achievement("all_clear",       "Eco Restored",    "Complete all worlds"),
+        Achievement("collector",       "Collector",       "Find all 3 hidden eco-tokens")
     )
 
     fun get(id: String): Achievement? = ALL.firstOrNull { it.id == id }

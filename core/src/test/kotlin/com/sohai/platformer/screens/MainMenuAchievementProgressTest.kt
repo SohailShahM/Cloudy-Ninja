@@ -150,11 +150,11 @@ class MainMenuAchievementProgressTest : BehaviorSpec({
     given("AchievementRegistry.ALL") {
         `when`("the achievement total is read") {
             then("the registry's size is what drives the label total") {
-                // Sanity: ticket assumes 12, but code must use the registry.
-                // If this assertion fails because new achievements were added,
-                // the test should NOT be the failing constraint — the label
-                // already reads AchievementRegistry.ALL.size dynamically.
-                AchievementRegistry.ALL.size shouldBe 12
+                // Sanity: ticket originally assumed 12, T-107 bumped to 13;
+                // the label code already reads AchievementRegistry.ALL.size
+                // dynamically (verified in MainMenuScreen.kt:251), so this
+                // assertion just tracks the registry's current cardinality.
+                AchievementRegistry.ALL.size shouldBe 13
             }
         }
     }

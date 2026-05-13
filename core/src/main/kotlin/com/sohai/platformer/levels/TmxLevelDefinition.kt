@@ -27,6 +27,9 @@ import com.sohai.platformer.world.ObstacleManager
  * @param levelWidthPx  Approximate level width in virtual pixels (used to clamp camera).
  * @param exitXPx       X position of the level-exit sensor in virtual pixels.
  * @param ecoTokens     Eco-token positions in virtual pixels (converted to meters internally).
+ * @param hiddenEcoTokens  Hidden ("golden") eco-token positions in virtual pixels (T-107).
+ *                          Tracked independently across runs; collecting all 3 across
+ *                          level1/2/3 unlocks the `collector` achievement.
  * @param snapshots     Pairs of (CloudAtlasLibrary id, x px, y px) for snapshot pickups.
  * @param checkpoints   Static checkpoint definitions for this level.
  * @param enemies       Enemy placement definitions for this level.
@@ -41,6 +44,14 @@ data class TmxLevelDefinition(
     val levelWidthPx: Float,
     val exitXPx: Float,
     val ecoTokens: List<Vector2> = emptyList(),
+    /**
+     * T-107: Hidden ("golden") eco-tokens. Rendered with a golden tint to
+     * visually distinguish from regular eco-tokens. Tracked separately in
+     * [com.sohai.platformer.persist.GameState.collectedHiddenTokens] across
+     * runs; collecting all 3 across level1/2/3 unlocks the `collector`
+     * achievement.
+     */
+    val hiddenEcoTokens: List<Vector2> = emptyList(),
     val snapshots: List<SnapshotDef> = emptyList(),
     val checkpoints: List<LevelCheckpoint> = emptyList(),
     val enemies: List<EnemyDef> = emptyList(),
@@ -168,6 +179,9 @@ class TmxLevel(private val def: TmxLevelDefinition) : Level() {
     override fun getEcoTokenPositions(): List<Vector2> =
         def.ecoTokens.map { Vector2(it.x / Constants.PPM, it.y / Constants.PPM) }
 
+    override fun getHiddenEcoTokenPositions(): List<Vector2> =
+        def.hiddenEcoTokens.map { Vector2(it.x / Constants.PPM, it.y / Constants.PPM) }
+
     fun getEnemyDefs(): List<EnemyDef> = def.enemies
 
     fun getDriftHuskDefs(): List<DriftHuskDef> = def.driftHusks
@@ -229,6 +243,12 @@ object LevelRegistry {
                 Vector2(1610f, 450f),
                 Vector2(1800f, 410f)
             ),
+            // T-107: Hidden eco-token, ceiling alcove above the late-level
+            // 1610/1800 token cluster. Requires a well-timed wall-jump off
+            // the right edge to reach; out of normal autopilot trajectory.
+            hiddenEcoTokens = listOf(
+                Vector2(1700f, 640f)
+            ),
             enemies = listOf(
                 // Three Smog Sprites patrolling ground sections of Level 1
                 EnemyDef("smog_sprite", 400f, 60f,  300f,  550f),
@@ -267,6 +287,13 @@ object LevelRegistry {
                 Vector2(1550f,  180f),
                 Vector2(1720f,  230f),
                 Vector2(1920f,  200f)
+            ),
+            // T-107: Hidden eco-token tucked in the upper-left ceiling, well
+            // above the regular token path. Requires a Wind Dash from the
+            // mid-level 620/820 platform cluster to reach; autopilot's
+            // rightward sweep won't find it.
+            hiddenEcoTokens = listOf(
+                Vector2( 470f, 650f)
             ),
             // T-062: Drift Husks float above the mid-level token run and
             // drop on the player as they pass under. First husk hovers
@@ -324,6 +351,13 @@ object LevelRegistry {
                 Vector2(2310f, 265f),
                 Vector2(2550f, 370f),
                 Vector2(2710f, 265f)
+            ),
+            // T-107: Hidden eco-token at the top of the wall-jump shaft (Ten
+            // zone), well above cp2 at y=410. Reachable only by chaining
+            // wall-jumps past the normal sky-landing exit. Out of autopilot
+            // trajectory which heads straight for the boss arena.
+            hiddenEcoTokens = listOf(
+                Vector2(1280f, 660f)
             ),
             bossDef = BossDef(
                 type         = "storm_sentinel",

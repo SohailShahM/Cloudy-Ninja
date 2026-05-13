@@ -205,6 +205,12 @@ class LevelRenderer(
         val tmpWindCol          = Color(1f,    1f,    1f,    1f)
         val GROUND_SHADOW       = Color(0.28f, 0.29f, 0.32f, 1f)
         val MP_SHADOW           = Color(0.30f, 0.18f, 0.06f, 1f)
+        // T-107: hidden ("golden") eco-token tint. Body is the spec-suggested
+        // RGBA(1.0, 0.85, 0.3, 1.0); glow halo is a softer/translucent version
+        // of the same hue so the token reads as "special" without needing new
+        // art assets. Same shape as a normal token; only colour differs.
+        val HIDDEN_TOKEN_BODY   = Color(1.00f, 0.85f, 0.30f, 1f)
+        val HIDDEN_TOKEN_GLOW   = Color(1.00f, 0.88f, 0.40f, 0.45f)
     }
 
     /** Active mode-sensitive palette; resolved from SettingsManager at render time. */
@@ -411,12 +417,23 @@ class LevelRenderer(
             shapeRenderer.circle(cp.body.position.x, cp.body.position.y, r * 0.35f)
         }
 
-        // Eco-tokens
-        shapeRenderer.color = palette.TOKEN
+        // Eco-tokens — regular = palette.TOKEN; hidden = golden tint (T-107).
+        // We draw hidden tokens with a slightly larger glow halo so they're
+        // visually distinct on top of the colour shift (the player who finds
+        // them gets unambiguous feedback that this one was "special").
         for (token in ecoTokens) {
-            if (!token.isCollected) {
-                val p = token.body.position
-                shapeRenderer.circle(p.x, p.y, token.getAnimatedRadius())
+            if (token.isCollected) continue
+            val p = token.body.position
+            val r = token.getAnimatedRadius()
+            if (token.isHidden) {
+                // Golden tint, ~RGBA(1.0, 0.85, 0.3, 1.0) per spec
+                shapeRenderer.color = HIDDEN_TOKEN_GLOW
+                shapeRenderer.circle(p.x, p.y, r * 1.5f)
+                shapeRenderer.color = HIDDEN_TOKEN_BODY
+                shapeRenderer.circle(p.x, p.y, r)
+            } else {
+                shapeRenderer.color = palette.TOKEN
+                shapeRenderer.circle(p.x, p.y, r)
             }
         }
 

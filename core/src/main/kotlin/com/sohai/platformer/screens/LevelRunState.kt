@@ -372,9 +372,13 @@ class LevelRunState(
             if (isTimeTrial) hud.updateStopwatch(levelTimer)
         }
 
+        // HUD progress uses regular (non-hidden) eco-tokens only — hidden
+        // tokens are tracked separately (T-107) and excluded from the
+        // "collect all eco-tokens" milestone displayed on the HUD bar.
         val totalEco = level.getEcoTokenPositions().size
         if (totalEco > 0) {
-            val collected = totalEco - ecoTokens.size
+            val regularRemaining = ecoTokens.count { !it.isHidden }
+            val collected = totalEco - regularRemaining
             hud.updateProgress(collected.toFloat() / totalEco.toFloat())
         }
 
@@ -592,10 +596,30 @@ class LevelRunState(
                 renderer.spawnTokenSparkle(it.body.position.x, it.body.position.y)
                 pendingBodyDestroy.add(it.body)
             }
+
+            // T-107: route hidden ("golden") eco-tokens to the cross-run
+            // persistence path and fire the `collector` achievement when all
+            // 3 are collected (across runs — Set add is idempotent and
+            // tryUnlock guards against double-firing).
+            val collectedHidden = collected.filter { it.isHidden }
+            if (collectedHidden.isNotEmpty()) {
+                val state = SaveManager.loadGame(saveSlotFile)
+                val newIds = state.collectedHiddenTokens + level.id
+                if (newIds != state.collectedHiddenTokens) {
+                    SaveManager.saveGame(state.copy(collectedHiddenTokens = newIds), saveSlotFile)
+                }
+                // 3 = level1 + level2 + level3.
+                if (newIds.size >= 3) tryUnlock("collector")
+            }
+
             ecoTokens.removeAll(collected.toSet())
 
-            // Achievement: eco_sweep — all tokens collected in this level for the first time this run
-            if (!achievEcoSweepFired && ecoTokens.isEmpty() && level.getEcoTokenPositions().isNotEmpty()) {
+            // Achievement: eco_sweep — all REGULAR tokens collected in this level
+            // for the first time this run. Hidden tokens are tracked separately
+            // (T-107) and excluded from eco_sweep + HUD progress so finding the
+            // hidden token isn't required for the "all eco-tokens" milestone.
+            val regularRemaining = ecoTokens.any { !it.isHidden }
+            if (!achievEcoSweepFired && !regularRemaining && level.getEcoTokenPositions().isNotEmpty()) {
                 achievEcoSweepFired = true
                 tryUnlock("eco_sweep")
             }

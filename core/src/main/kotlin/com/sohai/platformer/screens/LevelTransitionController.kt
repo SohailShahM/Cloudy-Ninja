@@ -60,8 +60,13 @@ class LevelTransitionController(
         SoundManager.play("level_complete")
         screenFade.fadeToBlack(speed = 0.4f)
 
+        // T-107: hidden tokens are excluded from the level-complete overlay
+        // counter to keep the displayed total aligned with the visible-from-
+        // the-start "regular" eco-tokens. The hidden-token achievement
+        // (`collector`) is tracked separately across runs.
         val totalEco    = level.getEcoTokenPositions().size
-        val ecoCollected = totalEco - ecoTokens.size
+        val regularRemaining = ecoTokens.count { !it.isHidden }
+        val ecoCollected = totalEco - regularRemaining
         val overlay = LevelCompleteOverlay(
             levelName    = level.name,
             timeSeconds  = levelTimer,

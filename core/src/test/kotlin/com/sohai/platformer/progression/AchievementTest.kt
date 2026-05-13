@@ -110,8 +110,8 @@ class AchievementTest : BehaviorSpec({
         `when`("the full list is inspected") {
             val all = AchievementRegistry.ALL
 
-            then("it contains exactly 12 achievements") {
-                all shouldHaveSize 12
+            then("it contains exactly 13 achievements") {
+                all shouldHaveSize 13
             }
 
             then("every achievement has a non-blank id") {
@@ -136,11 +136,13 @@ class AchievementTest : BehaviorSpec({
                 titles.toSet().size shouldBe titles.size
             }
 
-            then("the canonical 12 achievement ids are all present") {
+            then("the canonical 13 achievement ids are all present") {
                 val expectedIds = setOf(
                     "first_jump", "first_cleanse", "eco_sweep", "no_death_run",
                     "speed_demon", "atlas_half", "atlas_full", "first_enemy",
-                    "stomp_10", "boss_defeated", "world_1_clear", "all_clear"
+                    "stomp_10", "boss_defeated", "world_1_clear", "all_clear",
+                    // T-107: hidden eco-token meta-achievement
+                    "collector"
                 )
                 val actualIds = all.map { it.id }.toSet()
                 actualIds shouldBe expectedIds
@@ -199,6 +201,25 @@ class AchievementTest : BehaviorSpec({
             then("it refers to World 1") {
                 a.shouldNotBeNull()
                 (a.desc.contains("World 1")) shouldBe true
+            }
+        }
+
+        `when`("inspecting collector's metadata") {
+            // T-107: meta-achievement for hidden eco-tokens. Description must
+            // advertise the '3' threshold matching the LevelRunState unlock
+            // site (newIds.size >= 3 → tryUnlock("collector")).
+            val a = AchievementRegistry.get("collector")
+            then("the achievement exists with the right title") {
+                a.shouldNotBeNull()
+                a.title shouldBe "Collector"
+            }
+            then("desc advertises the '3' threshold") {
+                a.shouldNotBeNull()
+                (a.desc.contains("3")) shouldBe true
+            }
+            then("desc mentions 'hidden' to differentiate from eco_sweep") {
+                a.shouldNotBeNull()
+                (a.desc.contains("hidden")) shouldBe true
             }
         }
 
