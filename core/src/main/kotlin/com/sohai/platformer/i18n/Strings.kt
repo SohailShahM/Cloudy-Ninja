@@ -103,6 +103,10 @@ enum class StringKey {
     ATLAS_LOCKED,
     ATLAS_BACK,
     ATLAS_SELECT_HINT,
+    // T-141: Cloud Atlas search/filter
+    ATLAS_SEARCH_PLACEHOLDER,
+    ATLAS_SEARCH_CLEAR,
+    ATLAS_SEARCH_NO_RESULTS,
 
     // ── Game-over overlay ────────────────────────────────────────────────────
     GAME_OVER_TITLE,
@@ -361,6 +365,10 @@ object Strings {
         StringKey.ATLAS_LOCKED       to "??? (locked)",
         StringKey.ATLAS_BACK         to "Back to Menu",
         StringKey.ATLAS_SELECT_HINT  to "Select a snapshot to read.",
+        // T-141: search/filter
+        StringKey.ATLAS_SEARCH_PLACEHOLDER to "Search snapshots…",
+        StringKey.ATLAS_SEARCH_CLEAR       to "Clear",
+        StringKey.ATLAS_SEARCH_NO_RESULTS  to "No entries match",
 
         // Game-over overlay
         StringKey.GAME_OVER_TITLE      to "SPIRIT EXHAUSTED",
