@@ -12,10 +12,11 @@ import kotlin.math.*
  * Follows the same WAV-writing pattern as [ProceduralSoundGenerator].
  * Output: `assets/audio/music/{trackId}.wav` — 16-bit mono PCM at 22,050 Hz.
  *
- * Three tracks are generated:
+ * Four tracks are generated:
  *  - `ambient_arid` — warm, low drones with occasional wind texture
  *  - `ambient_wind` — airy sweeps, high whistles
  *  - `ambient_eco`  — lush harmonics, water-like tones
+ *  - `ambient_menu` — soft harmonic pad for the main menu (T-134)
  */
 object ProceduralMusicGenerator {
 
@@ -30,6 +31,7 @@ object ProceduralMusicGenerator {
         writeIfMissing("audio/music/ambient_arid.wav", makeWav(ambientArid()))
         writeIfMissing("audio/music/ambient_wind.wav", makeWav(ambientWind()))
         writeIfMissing("audio/music/ambient_eco.wav",  makeWav(ambientEco()))
+        writeIfMissing("audio/music/ambient_menu.wav", makeWav(ambientMenu()))
     }
 
     /**
@@ -48,6 +50,7 @@ object ProceduralMusicGenerator {
             "ambient_arid" -> ambientArid()
             "ambient_wind" -> ambientWind()
             "ambient_eco"  -> ambientEco()
+            "ambient_menu" -> ambientMenu()
             else           -> return
         }
         writeIfMissing("audio/music/$trackId.wav", makeWav(samples))
@@ -244,6 +247,28 @@ object ProceduralMusicGenerator {
 
             val mix = pad + shimmer + drip + stream + hum
             mix * loopEnv(t, DURATION) * 0.60f
+        }
+    }
+
+    // ── Track 4: ambient_menu (T-134) ────────────────────────────────────────
+    // Soft harmonic pad for the main menu — gentler than ambient_arid (no wind
+    // bursts, no sub rumble) and more consonant (root + perfect fifth + octave +
+    // major tenth, all pure sines with slow LFOs). Final attenuation is 0.45
+    // vs. ambient_arid's 0.65 so the menu music sits behind UI sound effects.
+    private fun ambientMenu(): FloatArray {
+        val n = (RATE * DURATION).toInt()
+        return FloatArray(n) { i ->
+            val t = i.toFloat() / RATE
+            // Root A2 (110 Hz) + perfect fifth E3 (164.8) + octave A3 (220) +
+            // major tenth C#4 (277.2) — a slowly-breathing major-triad pad.
+            val root  = sine(110.0f,  t) * 0.18f * lfo(0.05f, t)
+            val fifth = sine(164.8f, t) * 0.13f * lfo(0.07f, t + 6f)
+            val oct   = sine(220.0f, t) * 0.10f * lfo(0.06f, t + 12f)
+            val tenth = sine(277.2f, t) * 0.07f * lfo(0.09f, t + 3f)
+            // Sparkle: high octave shimmer, very quiet, slow tremolo.
+            val sparkle = sine(880.0f, t) * 0.025f * lfo(0.11f, t + 8f)
+            val mix = root + fifth + oct + tenth + sparkle
+            mix * loopEnv(t, DURATION) * 0.45f
         }
     }
 }
