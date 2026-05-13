@@ -390,19 +390,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
      whose initial agent died silently.
 ═══════════════════════════════════════════════════════════════ -->
 
-### T-128 — Refactor achievement unlock predicates to pure functions  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`  *(re-spec from a 2026-05-13 spawn-task chip whose dispatched agent died silently)*
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-107  *(AchievementRegistry + LevelRunState contention — wait for T-107 to land first)*
-- **GDD ref:** HANDOFF.md source-side quirk #4 — predicate-firing tests need a source refactor
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt` (12+ inline `tryUnlock` sites), `core/src/main/kotlin/com/sohai/platformer/screens/LevelTransitionController.kt` (3 sites + duplicate `tryUnlock` helper), `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt` (1 site at L305 for `boss_defeated`), `core/src/main/kotlin/com/sohai/platformer/progression/AchievementRegistry.kt` (or new `AchievementPredicates.kt`), new test file
-- **Goal:** Extract each achievement's unlock condition into a pure function `(AchievementInputs) -> Boolean`. `AchievementInputs` data class carries `totalStomps`, `atlasSize`, `completedLevels`, `levelTimer`, `levelId`, `noDeathRun`, `unlockedAchievements: Set<String>`, `collectedHiddenTokens: Set<String>` (from T-107), etc. Add `evaluate(inputs, currentlyUnlocked): List<String>` orchestrator returning newly-firing achievement IDs. Rewrite call sites to build inputs and loop; keep `tryUnlock` itself (it's the impure toast+save side). Consolidate the two duplicate `tryUnlock` helpers.
-- **Done when:** Each predicate is testable headless without `Gdx.*`; behavior identical (no achievement fires earlier or later than before); test file covers each predicate with met/unmet/already-unlocked cases.
-- **Constraints:** **BEHAVIOR MUST STAY IDENTICAL.** Don't fix bugs as part of the refactor — surface them in LEARNINGS.md and QUESTIONS.md instead. Don't refactor T-107's `collector` predicate beyond what fits this pattern.
 
 ### T-130 — Death recap overlay  [P3]
 - **Status:** Todo
@@ -549,6 +536,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Goal:** Splash screen waits for first keypress OR mouse-click before transitioning to MainMenu (in addition to the existing 1s minimum + preload gate). When the gate fires, MusicManager.play() is allowed to start. Smoke mode bypasses this gate (already configured in T-104).
 - **Done when:** On desktop, splash shows a small "Press any key to continue" hint after the 1s minimum + preload complete. Key/click advances to MainMenu. Smoke CI passes unchanged.
 - **Constraints:** Don't break smoke. Don't add network calls. Hint text via Strings.kt new key `SPLASH_PRESS_ANY_KEY`.
+
+### T-128 — Refactor achievement unlock predicates to pure functions  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`  *(re-spec from a 2026-05-13 spawn-task chip whose dispatched agent died silently)*
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-128-predicates-refactor
+- **Started:** 2026-05-13
+- **Depends on:** T-107  *(AchievementRegistry + LevelRunState contention — wait for T-107 to land first)*
+- **GDD ref:** HANDOFF.md source-side quirk #4 — predicate-firing tests need a source refactor
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt` (12+ inline `tryUnlock` sites), `core/src/main/kotlin/com/sohai/platformer/screens/LevelTransitionController.kt` (3 sites + duplicate `tryUnlock` helper), `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt` (1 site at L305 for `boss_defeated`), `core/src/main/kotlin/com/sohai/platformer/progression/AchievementRegistry.kt` (or new `AchievementPredicates.kt`), new test file
+- **Goal:** Extract each achievement's unlock condition into a pure function `(AchievementInputs) -> Boolean`. `AchievementInputs` data class carries `totalStomps`, `atlasSize`, `completedLevels`, `levelTimer`, `levelId`, `noDeathRun`, `unlockedAchievements: Set<String>`, `collectedHiddenTokens: Set<String>` (from T-107), etc. Add `evaluate(inputs, currentlyUnlocked): List<String>` orchestrator returning newly-firing achievement IDs. Rewrite call sites to build inputs and loop; keep `tryUnlock` itself (it's the impure toast+save side). Consolidate the two duplicate `tryUnlock` helpers.
+- **Done when:** Each predicate is testable headless without `Gdx.*`; behavior identical (no achievement fires earlier or later than before); test file covers each predicate with met/unmet/already-unlocked cases.
+- **Constraints:** **BEHAVIOR MUST STAY IDENTICAL.** Don't fix bugs as part of the refactor — surface them in LEARNINGS.md and QUESTIONS.md instead. Don't refactor T-107's `collector` predicate beyond what fits this pattern.
 
 ### T-106 — Extract `LevelEntityFactory` from GameScreen  [P3]
 - **Status:** In Progress
