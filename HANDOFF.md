@@ -177,23 +177,17 @@ When AGV is quiet on a critical-path ticket, **re-tag it to `claude-code-sub-age
 
 ## Tooling gotchas learned THIS session (read before repeating)
 
-1. **`gh issue edit --add-assignee` falls back to repo owner.** Using `@copilot`, `Copilot`, or `copilot-swe-agent` all may silently re-assign the issue creator (SohailShahM). Workaround: `gh issue edit N --add-assignee copilot-swe-agent` (this DOES assign Copilot), then `gh issue edit N --remove-assignee SohailShahM` to clean up. Or use the web UI per LEARNINGS.md.
+Consolidated into `LEARNINGS.md` 2026-05-13 entries (T-148). Pointers:
 
-2. **`gh pr close && gh pr reopen` on a bot-authored PR DELETES in-flight CI runs without triggering new ones.** Don't do this on Copilot PRs. The original `action_required` runs vanish; the `reopen` doesn't fire a new `pull_request.reopened` workflow trigger for bot actors. Leave Copilot PRs alone if CI is gated — surface for user UI approval instead.
-
-3. **Workflow `ai-smoke.yml` does NOT include `ready_for_review` in its `pull_request` activity types** (defaults to `opened, synchronize, reopened`). Promoting a draft Copilot PR to "ready" does not trigger CI. If you need CI on a Copilot draft, the bot needs to push a new commit OR you need to add `ready_for_review` to the workflow trigger config (CI policy change — surface to user).
-
-4. **Worktree path gotcha:** when a sub-agent is dispatched with `isolation: worktree`, it runs under `.claude/worktrees/agent-<id>/...`, not under the main repo path. The main repo's working copy may be dozens of commits behind. Sub-agents must use the worktree path — edits to the main repo path silently miss recent merged work. (T-117 agent hit this; recovered.)
-
-5. **Dead sub-agents are real.** This session had THREE sub-agents die silently mid-task (predicates refactor, T-098, T-104). They claimed the ticket (pushed `claim T-XXX` to main) but never pushed implementation work. Detection: branch exists on origin but has only the claim commit, hours old. Recovery: re-dispatch with explicit "this is a re-dispatch" briefing, instruct agent NOT to re-claim (update Agent line on existing In-Progress block instead). Force-removing the dead worktree may be required if its lock blocks branch reuse.
-
-6. **`gh api repos/.../actions/runs/{id}/approve`** returns 404 for non-fork bot PRs. The endpoint only works for fork PRs. For same-repo bot PRs (Copilot), approval must come through repo Settings → Actions policy change or the Actions UI on each run.
-
-7. **`gh pr merge --admin --squash --delete-branch` returns silent (no stdout/stderr) on success.** Looks like nothing happened. Verify by `git log -1 origin/main` after.
-
-8. **TASKS.md is a contention point under parallel claims.** When 4+ sub-agents claim simultaneously, several rebase rounds are normal. Each agent re-syncs main, applies their claim block, force-pushes. Conflicts almost always resolve cleanly because each agent edits a different block.
-
-9. **Manual exception verification leaves artifacts in user's home.** T-115's sub-agent threw a real exception to verify the crash handler — produced `C:\Users\Radmin\.cloudy-ninja\crashes\crash-20260513-085452.log` (512 bytes, harmless, safe to delete).
+1. See LEARNINGS.md §gh issue edit --add-assignee falls back to repo owner
+2. See LEARNINGS.md §gh pr close && reopen deletes in-flight CI on bot PRs
+3. See LEARNINGS.md §ai-smoke.yml doesn't trigger on draft → ready_for_review
+4. See LEARNINGS.md §Worktree sub-agents must edit under the worktree path
+5. See LEARNINGS.md §Dead sub-agents — claim without implementation
+6. See LEARNINGS.md §actions/runs/{id}/approve returns 404 for same-repo bot PRs
+7. See LEARNINGS.md §gh pr merge --admin --squash is silent on success
+8. See LEARNINGS.md §TASKS.md is a contention point under parallel claims
+9. See LEARNINGS.md §Manual exception verification leaves crash artifacts
 
 ---
 
