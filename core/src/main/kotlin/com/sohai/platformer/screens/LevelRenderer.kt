@@ -26,8 +26,8 @@ import com.sohai.platformer.persist.SettingsManager
 import com.sohai.platformer.rendering.CharacterAnimator
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.rendering.CameraLookAhead
+import com.sohai.platformer.rendering.ColorRole
 import com.sohai.platformer.rendering.HighContrastPalette
-import com.sohai.platformer.rendering.HighContrastPalette.ColorRole
 import com.sohai.platformer.rendering.ParallaxBackground
 import com.sohai.platformer.rendering.ParallaxTheme
 import com.sohai.platformer.rendering.ParticleSystem
