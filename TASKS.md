@@ -115,17 +115,11 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Player reaches boss arena in Level 3, boss cycles attacks, can be defeated in 3 hits, defeat triggers level complete. Compile clean.
 
 ### T-035 — Audio bus sliders: music / sfx / ui  [P2]
-- **Status:** Todo
-- **Tool:** `copilot-agent`  *(autonomous from GitHub Issue)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-030
-- **GDD ref:** §18.4 ("Audio bus sliders")
-- **Files:** `persist/Settings.kt`, `screens/SettingsScreen.kt`, `audio/MusicManager.kt`, `audio/SoundManager.kt`
-- **Goal:** Add `volMusic: Float = 0.7f` and `volUi: Float = 0.9f` to `Settings` (existing `volSfx` stays). Replace the single SFX slider in `SettingsScreen` with three VisUI sliders labelled "Music", "SFX", "UI". On slider change: call `MusicManager.setMusicVolume(v)` and `SoundManager.setVolume(v)` respectively. Persist immediately via `SettingsManager.save()`. `GameScreen.init` applies all three volumes.
-- **Done when:** Three sliders visible in Settings, all three volumes respond in real-time, persist across sessions. Compile clean.
+- **Status:** Done
+- **Completed:** 2026-05-12
+- **Outcome:** Three per-bus sliders (Music/SFX/UI) wired in `SettingsScreen` with `volMusic=0.7f`/`volUi=0.9f` defaults; `SoundManager.setUiVolume` + `playUi()` plumbed (UI bus currently unused, no callers); `MusicManager.setMusicVolume` respects T-117 ducking via `effectiveVolume()`; `GameScreen.init` applies all three. Discovered stale-in-Todo 2026-05-13 during queue audit.
+- **Commit/PR:** PR #9 (Copilot, squashed 4b4e10b)
+- **Tool:** `copilot-agent`
 
 ### T-036 — Key rebinding UI in Settings  [P2]
 - **Status:** Done
