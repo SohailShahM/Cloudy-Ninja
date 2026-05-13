@@ -279,20 +279,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Extract the entity-instantiation logic out of `GameScreen.init` (currently lines ~194–250 with three parallel `if (level is TmxLevel) { for (def in level.getXxx()) { … } }` blocks for enemies + boss + drift husks) into a new `LevelEntityFactory.spawn(level, world): SpawnedEntities` data class. `GameScreen` becomes a one-liner: `val spawned = LevelEntityFactory.spawn(level, world)`. Future enemy types (T-046's sprite work, future ticket additions) plug in via the factory, not via more parallel blocks in `GameScreen`.
 - **Done when:** `GameScreen.init` is shorter; entity behavior unchanged; smoke CI passes; future entity additions need no GameScreen edit.
 
-### T-107 — Hidden eco-token in each campaign level + "Collector" achievement  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-019, T-037
-- **GDD ref:** GAME_PLAN.md (collectibles + replay-value loop)
-- **Files:** `levels/TmxLevelDefinition.kt` (add 1 hidden eco-token per level1/2/3 in an off-path location), `progression/AchievementRegistry.kt` (add `collector` achievement: "Find all 3 hidden eco-tokens"), `screens/LevelRunState.kt` (track hidden-token collection separately + emit unlock)
-- **Goal:** Add 1 visually-distinct "hidden" eco-token to each of level1/2/3, placed in an out-of-the-way spot (e.g. behind a wall jump, in a ceiling alcove). Collecting all 3 across runs unlocks a new `collector` achievement. Hidden tokens render with a slight golden tint to distinguish from regular ones.
-- **Done when:** Each campaign level has 1 hidden token; collecting all 3 unlocks `collector`; smoke CI passes (autopilot is unlikely to find them — that's fine, they're hidden).
-
-
 <!-- ═══════════════════════════════════════════════════════════════
      SPRINT D — "Alpha launch readiness"
      T-109..T-120 batch (planned 2026-05-12 by claude-code-opus).
@@ -464,6 +450,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-107 — Hidden eco-token in each campaign level + "Collector" achievement  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-107-hidden-eco-tokens
+- **Started:** 2026-05-13
+- **Depends on:** T-019, T-037
+- **GDD ref:** GAME_PLAN.md (collectibles + replay-value loop)
+- **Files:** `levels/TmxLevelDefinition.kt` (add 1 hidden eco-token per level1/2/3 in an off-path location), `progression/AchievementRegistry.kt` (add `collector` achievement: "Find all 3 hidden eco-tokens"), `screens/LevelRunState.kt` (track hidden-token collection separately + emit unlock)
+- **Goal:** Add 1 visually-distinct "hidden" eco-token to each of level1/2/3, placed in an out-of-the-way spot (e.g. behind a wall jump, in a ceiling alcove). Collecting all 3 across runs unlocks a new `collector` achievement. Hidden tokens render with a slight golden tint to distinguish from regular ones.
+- **Done when:** Each campaign level has 1 hidden token; collecting all 3 unlocks `collector`; smoke CI passes (autopilot is unlikely to find them — that's fine, they're hidden).
 
 ### T-117 — Audio ducking on pause overlay  [P3]
 - **Status:** In Progress
