@@ -52,12 +52,12 @@ class InputActionTest : BehaviorSpec({
                 }
             }
 
-            then("only MUTE is allowed to be absent from defaultKeybinds (reserved for T-118)") {
+            then("every InputAction has a binding in defaultKeybinds (T-118 added MUTE)") {
                 val defaultKeys = defaultKeybinds().keys
                 val missingFromDefaults = InputAction.values()
                     .map { it.wireName }
                     .filterNot { it in defaultKeys }
-                missingFromDefaults shouldBe listOf("mute")
+                missingFromDefaults shouldBe emptyList()
             }
         }
     }

@@ -225,7 +225,7 @@ class SettingsScreen(
         // ══════════════════════════════════════════════════════════════════
         sectionHeader(Strings.get(StringKey.SETTINGS_CONTROLS), topPad = 12f)
 
-        val actionNames = listOf("left", "right", "jump", "action", "swap", "restart")
+        val actionNames = listOf("left", "right", "jump", "action", "swap", "restart", "mute")
         val displayNames = mapOf(
             "left" to Strings.get(StringKey.SETTINGS_MOVE_LEFT),
             "right" to Strings.get(StringKey.SETTINGS_MOVE_RIGHT),
@@ -233,7 +233,11 @@ class SettingsScreen(
             "action" to Strings.get(StringKey.SETTINGS_ACTION),
             "swap" to Strings.get(StringKey.SETTINGS_SWAP_CHARACTER),
             // T-133: rebindable quick-restart hotkey (held 0.5s in-game).
-            "restart" to Strings.get(StringKey.SETTINGS_RESTART_LEVEL)
+            "restart" to Strings.get(StringKey.SETTINGS_RESTART_LEVEL),
+            // T-118: master mute hotkey (default M). Toggles Settings.muted —
+            // the same flag the Audio "Mute all" checkbox drives, so the two
+            // controls stay in lock-step automatically.
+            "mute" to Strings.get(StringKey.SETTINGS_MUTE_TOGGLE)
         )
 
         // Track buttons so we can update their text after rebind

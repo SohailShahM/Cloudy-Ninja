@@ -79,6 +79,10 @@ enum class StringKey {
     SETTINGS_ACTION,
     SETTINGS_SWAP_CHARACTER,
     SETTINGS_RESTART_LEVEL,
+    // T-118: label for the rebindable master-mute hotkey row in Settings →
+    // Controls. Distinct from [SETTINGS_MUTE] (which is the Audio-section
+    // checkbox " Mute all" with a leading space for the checkbox layout).
+    SETTINGS_MUTE_TOGGLE,
     SETTINGS_PRESS_KEY,
     SETTINGS_RESET_DEFAULTS,
     SETTINGS_CONTROLS_RESET,
@@ -388,6 +392,8 @@ object Strings {
         StringKey.SETTINGS_ACTION          to "Action",
         StringKey.SETTINGS_SWAP_CHARACTER  to "Swap Character",
         StringKey.SETTINGS_RESTART_LEVEL    to "Restart Level (hold)",
+        // T-118: row label in Settings → Controls for the master-mute hotkey.
+        StringKey.SETTINGS_MUTE_TOGGLE     to "Mute",
         StringKey.SETTINGS_PRESS_KEY       to "Press a key...",
         StringKey.SETTINGS_RESET_DEFAULTS  to "Reset to Defaults",
         StringKey.SETTINGS_CONTROLS_RESET  to "Controls reset!",

@@ -3,6 +3,8 @@ package com.sohai.platformer.input
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.controllers.Controllers
+import com.sohai.platformer.audio.MusicManager
+import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.persist.SettingsManager
 import com.sohai.platformer.persist.defaultKeybinds
 
@@ -173,5 +175,34 @@ object InputManager {
      */
     fun isRestartHeld(): Boolean {
         return Gdx.input.isKeyPressed(keyFor("restart"))
+    }
+
+    /**
+     * T-118: poll the master-mute hotkey (default M, rebindable in Settings →
+     * Controls). On a fresh key edge, flips [com.sohai.platformer.persist.Settings.muted],
+     * persists via [SettingsManager.update], and propagates the new state to
+     * [MusicManager] / [SoundManager] so the existing T-105 output gate engages
+     * immediately. The master-volume slider value is **not** touched — mute is
+     * a separate flag that gates output to 0 without overwriting [Settings.volMaster].
+     *
+     * Returns `true` if the toggle fired this frame and the new state is
+     * "muted" (so the caller can flash a `[MUTED]` toast on the active screen).
+     * Returns `false` on no edge or on toggle-off — quiet by design.
+     *
+     * Designed to be called from a single global hook ([com.sohai.platformer.Main.render])
+     * so the hotkey works from any screen without each Screen subclass
+     * having to opt in.
+     */
+    fun pollMuteHotkey(): Boolean {
+        if (!Gdx.input.isKeyJustPressed(keyFor("mute"))) return false
+        val next = SettingsManager.update { it.copy(muted = !it.muted) }
+        MusicManager.setMuted(next.muted)
+        SoundManager.setMuted(next.muted)
+        if (next.muted) {
+            Gdx.app.log("T-118", "[MUTED]")
+        } else {
+            Gdx.app.log("T-118", "[UNMUTED]")
+        }
+        return next.muted
     }
 }

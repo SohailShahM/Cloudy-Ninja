@@ -24,7 +24,12 @@ fun defaultKeybinds(): Map<String, Int> = mapOf(
     // T-133: hold-R-to-restart hotkey. Bound to R by default; rebindable in
     // Settings → Controls. The 0.5s hold threshold is enforced at the call
     // site (GameScreen) — InputManager only reports raw held state.
-    "restart" to Input.Keys.R
+    "restart" to Input.Keys.R,
+    // T-118: master mute hotkey. Tap to toggle [Settings.muted]. The flag is
+    // already wired into MusicManager/SoundManager (T-105), so this binding
+    // is just an input edge — the slider position is preserved across
+    // mute/unmute by the existing output-gate design.
+    "mute" to Input.Keys.M
 )
 
 /**
