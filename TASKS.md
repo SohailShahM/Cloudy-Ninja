@@ -391,20 +391,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 ═══════════════════════════════════════════════════════════════ -->
 
 
-### T-133 — Quick-restart hotkey (R) in-game  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-036  *(adds new keybind to existing system)*
-- **GDD ref:** GAME_PLAN.md (player flow — speedrunners + casual retry experience)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/input/InputManager.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
-- **Goal:** Add `keybind("restart")` default `Input.Keys.R`. Holding R for 0.5s (NOT a tap — prevent accidental restarts) triggers level restart. Visual feedback: small radial progress indicator near HUD while held. Releasing before 0.5s cancels. Rebindable in Settings → Controls.
-- **Done when:** Hold-R-to-restart works at 0.5s; tap-R is a no-op; rebindable; persists; smoke CI passes (autopilot won't hold R — confirmed safe).
-- **Constraints:** Hold-not-tap is deliberate — accidental R presses are common. The 0.5s threshold is the standard for "are you sure?" patterns in indie games.
-
 <!-- ═══════════════════════════════════════════════════════════════
      SPRINT D wave 6 — defensive saves + onboarding + polish
      T-136..T-141 batch (planned 2026-05-13 by claude-code-opus,
@@ -484,6 +470,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-133 — Quick-restart hotkey (R) in-game  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-133-quick-restart-hotkey
+- **Started:** 2026-05-13
+- **Depends on:** T-036  *(adds new keybind to existing system)*
+- **GDD ref:** GAME_PLAN.md (player flow — speedrunners + casual retry experience)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/input/InputManager.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
+- **Goal:** Add `keybind("restart")` default `Input.Keys.R`. Holding R for 0.5s (NOT a tap — prevent accidental restarts) triggers level restart. Visual feedback: small radial progress indicator near HUD while held. Releasing before 0.5s cancels. Rebindable in Settings → Controls.
+- **Done when:** Hold-R-to-restart works at 0.5s; tap-R is a no-op; rebindable; persists; smoke CI passes (autopilot won't hold R — confirmed safe).
+- **Constraints:** Hold-not-tap is deliberate — accidental R presses are common. The 0.5s threshold is the standard for "are you sure?" patterns in indie games.
 
 ### T-138 — SFX on achievement unlock (audio feedback)  [P3]
 - **Status:** In Progress
