@@ -171,3 +171,20 @@ desktop.ini
 ## You could also add that configuration to the text in nativeimage.gradle .
 ## You should delete or comment out the next line if you have configuration in a different resource-config.json .
 **/resource-config.json
+
+## T-194 (2026-05-14): runtime artifacts that should not churn the working tree.
+## NOTE: lines below only affect FUTURE staging. Files already tracked
+## (e.g. assets/saves/save_slot_1.json and the three ambient_arid/wind/eco
+## tracks) remain tracked — git ignores rules don't un-track. See PR T-194.
+
+# Player save slots — SaveManager writes these via Gdx.files.local("saves/...")
+# which on the desktop launcher resolves to assets/saves/save_slot_{N}.json.
+assets/saves/save_slot_*.json
+assets/saves/save_slot_*.json.tmp
+
+# Procedurally-generated ambient music — ProceduralMusicGenerator.generateAll()
+# writes these on first run via writeIfMissing. The three "scene" tracks
+# (ambient_arid/wind/eco) are already tracked and shipped; ambient_menu was
+# added in T-134 and is generated locally on first launch. The pattern below
+# matches all four but only un-tracked ones (ambient_menu) take effect.
+assets/audio/music/ambient_*.wav
