@@ -100,8 +100,18 @@ class Level0_0 : Level() {
          * (`GameScreen`) calls this on Level0_0 construction; on a true
          * result, it builds the overlay and persists `tutorialSeen=true`
          * once the player dismisses it.
+         *
+         * **Smoke-mode bypass (T-137 fixup):** when `Constants.SMOKE_MODE` is
+         * set, return false unconditionally. The smoke autopilot drives the
+         * player Body directly via Box2D forces (see `LevelRunState`'s
+         * `debugSmokeMode` path) — it does NOT route through `Gdx.input`,
+         * so `HubTutorialOverlay`'s `isKeyJustPressed` / `justTouched`
+         * dismiss check never fires in smoke. Without this guard the
+         * `smoke (level0_0)` job hangs indefinitely waiting on a keypress
+         * the autopilot will never produce. Production behavior unchanged.
          */
-        fun shouldShowFirstRunTutorial(state: GameState): Boolean = !state.tutorialSeen
+        fun shouldShowFirstRunTutorial(state: GameState): Boolean =
+            !state.tutorialSeen && !com.sohai.platformer.Constants.SMOKE_MODE
     }
 
     override fun setup(
