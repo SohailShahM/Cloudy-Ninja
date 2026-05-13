@@ -20,7 +20,10 @@ class SpriteFactoryTest : BehaviorSpec({
 
     given("per-character spriteFootOffset constants") {
         then("SPRITE_FOOT_OFFSET_EBO is set to the current tuning value") {
-            SpriteFactory.SPRITE_FOOT_OFFSET_EBO shouldBe 0.3f
+            // T-A14: value produced by scripts/foot_offset_autotuner.py from
+            // level1-start.png (Ebo, procedural sprite). Re-run the autotuner
+            // after a fresh capture and update this assertion to the new value.
+            SpriteFactory.SPRITE_FOOT_OFFSET_EBO shouldBe 0.03f
         }
         then("SPRITE_FOOT_OFFSET_LAYA is set to the current tuning value") {
             SpriteFactory.SPRITE_FOOT_OFFSET_LAYA shouldBe 0.3f
