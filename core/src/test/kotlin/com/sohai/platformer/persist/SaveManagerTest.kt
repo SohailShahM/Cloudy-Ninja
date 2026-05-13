@@ -67,6 +67,9 @@ class SaveManagerTest : BehaviorSpec({
         // Restore previous globals (likely null in unit-test JVM, but be polite).
         Gdx.app = prevApp
         Gdx.files = prevFiles
+        // Clear any test-only hooks so cross-spec interleaving stays safe.
+        SaveManager.crashAfterTempWriteHook = null
+        SaveManager.crashDuringWriteHook = null
         // Wipe the temp directory.
         tmpRoot.deleteRecursively()
     }
@@ -365,6 +368,155 @@ class SaveManagerTest : BehaviorSpec({
                 loaded.bestScores shouldBe emptyMap()
                 loaded.bestTimes shouldBe emptyMap()
                 loaded.unlockedAchievements shouldBe emptySet()
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // T-136 — Atomic save writes
+    // ─────────────────────────────────────────────────────────────────────
+
+    given("an existing save and a crash AFTER temp write but BEFORE rename (T-136)") {
+        val filename = slot("atomic_crash_after_temp")
+
+        `when`("the second save throws between temp write and atomic rename") {
+            // First, persist a known-good "v1" save.
+            val v1 = GameState(
+                level = "level_v1",
+                characterName = "Ebo",
+                totalDeaths = 1,
+                completedLevels = setOf("level0_0")
+            )
+            SaveManager.saveGame(v1, filename)
+            // Evict the cache so the next loadGame is forced to read from disk.
+            val saveFile = File(tmpRoot, "saves/$filename")
+            saveFile.exists() shouldBe true
+            val v1OnDiskBytes = saveFile.readBytes()
+
+            // Now attempt a v2 save that "crashes" after the temp file has
+            // been written + fsynced but before the atomic rename happens.
+            val v2 = GameState(
+                level = "level_v2",
+                characterName = "Laya",
+                totalDeaths = 999,
+                completedLevels = setOf("level0_0", "level1_0", "level2_0"),
+                unlockedAchievements = setOf("first_steps", "stomp_10")
+            )
+            SaveManager.crashAfterTempWriteHook = {
+                throw RuntimeException("simulated mid-save crash (post-temp, pre-rename)")
+            }
+            try {
+                SaveManager.saveGame(v2, filename)
+            } finally {
+                SaveManager.crashAfterTempWriteHook = null
+            }
+
+            then("the original save file on disk is byte-for-byte unchanged") {
+                saveFile.exists() shouldBe true
+                saveFile.readBytes() shouldBe v1OnDiskBytes
+            }
+            then("a cold disk load (bypassing the cache) returns the v1 state") {
+                // The crashed save did NOT update the cache, so the in-memory
+                // cache still holds v1. To prove the on-disk file is the
+                // source of truth, copy the bytes to a fresh slot whose
+                // cache key has never been touched and load that.
+                val coldName = slot("atomic_crash_after_temp_cold")
+                File(tmpRoot, "saves/$coldName").writeBytes(v1OnDiskBytes)
+                val loaded = SaveManager.loadGame(coldName)
+                loaded.level shouldBe "level_v1"
+                loaded.characterName shouldBe "Ebo"
+                loaded.totalDeaths shouldBe 1
+            }
+            then("the temp file has been cleaned up (no leaked .tmp)") {
+                val tmpFile = File(tmpRoot, "saves/$filename.tmp")
+                tmpFile.exists() shouldBe false
+            }
+        }
+    }
+
+    given("an existing save and a crash DURING the temp file write (T-136)") {
+        val filename = slot("atomic_crash_during_write")
+
+        `when`("the second save throws while writing the temp file") {
+            // Establish a baseline save we want to preserve across the crash.
+            val baseline = GameState(
+                level = "baseline_level",
+                characterName = "Zephyr",
+                totalDeaths = 7,
+                bestTimes = mapOf("level0_0" to 33.3f)
+            )
+            SaveManager.saveGame(baseline, filename)
+            val saveFile = File(tmpRoot, "saves/$filename")
+            saveFile.exists() shouldBe true
+            val baselineBytes = saveFile.readBytes()
+
+            // Attempt a clobbering save that "crashes" mid-write.
+            val clobber = GameState(level = "should_never_land", totalDeaths = 9999)
+            SaveManager.crashDuringWriteHook = {
+                throw RuntimeException("simulated crash during temp write")
+            }
+            try {
+                SaveManager.saveGame(clobber, filename)
+            } finally {
+                SaveManager.crashDuringWriteHook = null
+            }
+
+            then("the original save on disk is byte-for-byte unchanged") {
+                saveFile.exists() shouldBe true
+                saveFile.readBytes() shouldBe baselineBytes
+            }
+            then("loadGame returns the baseline state (on-disk recovery)") {
+                val coldName = slot("atomic_crash_during_write_cold")
+                // Copy the on-disk file into a cold slot and load that to
+                // bypass the in-memory cache entirely.
+                File(tmpRoot, "saves/$coldName").writeBytes(baselineBytes)
+                val loaded = SaveManager.loadGame(coldName)
+                loaded.level shouldBe "baseline_level"
+                loaded.characterName shouldBe "Zephyr"
+                loaded.totalDeaths shouldBe 7
+            }
+            then("the temp file is cleaned up (or, if it remains, the original still loads)") {
+                // Strict contract: best-effort cleanup runs in the catch
+                // block, so the .tmp file should not be present. If a
+                // future implementation chooses to leak it, the previous
+                // two assertions still guarantee correctness.
+                val tmpFile = File(tmpRoot, "saves/$filename.tmp")
+                tmpFile.exists() shouldBe false
+            }
+        }
+    }
+
+    given("a normal save with no simulated crash (T-136 atomic happy path)") {
+        val filename = slot("atomic_happy_path")
+
+        `when`("saveGame completes cleanly") {
+            // Make sure no stale hook from a sibling test is still wired.
+            SaveManager.crashAfterTempWriteHook = null
+            SaveManager.crashDuringWriteHook = null
+
+            val state = GameState(
+                level = "atomic_ok",
+                characterName = "Ebo",
+                totalDeaths = 3,
+                bestScores = mapOf("level0_0" to 500),
+                unlockedAchievements = setOf("first_steps")
+            )
+            SaveManager.saveGame(state, filename)
+
+            then("the final save file exists on disk") {
+                File(tmpRoot, "saves/$filename").exists() shouldBe true
+            }
+            then("no .tmp residue is left behind") {
+                File(tmpRoot, "saves/$filename.tmp").exists() shouldBe false
+            }
+            then("loadGame returns the saved state via cache") {
+                SaveManager.loadGame(filename) shouldBe state
+            }
+            then("a cold load from disk also returns the saved state") {
+                val coldName = slot("atomic_happy_path_cold")
+                val src = File(tmpRoot, "saves/$filename").readBytes()
+                File(tmpRoot, "saves/$coldName").writeBytes(src)
+                SaveManager.loadGame(coldName) shouldBe state
             }
         }
     }
