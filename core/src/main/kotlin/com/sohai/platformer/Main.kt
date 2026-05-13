@@ -91,63 +91,29 @@ class Main : Game() {
     }
 
     /**
-     * Global per-frame hook for hotkeys that must work regardless of which
-     * [com.badlogic.gdx.Screen] currently owns `Gdx.input.inputProcessor`.
+     * T-172 (Phase B): the F12 + M-key hotkeys are wired purely through the
+     * [GlobalInputRouter] adapters registered in [create] now that every
+     * [com.badlogic.gdx.Screen] cooperates with the router. The Phase A
+     * polling fallbacks lived here gated on `!GlobalInputRouter.isActive()`;
+     * with the router always active they would never fire, so they're gone.
      *
-     * **T-171 (Phase A):** the F12 and M-key hotkeys are now ALSO wired
-     * through [GlobalInputRouter] via [InputAdapter]s registered in [create].
-     * The polling here is the legacy fallback for screens that haven't been
-     * migrated to the router yet — each poll is gated on
-     * `!GlobalInputRouter.isActive()` so migrated screens (currently just
-     * MainMenuScreen) don't double-fire. Phase B (T-172) deletes this hook
-     * once every screen cooperates with the router.
-     *
-     *  - **T-147 F12 screenshot:** capture the current framebuffer to a PNG
-     *    under `~/.cloudy-ninja/screenshots/`. Smoke mode skipped inside
-     *    [ScreenshotWriter.captureManual] AND short-circuited here so we
-     *    never even probe the keypress under SMOKE_MODE.
-     *  - **T-118 M-key mute:** flip [com.sohai.platformer.persist.Settings.muted],
-     *    propagate to [MusicManager] / [SoundManager], log a `[MUTED]` line.
-     *    The mute flag is the same one the Audio "Mute all" checkbox drives
-     *    (T-105), so the keybind and the checkbox stay in lock-step.
+     * We override [render] only to forward to [Game.render] (which dispatches
+     * to the active screen). Keeping the override (instead of letting [Game]'s
+     * default run) costs nothing and is a cheap hook if a future ticket needs
+     * a per-frame global again.
      */
     override fun render() {
-        // T-171 (Phase A): gate the legacy F12 poll on `!GlobalInputRouter.isActive()`.
-        // When a migrated screen owns the router (MainMenu only in Phase A),
-        // the router's F12 InputAdapter fires via libGDX's normal event loop;
-        // we must NOT poll here too or F12 captures twice in one frame.
-        // Unmigrated screens leave the router inactive, isActive() returns
-        // false, and the legacy poll fires as before.
-        if (!GlobalInputRouter.isActive() &&
-            !Constants.SMOKE_MODE &&
-            Gdx.input.isKeyJustPressed(Input.Keys.F12)
-        ) {
-            captureF12Screenshot()
-        }
-        // T-118: master-mute hotkey (default M). Toast is log-only — no global
-        // Stage exists at the [Main] level; a visual toast would require the
-        // same cross-Stage refactor T-147 also opted out of.
-        //
-        // T-171 (Phase A): InputManager.pollMuteHotkey() itself self-gates on
-        // GlobalInputRouter.isActive(), so it's safe to keep this unconditional
-        // call. The router's M-key adapter handles the action on migrated
-        // screens; the poll handles it on the rest.
-        InputManager.pollMuteHotkey()
         super.render()
     }
 
     /**
      * T-147 / T-171: capture the current framebuffer to a PNG via
-     * [ScreenshotWriter]. Extracted as a helper so both trigger paths — the
-     * legacy [render] poll and the [GlobalInputRouter]-registered keyDown
-     * adapter wired up in [create] — share one implementation. Single source
-     * of truth for the action; two trigger paths.
+     * [ScreenshotWriter]. Invoked by the F12 [InputAdapter] registered on the
+     * [GlobalInputRouter] in [create].
      *
      * Smoke mode early-outs because [ScreenshotWriter.captureManual] itself
      * skips under SMOKE_MODE and we don't even want to probe the GL state on
-     * smoke runs. The router-driven path won't hit this in smoke (smoke skips
-     * the splash, jumps straight to GameScreen, which is unmigrated and
-     * leaves the router inactive) but the guard is defensive and free.
+     * smoke runs.
      *
      * All failures are swallowed and logged — a screenshot attempt must never
      * crash the render loop.
