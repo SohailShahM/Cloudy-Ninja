@@ -24,7 +24,14 @@ class PauseOverlay(
     private val onRestart: () -> Unit,
     private val onMainMenu: () -> Unit,
     private val onTimeTrial: (() -> Unit)? = null,
-    private val isCurrentlyTimeTrial: Boolean = false
+    private val isCurrentlyTimeTrial: Boolean = false,
+    /**
+     * T-140: name of the currently-selected character ("Ebo" / "Laya" / "Zephyr").
+     * The matching row in the ability summary card is rendered with
+     * [HIGHLIGHT_COLOR] (the existing achievement-toast gold accent). Other rows
+     * use [DIM_COLOR]. The default keeps existing callers backward-compatible.
+     */
+    private val currentCharacter: String = "Ebo"
 ) : Disposable {
 
     private val viewport = FitViewport(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
@@ -76,6 +83,19 @@ class PauseOverlay(
             override fun changed(event: ChangeEvent?, actor: Actor?) { onTimeTrial?.invoke() }
         })
         table.add(btnTrial).size(220f, 55f).padTop(20f).row()
+
+        // T-140: per-character ability summary card. One row per character;
+        // current character renders in HIGHLIGHT_COLOR (achievement-toast gold),
+        // others in DIM_COLOR. Action-key label resolves from current bindings.
+        val keyName = actionKeyName(SettingsManager.load().keybinds)
+        val rows = abilityRows(currentCharacter, keyName)
+        for (row in rows) {
+            val style = Label.LabelStyle(bodyFont, row.color)
+            // First row gets padTop to separate from the buttons above.
+            val cell = table.add(Label(row.text, style))
+            if (row === rows.first()) cell.padTop(20f)
+            cell.padBottom(4f).row()
+        }
 
         stage.addActor(table)
 
@@ -139,5 +159,80 @@ class PauseOverlay(
         stage.dispose()
         shapeRenderer.dispose()
         // Fonts are shared (FontManager.getShared); do NOT dispose here.
+    }
+
+    /**
+     * T-140: data class for one row of the ability-summary card. Decouples
+     * row construction (pure, testable) from Scene2D Label creation.
+     */
+    data class AbilityRow(val character: String, val text: String, val color: Color)
+
+    companion object {
+        /**
+         * T-140: highlight color for the currently-selected character row in
+         * the pause-overlay ability summary. Matches the achievement-toast
+         * accent ([AchievementToast] title style) — the "existing toast accent
+         * color" called out in the T-140 spec. RGB intentionally pinned to a
+         * fresh `Color(...)` each access so callers cannot mutate the canonical
+         * value via Color's mutable channels.
+         */
+        val HIGHLIGHT_COLOR: Color get() = Color(1f, 0.92f, 0.3f, 1f)
+
+        /** Dim row color for non-selected characters. */
+        val DIM_COLOR: Color get() = Color(0.75f, 0.75f, 0.75f, 1f)
+
+        /** The three character names in the order they render in the card. */
+        val CHARACTERS: List<String> = listOf("Ebo", "Laya", "Zephyr")
+
+        /**
+         * T-140: resolves the display name of the current "action" keybind
+         * (e.g. "E", "F", "Space"). Falls back to "E" — the default in
+         * [com.sohai.platformer.persist.defaultKeybinds] — if the binding is
+         * missing or unresolvable. Pure helper for tests.
+         */
+        fun actionKeyName(keybinds: Map<String, Int>): String {
+            val code = keybinds["action"] ?: return Input.Keys.toString(Input.Keys.E)
+            val name = Input.Keys.toString(code)
+            return name ?: Input.Keys.toString(Input.Keys.E)
+        }
+
+        /** Maps a character name to its [StringKey] template. */
+        internal fun keyForCharacter(character: String): StringKey = when (character) {
+            "Ebo"    -> StringKey.PAUSE_ABILITY_EBO
+            "Laya"   -> StringKey.PAUSE_ABILITY_LAYA
+            "Zephyr" -> StringKey.PAUSE_ABILITY_ZEPHYR
+            else     -> StringKey.PAUSE_ABILITY_EBO  // defensive default
+        }
+
+        /**
+         * T-140: renders the localized row text for [character] with the
+         * action-key name substituted. Pure helper — no GL, no Settings.
+         */
+        fun abilityRowText(character: String, keyName: String): String =
+            Strings.format(keyForCharacter(character), keyName)
+
+        /**
+         * T-140: picks the color for one row of the ability card.
+         * - if [character] == [currentCharacter] → [HIGHLIGHT_COLOR]
+         * - otherwise → [DIM_COLOR]
+         * Pure helper — used by both the live `init { }` render path and the
+         * Kotest in `PauseOverlayAbilityRowsTest`.
+         */
+        fun abilityRowColor(character: String, currentCharacter: String): Color =
+            if (character == currentCharacter) HIGHLIGHT_COLOR else DIM_COLOR
+
+        /**
+         * T-140: assembles the three rows (Ebo / Laya / Zephyr) for the
+         * ability-summary card. Order is fixed; current character (if any of
+         * the three) is the only one rendered in [HIGHLIGHT_COLOR].
+         */
+        fun abilityRows(currentCharacter: String, keyName: String): List<AbilityRow> =
+            CHARACTERS.map { c ->
+                AbilityRow(
+                    character = c,
+                    text = abilityRowText(c, keyName),
+                    color = abilityRowColor(c, currentCharacter)
+                )
+            }
     }
 }

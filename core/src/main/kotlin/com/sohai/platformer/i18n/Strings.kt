@@ -162,6 +162,11 @@ enum class StringKey {
     PAUSE_EXIT_TIME_TRIAL,
     PAUSE_ENTER_TIME_TRIAL,
     PAUSE_KEY_ESC,
+    // T-140: per-character ability tooltip rows. Templates take {0} = action-key
+    // name (e.g. "E") resolved from Settings.keybinds["action"] via Input.Keys.toString.
+    PAUSE_ABILITY_EBO,
+    PAUSE_ABILITY_LAYA,
+    PAUSE_ABILITY_ZEPHYR,
 
     // ── Hub tutorial overlay (T-137) ─────────────────────────────────────────
     TUTORIAL_TITLE,
@@ -457,6 +462,10 @@ object Strings {
         StringKey.PAUSE_EXIT_TIME_TRIAL   to "Exit Time Trial",
         StringKey.PAUSE_ENTER_TIME_TRIAL  to "▶ Time Trial",
         StringKey.PAUSE_KEY_ESC           to "Esc",
+        // T-140: ability summary rows. {0} = current action-key display name.
+        StringKey.PAUSE_ABILITY_EBO       to "Ebo — Seed Slam ({0})",
+        StringKey.PAUSE_ABILITY_LAYA      to "Laya — Wind Dash ({0})",
+        StringKey.PAUSE_ABILITY_ZEPHYR    to "Zephyr — Cloud Float ({0})",
 
         // Hub tutorial overlay (T-137) — shown once on first Sky Sanctuary entry
         StringKey.TUTORIAL_TITLE          to "WELCOME",

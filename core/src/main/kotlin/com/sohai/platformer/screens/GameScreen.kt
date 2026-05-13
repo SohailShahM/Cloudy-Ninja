@@ -346,7 +346,10 @@ class GameScreen(
                     dispose()
                 }
             },
-            isCurrentlyTimeTrial = isTimeTrial
+            isCurrentlyTimeTrial = isTimeTrial,
+            // T-140: highlight the player's active character in the
+            // pause-overlay ability-summary card.
+            currentCharacter = runState.currentCharacter
         )
 
         hud.updateSpiritHealth(runState.spiritHealth)
