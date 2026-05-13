@@ -52,3 +52,20 @@ _(no questions yet — autonomous agents append here as they encounter ambiguity
   **Severity:** alpha cannot ship until this is resolved.
 - **Status:** `open`
 - **Answer:** _(pending — needs user decision before alpha branch is cut)_
+
+### 2026-05-13 — claude-code-sub-agent — T-177
+- **Question:** The T-177 anime asset pack survey (full report at `research/anime-asset-pack-evaluation.md`) flagged one visually-strong but license-ambiguous candidate:
+
+  **PushPlayArt — "Hero Hack and Slash Anime"** (https://pushplayart.itch.io/hero-hack-and-slash-anime) and its sibling **"Anime Hero 2"** (https://pushplayart.itch.io/hero-sprite-animation-2d-assets). These are the two most explicitly *anime-styled* (shounen-action) sprite packs found across the entire survey — visually the closest match to the user's stated direction. Both are "name your own price" on itch.io.
+
+  **The problem:** Neither storefront page contains a written license. Commercial use is confirmed only via creator replies in the comments section ("Yes" to "can I use this for commercial purposes?", "use it however you like"). A comment-thread "yes" is not the same as CC0/CC-BY/EULA text — if the creator later changes the license, deletes the storefront, or denies a written record, a commercial shipment risks a takedown.
+
+  Every other pack in the top 16 has a written license (CC0, CC-BY-4.0, or a custom royalty-free EULA file bundled with the download).
+
+  **Ask:** Do you want to (a) pursue a written license from PushPlayArt before considering these packs for the T-046 graphics overhaul, (b) skip these packs entirely on license grounds despite the strong visual fit, or (c) accept the comment-thread permission as good-enough given the low takedown probability for a pay-what-you-want indie pack?
+
+  **Recommendation:** (a) — email PushPlayArt for a one-line written license confirmation. The visual fit is too strong to discard without trying, but the licensing risk is too real to ship without paper.
+
+  **Severity:** non-blocking for the report itself; blocking only if the user wants to seriously consider these specific packs as a T-046 base.
+- **Status:** `open`
+- **Answer:** _(pending)_
