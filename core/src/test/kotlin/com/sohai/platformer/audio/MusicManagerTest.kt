@@ -480,6 +480,169 @@ class MusicManagerTest : BehaviorSpec({
         }
     }
 
+    given("duck()/unduck() ducking on an active track (T-117)") {
+
+        `when`("a track is playing and duck(0.3, 250ms) is called then update advances past the fade") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+            // Sanity: starts at the default master volume.
+            m.volume shouldBe 0.7f
+
+            MusicManager.duck(amount = 0.3f, fadeMs = 250)
+            // Advance past the 250ms tween (0.25s) — a single large tick is fine.
+            MusicManager.update(0.5f)
+
+            then("effective volume is volMusic * amount (0.7 * 0.3 = 0.21)") {
+                abs(m.volume - 0.21f) shouldBeLessThan EPS
+            }
+        }
+
+        `when`("duck halfway through the fade (125ms of a 250ms tween)") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+
+            MusicManager.duck(amount = 0.3f, fadeMs = 250)
+            MusicManager.update(0.125f)
+
+            then("the effective volume is approximately the midpoint of 0.7 and 0.21 (~0.455)") {
+                // Linear tween: multiplier moves from 1.0 to 0.3 over 250ms.
+                // At t=0.5 it's at 0.65, so effective = 0.7 * 0.65 = 0.455.
+                abs(m.volume - 0.455f) shouldBeLessThan EPS
+            }
+        }
+
+        `when`("unduck(250ms) is called after a completed duck and update advances past the fade") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+
+            MusicManager.duck(amount = 0.3f, fadeMs = 250)
+            MusicManager.update(0.5f)            // fully ducked
+            abs(m.volume - 0.21f) shouldBeLessThan EPS
+
+            MusicManager.unduck(fadeMs = 250)
+            MusicManager.update(0.5f)            // fully unducked
+
+            then("the track returns to the full master volume (0.7)") {
+                abs(m.volume - 0.7f) shouldBeLessThan EPS
+            }
+        }
+
+        `when`("duck() is called twice in a row (idempotent — single flag, not a counter)") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+
+            MusicManager.duck(amount = 0.3f, fadeMs = 250)
+            MusicManager.update(0.5f)            // fully ducked at 0.21
+
+            MusicManager.duck(amount = 0.3f, fadeMs = 250)  // no-op; already ducked
+            MusicManager.update(0.5f)
+
+            then("volume remains at the ducked level — second duck() didn't re-tween or stack") {
+                abs(m.volume - 0.21f) shouldBeLessThan EPS
+            }
+
+            // A single unduck() must restore even though duck() was called multiple times.
+            MusicManager.unduck(fadeMs = 250)
+            MusicManager.update(0.5f)
+
+            then("a single unduck() restores volume to volMusic (collapsed, not stacked)") {
+                abs(m.volume - 0.7f) shouldBeLessThan EPS
+            }
+        }
+
+        `when`("rapid duck/unduck/duck/unduck cycles don't desync the fade target") {
+            // The hard-rules guarantee: rapid open/close of the pause overlay
+            // (which translates to duck/unduck pairs) must always converge to the
+            // correct final volume. With a Boolean flag and a tween that re-bases
+            // from the live multiplier, the target is always the right value.
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+
+            // Open pause (duck), partial fade, close before fully ducked (unduck),
+            // open again, close again — each toggle re-targets correctly.
+            MusicManager.duck()
+            MusicManager.update(0.05f)            // ~20% through the 250ms duck fade
+            MusicManager.unduck()
+            MusicManager.update(0.05f)
+            MusicManager.duck()
+            MusicManager.update(0.05f)
+            MusicManager.unduck()
+            // Drain the tween fully.
+            MusicManager.update(1.0f)
+
+            then("final state is unducked at the full master volume (0.7) — no desync") {
+                abs(m.volume - 0.7f) shouldBeLessThan EPS
+            }
+        }
+
+        `when`("unduck() is called without a prior duck()") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+
+            MusicManager.unduck()                  // no-op; not currently ducked
+            MusicManager.update(0.5f)
+
+            then("volume is unchanged (still volMusic = 0.7)") {
+                m.volume shouldBe 0.7f
+            }
+        }
+
+        `when`("duck() is called with fadeMs = 0 (snap, no tween)") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+
+            MusicManager.duck(amount = 0.5f, fadeMs = 0)
+            MusicManager.update(0f)                // even a zero delta should apply the snap
+
+            then("the effective volume snaps to volMusic * amount immediately (0.7 * 0.5 = 0.35)") {
+                abs(m.volume - 0.35f) shouldBeLessThan EPS
+            }
+        }
+
+        `when`("duck() takes effect mid-crossfade and applies to both tracks") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val a = musicByTrack["ambient_arid"]!!
+            MusicManager.play("ambient_humid")
+            val b = musicByTrack["ambient_humid"]!!
+
+            // Halfway through the crossfade (0.75s of 1.5s), duck instantly.
+            MusicManager.duck(amount = 0.3f, fadeMs = 0)
+            MusicManager.update(0.75f)
+
+            then("both tracks reflect the duck multiplier scaled by crossfade weight") {
+                // t = 0.5 → outgoing = 0.7 * 0.3 * (1 - 0.5) = 0.105
+                //         incoming  = 0.7 * 0.3 * 0.5       = 0.105
+                abs(a.volume - 0.105f) shouldBeLessThan EPS
+                abs(b.volume - 0.105f) shouldBeLessThan EPS
+            }
+        }
+
+        `when`("stop() is called while ducked — duck state is reset") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            MusicManager.duck(amount = 0.3f, fadeMs = 0)
+            MusicManager.update(0f)
+            MusicManager.stop()
+
+            // A fresh track after stop() must start at full master volume,
+            // not at the prior ducked level.
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+
+            then("the fresh track starts at volMusic (0.7), not at the prior ducked level") {
+                m.volume shouldBe 0.7f
+            }
+        }
+    }
+
     given("setMusicVolume() with no track active") {
 
         `when`("the manager has never been started and volume is changed") {
