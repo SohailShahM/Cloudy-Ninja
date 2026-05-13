@@ -8,6 +8,7 @@ import com.sohai.platformer.audio.MusicManager
 import com.sohai.platformer.audio.ProceduralMusicGenerator
 import com.sohai.platformer.audio.ProceduralSoundGenerator
 import com.sohai.platformer.audio.SoundManager
+import com.sohai.platformer.input.InputManager
 import com.sohai.platformer.persist.CrashReporter
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.rendering.DisplayScale
@@ -57,28 +58,25 @@ class Main : Game() {
     }
 
     /**
-     * T-147: Global F12-anytime screenshot hotkey.
+     * Global per-frame hook for hotkeys that must work regardless of which
+     * [com.badlogic.gdx.Screen] currently owns `Gdx.input.inputProcessor`.
      *
-     * Polled per-frame here (rather than registered as an [com.badlogic.gdx.InputAdapter])
-     * because every screen sets `Gdx.input.inputProcessor = stage` in its own
-     * `init {}` / `show()`, which would clobber any root-level multiplexer we
-     * installed in `create()`. Polling sidesteps that input-chain churn entirely
-     * — `isKeyJustPressed` is per-frame edge-triggered, so the screen's own
-     * processor still receives the key event normally.
+     * libGDX's [Game.render] forwards to `screen.render(delta)`, so overriding
+     * here lets us poll keys ONCE per frame and have them work from MainMenu,
+     * Settings, GameScreen, etc. with no per-screen wiring. We deliberately
+     * use polling instead of installing a root [com.badlogic.gdx.InputMultiplexer]
+     * because every Screen sets `Gdx.input.inputProcessor = stage` in its
+     * `init`/`show()` — see `LEARNINGS.md` (2026-05-13 entry) for the war
+     * story behind that choice.
      *
-     * Smoke mode is handled inside [ScreenshotWriter.captureManual]; we still
-     * skip even the keypress probe under SMOKE_MODE so the smoke autopilot's
-     * stress-typing can never accidentally allocate a pixmap.
-     *
-     * The active-screen name is taken from `screen?.javaClass?.simpleName` —
-     * e.g. `MainMenuScreen`, `GameScreen`, `VictoryScreen`. `sanitizeLevelId`
-     * in [ScreenshotWriter.manualFileName] strips any odd characters before
-     * the filename is built.
-     *
-     * Toast: log-only (`Gdx.app.log`) — there is no global Stage at the [Main]
-     * level (Stage lives per-Screen) and adding one would be a refactor well
-     * outside the T-147 scope. The path is logged so the user can find the
-     * file. Visual toast is a follow-up ticket if anyone asks for it.
+     *  - **T-147 F12 screenshot:** capture the current framebuffer to a PNG
+     *    under `~/.cloudy-ninja/screenshots/`. Smoke mode skipped inside
+     *    [ScreenshotWriter.captureManual] AND short-circuited here so we
+     *    never even probe the keypress under SMOKE_MODE.
+     *  - **T-118 M-key mute:** flip [com.sohai.platformer.persist.Settings.muted],
+     *    propagate to [MusicManager] / [SoundManager], log a `[MUTED]` line.
+     *    The mute flag is the same one the Audio "Mute all" checkbox drives
+     *    (T-105), so the keybind and the checkbox stay in lock-step.
      */
     override fun render() {
         if (!Constants.SMOKE_MODE && Gdx.input.isKeyJustPressed(Input.Keys.F12)) {
@@ -94,6 +92,10 @@ class Main : Game() {
                 Gdx.app?.error("T-147", "F12 screenshot handler crashed: ${t.message}")
             }
         }
+        // T-118: master-mute hotkey (default M). Toast is log-only — no global
+        // Stage exists at the [Main] level; a visual toast would require the
+        // same cross-Stage refactor T-147 also opted out of.
+        InputManager.pollMuteHotkey()
         super.render()
     }
 

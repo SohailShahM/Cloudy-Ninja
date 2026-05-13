@@ -153,6 +153,13 @@ class AchievementToastChimeTest : BehaviorSpec({
         SoundManager.setEnabled(true)
         SoundManager.setVolume(0.8f)
         SoundManager.setUiVolume(1f)
+        // T-118: also reset the T-105 master-volume + mute fields. They are
+        // SoundManager singleton state that prior tests in the run may have
+        // left non-default (e.g. SoundManagerTest's mute / master-volume
+        // scenarios). Without this the captured play() volume would be 0
+        // whenever those tests scheduled before this one.
+        SoundManager.setMasterVolume(1f)
+        SoundManager.setMuted(false)
         SoundManager.init()
     }
 
