@@ -20,6 +20,8 @@ import com.sohai.platformer.entities.Projectile
 import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.entities.StormSentinel
 import com.sohai.platformer.levels.Level0_0
+import com.sohai.platformer.i18n.StringKey
+import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.persist.ColorBlindMode
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.persist.SettingsManager
@@ -501,7 +503,7 @@ class LevelRenderer(
         for (portal in Level0_0.PORTALS) {
             val required = Level0_0.portalUnlockRequirement(portal.userData)
             val unlocked = required.all { it in completedLevels }
-            val label    = if (unlocked) portal.label else "[Locked]"
+            val label    = if (unlocked) portal.label else Strings.format(StringKey.HUB_PORTAL_LOCKED)
             val worldX   = portal.centerXPx / Constants.PPM
             val worldY   = (Level0_0.PORTAL_CENTER_Y_PX + Level0_0.PORTAL_HALF_H_PX + 15f) / Constants.PPM
             font.color = if (unlocked) Color.WHITE else Color.GRAY

@@ -254,6 +254,9 @@ enum class StringKey {
     // Victory
     VICTORY_FINAL_SCORE,
     VICTORY_TRIAL_TIME,
+    VICTORY_DELTA_UNDER,
+    VICTORY_DELTA_OVER,
+    HUB_PORTAL_LOCKED,
 }
 
 /**
@@ -493,6 +496,9 @@ object Strings {
         StringKey.PAUSE_HINT                 to "Press {0} to resume",
         StringKey.VICTORY_FINAL_SCORE        to "Final Score: {0}",
         StringKey.VICTORY_TRIAL_TIME         to "Trial Time: {0}",
+        StringKey.VICTORY_DELTA_UNDER        to "−{0}s under best",
+        StringKey.VICTORY_DELTA_OVER         to "+{0}s slower",
+        StringKey.HUB_PORTAL_LOCKED          to "[Locked]",
     )
 
     fun get(key: StringKey): String =
