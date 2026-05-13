@@ -137,7 +137,20 @@ class SettingsScreen(
                 settings = SettingsManager.update { it.copy(showFps = chkFps.isChecked) }
             }
         })
-        inner.add(chkFps).left().padBottom(20f).row()
+        inner.add(chkFps).left().padBottom(4f).row()
+
+        // T-144: Camera look-ahead toggle. Default ON — players who prefer
+        // a static, perfectly-centred camera can switch it off here.
+        // Independent of the screen-shake toggle in Accessibility; both
+        // offsets coexist when both are on.
+        val chkCameraLookAhead = CheckBox(Strings.get(StringKey.SETTINGS_CAMERA_LOOK_AHEAD), skin)
+        chkCameraLookAhead.isChecked = settings.cameraLookAhead
+        chkCameraLookAhead.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(cameraLookAhead = chkCameraLookAhead.isChecked) }
+            }
+        })
+        inner.add(chkCameraLookAhead).left().padBottom(20f).row()
 
         // ══════════════════════════════════════════════════════════════════
         // SECTION 2 — AUDIO

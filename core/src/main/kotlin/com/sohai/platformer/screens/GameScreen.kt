@@ -243,7 +243,11 @@ class GameScreen(
             sentinel      = sentinel,
             tileRenderer  = tileRenderer,
             parallaxTheme = parallaxTheme,
-            driftHusks    = driftHusks
+            driftHusks    = driftHusks,
+            // T-144: pass the level width so camera look-ahead can clamp
+            // against the right edge — keeps the bias from revealing
+            // out-of-bounds space at level extremes.
+            levelWidthPx  = level.levelWidthPx
         )
 
         player.onJump = {

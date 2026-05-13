@@ -25,6 +25,7 @@ import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.persist.SettingsManager
 import com.sohai.platformer.rendering.CharacterAnimator
 import com.sohai.platformer.FontManager
+import com.sohai.platformer.rendering.CameraLookAhead
 import com.sohai.platformer.rendering.HighContrastPalette
 import com.sohai.platformer.rendering.HighContrastPalette.ColorRole
 import com.sohai.platformer.rendering.ParallaxBackground
@@ -64,7 +65,14 @@ class LevelRenderer(
     private val tileRenderer: TileRenderer? = null,
     private val parallaxTheme: ParallaxTheme = ParallaxTheme.ARID,
     /** T-062: Drift Husk enemies, drawn after [enemies] so their trail wisps overlay terrain. */
-    private val driftHusks: List<DriftHusk> = emptyList()
+    private val driftHusks: List<DriftHusk> = emptyList(),
+    /**
+     * T-144: total level width in virtual pixels, used to clamp the
+     * look-ahead offset against the right edge so we never reveal
+     * out-of-bounds space. `0f` (the default) disables clamping — useful
+     * for tests that don't construct a Level.
+     */
+    private val levelWidthPx: Float = 0f
 ) {
 
     // ── Hot-path colour constants (hoisted to avoid per-frame allocation) ─────
@@ -240,6 +248,15 @@ class LevelRenderer(
      */
     var playerAlpha: Float = 1f
 
+    /**
+     * T-144: camera look-ahead state. One instance per LevelRenderer (per
+     * active level) so the bias smoothly recenters on respawn / portal swap.
+     * The offset is applied alongside the T-116 [ScreenShake] offset before
+     * the projection matrix is built, and reverted afterwards so
+     * [camera.position] never drifts across frames.
+     */
+    private val cameraLookAhead = CameraLookAhead()
+
     private fun refreshPalette() {
         val s = SettingsManager.load()
         val m = s.colorBlindMode
@@ -282,10 +299,24 @@ class LevelRenderer(
         val shakeOffset   = ScreenShake.offset()
         val shakeOffsetX  = shakeOffset.x
         val shakeOffsetY  = shakeOffset.y
-        val hasShake      = shakeOffsetX != 0f || shakeOffsetY != 0f
-        if (hasShake) {
-            camera.position.x += shakeOffsetX
-            camera.position.y += shakeOffsetY
+
+        // T-144: lerp the look-ahead bias toward the player's horizontal
+        // direction of motion. Velocity is read from the player Body so the
+        // offset honours any modifier that adjusts player speed (assist
+        // slow-speed, etc.) — the look-ahead naturally relaxes when the
+        // player slows down. Setting gate lives inside [CameraLookAhead].
+        cameraLookAhead.update(player.body.linearVelocity.x)
+        // CameraLookAhead.offsetPx() is in virtual pixels; the camera is in
+        // world meters, so divide by PPM before applying. Clamp the total
+        // (look-ahead + shake) so we never reveal past the right edge of
+        // the level.
+        val lookAheadOffsetX = cameraLookAhead.offsetPx() / Constants.PPM
+        val totalOffsetX     = clampHorizontalOffset(lookAheadOffsetX + shakeOffsetX)
+        val totalOffsetY     = shakeOffsetY
+        val hasOffset        = totalOffsetX != 0f || totalOffsetY != 0f
+        if (hasOffset) {
+            camera.position.x += totalOffsetX
+            camera.position.y += totalOffsetY
             camera.update()
         }
 
@@ -548,13 +579,41 @@ class LevelRenderer(
         shapeRenderer.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
-        // T-116: revert the shake offset so camera.position never drifts
-        // across frames. Pair with the apply at the top of renderWorld.
-        if (hasShake) {
-            camera.position.x -= shakeOffsetX
-            camera.position.y -= shakeOffsetY
+        // T-116 + T-144: revert the combined (look-ahead + shake) offset so
+        // camera.position never drifts across frames. Pair with the apply at
+        // the top of renderWorld.
+        if (hasOffset) {
+            camera.position.x -= totalOffsetX
+            camera.position.y -= totalOffsetY
             camera.update()
         }
+    }
+
+    /**
+     * T-144: clamp [desiredOffsetX] (world meters) so applying it to
+     * [camera.position.x] never pushes the camera centre past the level's
+     * playable bounds.
+     *
+     * Without this, the look-ahead near a level edge would reveal the void
+     * beyond the rightmost wall. Mirrors the clamp logic in
+     * `LevelRunState.update()` (lines ~847) but operates on the offset
+     * delta rather than the absolute position.
+     *
+     * Returns the input unchanged when [levelWidthPx] is `0f` (default —
+     * tests that don't supply a level).
+     */
+    private fun clampHorizontalOffset(desiredOffsetX: Float): Float {
+        if (levelWidthPx <= 0f) return desiredOffsetX
+        val halfW   = camera.viewportWidth / 2f
+        val levelW  = levelWidthPx / Constants.PPM
+        // Tightest the camera can be: [halfW, levelW - halfW]. Compute the
+        // permitted delta from the current position.
+        val minCam  = halfW
+        val maxCam  = (levelW - halfW).coerceAtLeast(halfW)
+        val curX    = camera.position.x
+        val minDelta = minCam - curX
+        val maxDelta = maxCam - curX
+        return desiredOffsetX.coerceIn(minDelta, maxDelta)
     }
 
     /** Draws the player sprite using [SpriteBatch]. Handles flashing and Zephyr tint. */
