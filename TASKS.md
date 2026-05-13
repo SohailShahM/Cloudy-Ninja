@@ -302,19 +302,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
      (shake/duck), mute shortcut, slot-delete confirm, i18n audit.
 ═══════════════════════════════════════════════════════════════ -->
 
-### T-110 — ScreenFade semantics: rename or doc  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** HANDOFF.md source-side quirk #3 — `fadeIn` / `fadeOut` semantics are intuitively reversed (`fadeIn` makes screen clear)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/rendering/ScreenFade.kt` + all callers (find via `Grep "fadeIn|fadeOut" --type kt`)
-- **Goal:** Pick ONE and apply consistently: **(A)** rename `fadeIn` → `fadeFromBlack` and `fadeOut` → `fadeToBlack`, update all callers + tests; **(B)** add a KDoc paragraph above each function explaining the reversed-from-intuition semantics. Default to (A) unless caller count exceeds 20.
-- **Done when:** No caller is left ambiguous; existing `ScreenFadeTest` passes (renamed if (A) chosen); smoke CI passes.
-
 ### T-111 — SoundManager unknown-id: log → error  [P3]
 - **Status:** Todo
 - **Tool:** `copilot-agent`  *(autonomous from GitHub Issue)*
@@ -529,6 +516,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-110 — ScreenFade semantics: rename or doc  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-110-screenfade-rename
+- **Started:** 2026-05-13
+- **Depends on:** _none_
+- **GDD ref:** HANDOFF.md source-side quirk #3 — `fadeIn` / `fadeOut` semantics are intuitively reversed (`fadeIn` makes screen clear)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/rendering/ScreenFade.kt` + all callers (find via `Grep "fadeIn|fadeOut" --type kt`)
+- **Goal:** Pick ONE and apply consistently: **(A)** rename `fadeIn` → `fadeFromBlack` and `fadeOut` → `fadeToBlack`, update all callers + tests; **(B)** add a KDoc paragraph above each function explaining the reversed-from-intuition semantics. Default to (A) unless caller count exceeds 20.
+- **Done when:** No caller is left ambiguous; existing `ScreenFadeTest` passes (renamed if (A) chosen); smoke CI passes.
 
 ### T-100 — Game version + build info on MainMenu (bottom corner)  [P3]
 - **Status:** In Progress
