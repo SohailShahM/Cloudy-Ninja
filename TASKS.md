@@ -475,6 +475,97 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Constraints:** StatsScreen-only. Don't add any new save fields — read from existing T-107 + per-level token state.
 
 
+<!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D wave 6 — defensive saves + onboarding + polish
+     T-136..T-141 batch (planned 2026-05-13 by claude-code-opus,
+     mid-autonomous-run).
+═══════════════════════════════════════════════════════════════ -->
+
+### T-136 — Atomic save writes (write-to-temp-then-rename)  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-113  *(builds on save format scaffold)*
+- **GDD ref:** GAME_PLAN.md (alpha durability — a crash mid-save must not corrupt the player's saved file)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/SaveManager.kt`, `core/src/test/kotlin/com/sohai/platformer/persist/SaveManagerTest.kt`
+- **Goal:** Rewrite the save-write path to use atomic semantics: write JSON to `<slot>.tmp`, fsync, then atomic-rename to `<slot>`. If any step fails, the original `<slot>` file remains untouched and loadable. Cross-platform: use `java.nio.file.Files.move(..., REPLACE_EXISTING, ATOMIC_MOVE)` with a fallback for filesystems that don't support `ATOMIC_MOVE`.
+- **Done when:** Mid-write crash (simulated by deliberately throwing between temp write and rename) leaves original save intact; test covers the crash-mid-write path; smoke CI passes.
+- **Constraints:** **Save-data-adjacent.** Existing saves must still load. Don't change the schema. Don't add a new field.
+
+### T-137 — First-run tutorial overlay on Sky Sanctuary entry  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-033, T-091
+- **GDD ref:** GAME_PLAN.md (onboarding — new players don't know about Seed Slam, character swap, or hub portals)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/levels/Level0_0.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/HubTutorialOverlay.kt` (new), `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt` (add `tutorialSeen: Boolean = false` additive field, migrate via T-113 scaffold), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** First time a player enters the Sky Sanctuary hub (Level0_0), show a small overlay with 3 hint cards: (1) "Move with A/D, Jump with SPACE", (2) "Swap character with Q to use water-cycle abilities", (3) "Walk into a portal to enter a world". Player dismisses with any key. Sets `tutorialSeen = true`. Never shown again unless save is reset.
+- **Done when:** Fresh save shows overlay on first hub entry; subsequent entries do NOT show it; new keys via Strings.kt; persists; smoke CI passes (autopilot dismisses by key — confirm doesn't lock).
+- **Constraints:** No new assets. Use the existing pause-overlay-style modal pattern. Respect reducedMotion (no animations).
+
+### T-138 — SFX on achievement unlock (audio feedback)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-037, T-128  *(achievement unlock pipeline + post-refactor toast trigger site)*
+- **GDD ref:** GAME_PLAN.md (player engagement — currently achievement toasts are silent)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/AchievementToast.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/SoundManager.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/ProceduralSoundGenerator.kt` (or equivalent)
+- **Goal:** Generate a procedural "achievement unlock" SFX (short 0.3s C-major arpeggio chime via existing procedural-audio pattern). Play once when `AchievementToast.show(id)` fires. Volume scales with `volSfx` (or new `volUi` if that bus exists). Respect `enabled` flag in SoundManager.
+- **Done when:** Achievement unlock plays the chime; volume responds to sfx slider; tests cover playback gating; smoke CI passes.
+- **Constraints:** Procedural only — no new audio asset files. Don't double-fire on multi-achievement unlocks in same frame (debounce 200ms).
+
+### T-139 — Screenshot-on-victory (PNG to user dir)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (player sharing — Twitch/Discord screenshots boost organic discovery)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/VictoryScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/util/ScreenshotWriter.kt` (new), `core/src/test/kotlin/com/sohai/platformer/util/ScreenshotWriterTest.kt` (new)
+- **Goal:** On VictoryScreen entry, capture the current framebuffer to PNG at `<userHome>/.cloudy-ninja/screenshots/victory-{levelId}-{yyyyMMdd-HHmmss}.png`. Small toast: "Screenshot saved to ~/.cloudy-ninja/screenshots/". Skip in SMOKE_MODE. Tolerate file-write failure (log error, no crash).
+- **Done when:** Beating any level produces a PNG in the documented dir; toast visible; smoke CI does not write screenshots; smoke CI passes.
+- **Constraints:** Don't read user's filesystem outside the documented dir. Don't add a setting toggle yet (default-on; can ticket later). Use `Pixmap` + `PixmapIO.writePNG()` — already in libGDX.
+
+### T-140 — Per-character ability tooltip in pause overlay  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-063, T-128  *(pause overlay + achievement predicates refactor — GameScreen contention)*
+- **GDD ref:** GAME_PLAN.md (player onboarding — currently characters swap freely but pause overlay doesn't say what they do)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt` (pause overlay render path), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** In the pause overlay, below the existing resume/quit buttons, show a 3-row card listing: `Ebo — Seed Slam (action key)`, `Laya — Wind Dash (action key)`, `Zephyr — Cloud Float (action key)`. Highlight the currently-selected character with the existing toast accent color. Pull binding labels from `Settings.keybinds["action"]` (T-036 keybind system).
+- **Done when:** Pause overlay shows the 3-character ability summary; current character highlighted; keys reflect current bindings; smoke CI passes.
+- **Constraints:** Pause-overlay only. Don't add a new screen. New StringKey entries via `Strings.kt`.
+
+### T-141 — Cloud Atlas search/filter  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (atlas accessibility — with 6→12 entries planned the list needs a filter)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/CloudAtlasScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Add a small `VisTextField` at the top of the CloudAtlas screen. Filtering is substring-match against entry title (case-insensitive) + entry summary text. Clear button (✕) resets filter. If 0 results: show `No entries match` message. Filter is transient (doesn't persist).
+- **Done when:** Typing in the field narrows the visible entries; clear button works; smoke CI passes (autopilot doesn't enter the atlas — verify).
+- **Constraints:** Atlas screen only. Don't change the registry. Don't add fuzzy matching.
+
+
 
 ---
 
