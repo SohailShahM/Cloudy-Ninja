@@ -25,6 +25,8 @@ import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.persist.SettingsManager
 import com.sohai.platformer.rendering.CharacterAnimator
 import com.sohai.platformer.FontManager
+import com.sohai.platformer.rendering.HighContrastPalette
+import com.sohai.platformer.rendering.HighContrastPalette.ColorRole
 import com.sohai.platformer.rendering.ParallaxBackground
 import com.sohai.platformer.rendering.ParallaxTheme
 import com.sohai.platformer.rendering.ParticleSystem
@@ -218,6 +220,19 @@ class LevelRenderer(
     private var paletteMode: ColorBlindMode = SettingsManager.load().colorBlindMode
 
     /**
+     * T-132: cached high-contrast flag. Refreshed once per [renderWorld] /
+     * [renderPlayer] frame via [refreshPalette]. When false, [hc] is the
+     * identity and rendering is byte-identical to pre-T-132.
+     */
+    private var highContrast: Boolean = SettingsManager.load().highContrast
+
+    // Reusable scratch Color for [hc] so the high-contrast path doesn't
+    // allocate per primitive. Safe because ShapeRenderer.setColor() copies
+    // the value (does not retain the reference). Same lifecycle pattern as
+    // [tmpWindCol].
+    private val hcScratch: Color = Color()
+
+    /**
      * Alpha multiplier applied to the player sprite during the T-097 death
      * animation. Written by [LevelRunState] each frame while the player is
      * dying; restored to 1f on respawn. Outside the death animation this is
@@ -226,11 +241,28 @@ class LevelRenderer(
     var playerAlpha: Float = 1f
 
     private fun refreshPalette() {
-        val m = SettingsManager.load().colorBlindMode
+        val s = SettingsManager.load()
+        val m = s.colorBlindMode
         if (m != paletteMode) {
             paletteMode = m
             palette = Palette.forMode(m)
         }
+        highContrast = s.highContrast
+    }
+
+    /**
+     * T-132: high-contrast colour interceptor. When [highContrast] is on,
+     * remaps [c] to the swatch for [role] via [HighContrastPalette], reusing
+     * [hcScratch] to avoid per-primitive allocation. When off, returns [c]
+     * unchanged so the render path is byte-identical to pre-T-132.
+     *
+     * Alpha is preserved from the input so glow/halo translucency still
+     * fades correctly under high contrast.
+     */
+    private fun hc(c: Color, role: ColorRole): Color {
+        if (!highContrast) return c
+        val swatch = HighContrastPalette.swatchFor(role)
+        return hcScratch.set(swatch.r, swatch.g, swatch.b, c.a)
     }
 
     /**
@@ -264,7 +296,7 @@ class LevelRenderer(
         parallaxBg.render(shapeRenderer, camera, cleanseRatio)
 
         // ── Ability VFX ────────────────────────────────────────────────────────
-        shapeRenderer.color = DROPLET
+        shapeRenderer.color = hc(DROPLET, ColorRole.ABILITY_VFX)
         for (droplet in eboAbility.getActiveRaindrops()) {
             val pos = droplet.body.position
             shapeRenderer.circle(pos.x, pos.y, droplet.getRadius())
@@ -272,13 +304,13 @@ class LevelRenderer(
         for (trail in layaAbility.getActiveWindTrails()) {
             val pos = trail.getCurrentPosition()
             tmpWindCol.set(1f, 1f, 1f, 0.6f * trail.getAlpha())
-            shapeRenderer.color = tmpWindCol
+            shapeRenderer.color = hc(tmpWindCol, ColorRole.ABILITY_VFX)
             shapeRenderer.circle(pos.x / Constants.PPM, pos.y / Constants.PPM, trail.getRadius())
         }
         for (trail in zephyrAbility.getActiveWindTrails()) {
             val pos = trail.getCurrentPosition()
             tmpWindCol.set(0.75f, 0.55f, 1f, 0.65f * trail.getAlpha())
-            shapeRenderer.color = tmpWindCol
+            shapeRenderer.color = hc(tmpWindCol, ColorRole.ABILITY_VFX)
             shapeRenderer.circle(pos.x / Constants.PPM, pos.y / Constants.PPM, trail.getRadius())
         }
 
@@ -322,22 +354,22 @@ class LevelRenderer(
 
             when {
                 rect.kind == ObstacleKind.HAZARD && ud == "hazard_cleaned" -> {
-                    shapeRenderer.color = palette.HAZARD_CLEAN_BASE
+                    shapeRenderer.color = hc(palette.HAZARD_CLEAN_BASE, ColorRole.HAZARD_CLEANED)
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
-                    shapeRenderer.color = palette.HAZARD_CLEAN_GLEAM
+                    shapeRenderer.color = hc(palette.HAZARD_CLEAN_GLEAM, ColorRole.HAZARD_CLEANED)
                     shapeRenderer.rect(cx - w, cy + he - 0.04f, w * 2f, 0.04f)
                 }
                 rect.kind == ObstacleKind.HAZARD -> {
-                    shapeRenderer.color = palette.HAZARD_BASE
+                    shapeRenderer.color = hc(palette.HAZARD_BASE, ColorRole.HAZARD)
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
-                    shapeRenderer.color = palette.HAZARD_STRIPE
+                    shapeRenderer.color = hc(palette.HAZARD_STRIPE, ColorRole.HAZARD)
                     var sx = cx - w
                     while (sx < cx + w) {
                         shapeRenderer.rect(sx, cy - he, 0.05f, he * 2f)
                         sx += 0.2f
                     }
                     // Triangular spike shapes along the top edge
-                    shapeRenderer.color = palette.HAZARD_SPIKE
+                    shapeRenderer.color = hc(palette.HAZARD_SPIKE, ColorRole.HAZARD)
                     var spx = cx - w + 0.04f
                     while (spx < cx + w - 0.04f) {
                         shapeRenderer.triangle(spx - 0.04f, cy + he, spx + 0.04f, cy + he, spx, cy + he + 0.12f)
@@ -345,9 +377,9 @@ class LevelRenderer(
                     }
                 }
                 rect.kind == ObstacleKind.WALL -> {
-                    shapeRenderer.color = WALL_BASE
+                    shapeRenderer.color = hc(WALL_BASE, ColorRole.WALL)
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
-                    shapeRenderer.color = WALL_EDGE
+                    shapeRenderer.color = hc(WALL_EDGE, ColorRole.WALL_EDGE)
                     shapeRenderer.rect(cx - w, cy - he, 0.03f, he * 2f)
                 }
                 rect.kind == ObstacleKind.EXIT && ud.startsWith("portal_") -> {
@@ -357,27 +389,28 @@ class LevelRenderer(
                     val unlocked  = required.all { it in completed }
                     val baseCol   = if (unlocked) palette.PORTAL_UNLOCKED else PORTAL_LOCKED
                     val edgeCol   = if (unlocked) palette.PORTAL_UNLOCKED_EDGE else PORTAL_LOCKED_EDGE
-                    shapeRenderer.color = baseCol
+                    val portalRole     = if (unlocked) ColorRole.PORTAL_UNLOCKED else ColorRole.PORTAL_LOCKED
+                    shapeRenderer.color = hc(baseCol, portalRole)
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
-                    shapeRenderer.color = edgeCol
+                    shapeRenderer.color = hc(edgeCol, portalRole)
                     shapeRenderer.rect(cx - w, cy - he, 0.05f, he * 2f)
                     shapeRenderer.rect(cx + w - 0.05f, cy - he, 0.05f, he * 2f)
                     shapeRenderer.rect(cx - w, cy + he - 0.04f, w * 2f, 0.04f)
                 }
                 rect.kind == ObstacleKind.EXIT -> {
-                    shapeRenderer.color = palette.EXIT_BASE
+                    shapeRenderer.color = hc(palette.EXIT_BASE, ColorRole.EXIT)
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
-                    shapeRenderer.color = palette.EXIT_EDGE
+                    shapeRenderer.color = hc(palette.EXIT_EDGE, ColorRole.EXIT_EDGE)
                     shapeRenderer.rect(cx - w, cy - he, 0.05f, he * 2f)
                     shapeRenderer.rect(cx + w - 0.05f, cy - he, 0.05f, he * 2f)
                 }
                 else -> {
-                    shapeRenderer.color = GROUND_BASE
+                    shapeRenderer.color = hc(GROUND_BASE, ColorRole.PLATFORM)
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, he * 2f)
-                    shapeRenderer.color = GROUND_TOP
+                    shapeRenderer.color = hc(GROUND_TOP, ColorRole.PLATFORM_HIGHLIGHT)
                     shapeRenderer.rect(cx - w, cy + he - 0.05f, w * 2f, 0.05f)
                     // Grass tufts along the top surface — height varies with position
-                    shapeRenderer.color = palette.GRASS_TUFT
+                    shapeRenderer.color = hc(palette.GRASS_TUFT, ColorRole.GRASS)
                     var gx = cx - w + 0.04f
                     while (gx < cx + w - 0.04f) {
                         val bh = 0.062f + MathUtils.sin(gx * 19.1f + cx * 4.3f) * 0.024f
@@ -385,7 +418,7 @@ class LevelRenderer(
                         gx += 0.10f
                     }
                     // Bottom shadow strip for a subtle 3-D depth impression
-                    shapeRenderer.color = GROUND_SHADOW
+                    shapeRenderer.color = hc(GROUND_SHADOW, ColorRole.PLATFORM_SHADOW)
                     shapeRenderer.rect(cx - w, cy - he, w * 2f, 0.04f)
                 }
             }
@@ -396,12 +429,12 @@ class LevelRenderer(
             val pos = mp.body.position
             val hw = 50f / Constants.PPM
             val hh = 10f / Constants.PPM
-            shapeRenderer.color = MP_BASE
+            shapeRenderer.color = hc(MP_BASE, ColorRole.MOVING_PLATFORM)
             shapeRenderer.rect(pos.x - hw, pos.y - hh, hw * 2f, hh * 2f)
-            shapeRenderer.color = MP_TOP
+            shapeRenderer.color = hc(MP_TOP, ColorRole.MOVING_PLATFORM_HIGHLIGHT)
             shapeRenderer.rect(pos.x - hw, pos.y + hh - 0.04f, hw * 2f, 0.04f)
             // Underside shadow for depth
-            shapeRenderer.color = MP_SHADOW
+            shapeRenderer.color = hc(MP_SHADOW, ColorRole.PLATFORM_SHADOW)
             shapeRenderer.rect(pos.x - hw, pos.y - hh, hw * 2f, 0.025f)
         }
 
@@ -409,9 +442,12 @@ class LevelRenderer(
         for (cp in obstacleManager.checkpoints()) {
             val activated = cp.fixture.userData as? String == "checkpoint_activated"
             val r = cp.radiusPx / Constants.PPM
-            shapeRenderer.color = if (activated) palette.CP_GLOW_ACTIVE else palette.CP_GLOW_INACTIVE
+            val glowCol = if (activated) palette.CP_GLOW_ACTIVE else palette.CP_GLOW_INACTIVE
+            val bodyCol = if (activated) palette.CP_BODY_ACTIVE else palette.CP_BODY_INACTIVE
+            val cpRole  = if (activated) ColorRole.CHECKPOINT_ACTIVE else ColorRole.CHECKPOINT_INACTIVE
+            shapeRenderer.color = hc(glowCol, cpRole)
             shapeRenderer.circle(cp.body.position.x, cp.body.position.y, r * 1.5f)
-            shapeRenderer.color = if (activated) palette.CP_BODY_ACTIVE else palette.CP_BODY_INACTIVE
+            shapeRenderer.color = hc(bodyCol, cpRole)
             shapeRenderer.circle(cp.body.position.x, cp.body.position.y, r)
             shapeRenderer.color = Color.WHITE
             shapeRenderer.circle(cp.body.position.x, cp.body.position.y, r * 0.35f)
@@ -427,12 +463,12 @@ class LevelRenderer(
             val r = token.getAnimatedRadius()
             if (token.isHidden) {
                 // Golden tint, ~RGBA(1.0, 0.85, 0.3, 1.0) per spec
-                shapeRenderer.color = HIDDEN_TOKEN_GLOW
+                shapeRenderer.color = hc(HIDDEN_TOKEN_GLOW, ColorRole.TOKEN)
                 shapeRenderer.circle(p.x, p.y, r * 1.5f)
-                shapeRenderer.color = HIDDEN_TOKEN_BODY
+                shapeRenderer.color = hc(HIDDEN_TOKEN_BODY, ColorRole.TOKEN)
                 shapeRenderer.circle(p.x, p.y, r)
             } else {
-                shapeRenderer.color = palette.TOKEN
+                shapeRenderer.color = hc(palette.TOKEN, ColorRole.TOKEN)
                 shapeRenderer.circle(p.x, p.y, r)
             }
         }
@@ -443,9 +479,9 @@ class LevelRenderer(
                 val p  = snap.body.position
                 val r  = snap.getAnimatedRadius()
                 val ri = r * 0.45f
-                shapeRenderer.color = palette.SNAPSHOT_GLOW
+                shapeRenderer.color = hc(palette.SNAPSHOT_GLOW, ColorRole.SNAPSHOT)
                 shapeRenderer.circle(p.x, p.y, r * 1.4f)
-                shapeRenderer.color = palette.SNAPSHOT_BODY
+                shapeRenderer.color = hc(palette.SNAPSHOT_BODY, ColorRole.SNAPSHOT)
                 shapeRenderer.triangle(p.x, p.y + r,  p.x + ri, p.y,      p.x, p.y - r)
                 shapeRenderer.triangle(p.x, p.y + r,  p.x - ri, p.y,      p.x, p.y - r)
                 shapeRenderer.triangle(p.x - r, p.y,  p.x, p.y + ri,  p.x + r, p.y)
@@ -454,7 +490,7 @@ class LevelRenderer(
         }
 
         // Projectiles
-        shapeRenderer.color = PROJECTILE
+        shapeRenderer.color = hc(PROJECTILE, ColorRole.PROJECTILE)
         for (proj in projectiles) {
             val pos = proj.body.position
             shapeRenderer.circle(pos.x, pos.y, Projectile.RADIUS)
@@ -466,6 +502,16 @@ class LevelRenderer(
         // byte-identical to its pre-T-098 value.)
         for (enemy in enemies) {
             enemy.draw(shapeRenderer)
+            // T-132: cover the enemy with a pure-black silhouette when
+            // high-contrast is on. Enemies set their own colours inside
+            // [Enemy.draw], so we paint over the result here rather than
+            // editing every entity class. Size is a small generous box that
+            // covers SmogSprite (0.15×0.12 m) and similar small patrollers.
+            if (highContrast && !enemy.isDead) {
+                shapeRenderer.color = hc(Color.BLACK, ColorRole.ENEMY)
+                val ep = enemy.body.position
+                shapeRenderer.rect(ep.x - 0.18f, ep.y - 0.16f, 0.36f, 0.32f)
+            }
         }
 
         // T-062: Drift Husks (drop-from-above) -- draw() handles its own
@@ -473,10 +519,26 @@ class LevelRenderer(
         // here too via the same Enemy.applyHitFlash helper.
         for (husk in driftHusks) {
             husk.draw(shapeRenderer)
+            // T-132: same enemy-silhouette overlay (DriftHusk is 0.16×0.14 m,
+            // and it skips its own draw while in COOLDOWN — we mirror that
+            // by checking isDead, which covers the practical case).
+            if (highContrast && !husk.isDead) {
+                shapeRenderer.color = hc(Color.BLACK, ColorRole.ENEMY)
+                val hp = husk.body.position
+                shapeRenderer.rect(hp.x - 0.18f, hp.y - 0.16f, 0.36f, 0.32f)
+            }
         }
 
         // Boss sentinel (drawn after enemies so telegraph rings appear on top)
         sentinel?.draw(shapeRenderer)
+        // T-132: boss-sentinel silhouette overlay. BODY_RADIUS is 0.45 m, so
+        // a 0.5 m circle covers the body cleanly while leaving the telegraph
+        // rings (drawn outside the body radius) visible.
+        if (highContrast && sentinel != null) {
+            val sp = sentinel.body.position
+            shapeRenderer.color = hc(Color.BLACK, ColorRole.ENEMY)
+            shapeRenderer.circle(sp.x, sp.y, 0.5f)
+        }
 
         // Particles (alpha blend enabled; works inside the Filled block via GL blend state)
         Gdx.gl.glEnable(GL20.GL_BLEND)
@@ -497,6 +559,7 @@ class LevelRenderer(
 
     /** Draws the player sprite using [SpriteBatch]. Handles flashing and Zephyr tint. */
     fun renderPlayer(currentCharacter: String) {
+        refreshPalette()
         val flashVisible = !player.isFlashing || (player.deathFlashTimer * 8).toInt() % 2 == 0
         if (!flashVisible) return
         // T-097: skip the draw entirely once the death-fade is essentially invisible
@@ -530,6 +593,25 @@ class LevelRenderer(
         if (player.isFlashing || currentCharacter == "Zephyr" || a < 1f) spriteBatch.setColor(Color.WHITE)
         spriteBatch.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
+
+        // T-132: high-contrast overlay — paint a pure-white silhouette over the
+        // player sprite via ShapeRenderer (the sprite texture itself can't be
+        // recoloured without touching the atlas, so we cover it). The death
+        // fade still applies via [playerAlpha] so the player still vanishes on
+        // death; the per-character Zephyr tint is intentionally overridden
+        // because at maximum contrast we want all three characters to read as
+        // the SAME silhouette ("the player").
+        if (highContrast) {
+            shapeRenderer.projectionMatrix = camera.combined
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+            // Match the player sprite's body footprint roughly: 28×32 px at
+            // PPM=100 → 0.28×0.32 m. Centred at the body position (sy starts
+            // 32 px below the body so the sprite includes legs).
+            val whiteCol = Color(1f, 1f, 1f, a)
+            shapeRenderer.color = whiteCol
+            shapeRenderer.rect(playerPos.x - 0.14f, playerPos.y - 0.20f, 0.28f, 0.42f)
+            shapeRenderer.end()
+        }
     }
 
     /**
