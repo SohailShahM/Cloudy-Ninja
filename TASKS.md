@@ -463,6 +463,92 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 ═══════════════════════════════════════════════════════════════ -->
 
 <!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D wave 14 — T-046 integration cascade (2026-05-14)
+     T-181 placed 6 CC0 packs and the inventory at research/asset-pack-inventory.md.
+     T-180 introduces the rendering scaffold; T-186..T-193 swap one
+     entity / tileset at a time. Visual-risk work — each ticket ships
+     with a clear PR-diff contract so the orchestrator can admin-merge
+     or leave for user review on a per-ticket basis.
+═══════════════════════════════════════════════════════════════ -->
+
+### T-180 — SpriteFactory + CharacterAtlas scaffold (no behavior change)  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes  *(scaffold-only; no rendering change visible to player)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-181  *(Done — assets staged)*
+- **GDD ref:** `research/asset-pack-inventory.md`; T-046 umbrella
+- **Files:** new `core/src/main/kotlin/com/sohai/platformer/rendering/SpriteFactory.kt`, new `core/src/main/kotlin/com/sohai/platformer/rendering/CharacterAtlas.kt`, new `core/src/main/kotlin/com/sohai/platformer/rendering/AnimationStateMachine.kt` (or extend an existing helper), new tests
+- **Goal:** Introduce the rendering scaffold the next 8 integration tickets will use. **No existing rendering code is touched** in this ticket — the scaffold lands parallel to the current ShapeRenderer path. Integration tickets (T-186+) will route entity draw paths through the new scaffold one at a time.
+- **Design:**
+  - `SpriteFactory` — loads PNG sheets from `assets/sprites/...` lazily, caches `Texture` + `TextureRegion` objects, exposes `regionFor(spriteId: String, frame: Int): TextureRegion`. Disposes on game shutdown via libGDX `Disposable`.
+  - `CharacterAtlas` — per-character bundle: `idle: Array<TextureRegion>`, `run: ...`, `jump: ...`, `fall: ...`, `attack: ...`, `hit: ...`, `death: ...`. Loaded once per character via a factory method `CharacterAtlas.loadLuizMelo(packRoot: String)`. Maps the inventory's `Going Up.png` → `jump`, `Going Down.png` → `fall` (per inventory's semantic-equivalence note).
+  - `AnimationStateMachine` — given a character's current state (Walking, Jumping, Attacking, ...) and a delta, returns the current `TextureRegion`. Frame timing baked in.
+- **Done when:** Scaffold compiles. Kotest specs cover (a) SpriteFactory cache hit/miss, (b) CharacterAtlas loads all expected states from MH1/MH2/MH3 paths, (c) AnimationStateMachine advances frames at the expected rate. No existing rendering code changes; smoke CI passes (autopilot doesn't touch the scaffold).
+- **Constraints:** **Don't modify `LevelRenderer.kt`, `PlayerController.kt`, `EboAbility.kt`/`LayaAbility.kt`/`ZephyrAbility.kt`, or any entity files.** This is a scaffold-only ticket. The first wiring into existing code is T-186.
+
+### T-186 — Wire Ebo to MH1 sprite (first character integration)  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes-with-review  *(visual risk; PR diff must be inspectable; orchestrator may leave PR open for user to verify in-game)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-180
+- **GDD ref:** `research/asset-pack-inventory.md` row "Ebo → MH1"
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt` (route Ebo player draw through `CharacterAtlas`), `core/src/main/kotlin/com/sohai/platformer/entities/PlayerController.kt` (current state → AnimationStateMachine input)
+- **Goal:** When `currentCharacter == "Ebo"`, render the player from `assets/sprites/luizmelo/martial-hero-1/` via `CharacterAtlas.loadLuizMelo("luizmelo/martial-hero-1")` instead of the ShapeRenderer rect. **Other characters keep their current ShapeRenderer rendering** (T-187/T-188 will swap them).
+- **State mapping:** Walking right/left → `run`; idle → `idle`; ascending → `jump`; descending → `fall`; taking hit → `take-hit`; dying → `death`; Seed Slam (Ebo's ability) → `attack1`. Wall-slide is a gap (per inventory) — for now use `idle` with a comment marker so future authoring lands cleanly.
+- **Done when:** When Ebo is the active character, sprite-based rendering replaces the ShapeRenderer rectangle. Animations advance smoothly. Direction flips horizontally on left-input. Smoke CI passes (the smoke autopilot uses Ebo by default — verify it still completes Level 1/2/3).
+- **PR-diff contract (so orchestrator can admin-merge confidently):**
+  - PR body MUST include a state-to-sheet mapping table (one row per state)
+  - PR body MUST include frame-timing constants chosen (FPS per state)
+  - PR body MUST cite the existing autopilot smoke success on Level 1/2/3
+  - PR body MUST explicitly note: this is Ebo only; Laya + Zephyr unchanged
+- **Constraints:** **Don't touch Laya/Zephyr rendering paths.** **Don't change Ebo's hitbox** — sprite is visual; physics body unchanged. **Don't change movement physics** (T-175 already tuned). **High-contrast mode** (T-170) must still work — entity's `drawHighContrast(shapeRenderer, color)` continues to paint the silhouette; sprite rendering is the non-high-contrast path.
+
+### T-187 — Wire Laya to MH3 sprite  [P2]
+- **Status:** Todo · **Tool:** `claude-code-sonnet` · **Tier:** S · **Autonomous-eligible:** yes-with-review · **Depends on:** T-186 *(LevelRenderer/PlayerController contention)*
+- **Files:** `LevelRenderer.kt`, `PlayerController.kt`
+- **Goal:** Same pattern as T-186 but for Laya → `assets/sprites/luizmelo/martial-hero-3/`. Maps MH3's `Going Up.png` → `jump`, `Going Down.png` → `fall` (inventory's semantic-equivalence note). Wind Dash ability → `attack3` (MH3's triple-attack pack).
+- **Done when:** Active-Laya rendering uses sprite; Ebo + Zephyr unchanged; smoke passes; PR-diff contract from T-186 applies here too.
+
+### T-188 — Wire Zephyr to MH2 sprite  [P2]
+- **Status:** Todo · **Tool:** `claude-code-sonnet` · **Tier:** S · **Autonomous-eligible:** yes-with-review · **Depends on:** T-187
+- **Files:** `LevelRenderer.kt`, `PlayerController.kt`
+- **Goal:** Wire Zephyr → `assets/sprites/luizmelo/martial-hero-2/`. Cloud Float ability → `attack1`. After this ticket lands, all three characters are sprite-rendered.
+
+### T-189 — Replace arid biome tile rendering with Sunny Land tileset  [P3]
+- **Status:** Todo · **Tool:** `claude-code-sonnet` · **Tier:** M · **Autonomous-eligible:** yes-with-review · **Depends on:** T-180
+- **Files:** `LevelRenderer.kt`, `rendering/TileRenderer.kt`, level definitions for arid biome (`Level0_0.kt` / `levels/level1.tmx`)
+- **Goal:** When rendering the arid biome (Level 0-0 hub + Level 1), use `assets/tilesets/sunny-land/environment/layers/tileset.png` (16×16 grid) for ground tiles, plus parallax layers. Existing ShapeRenderer terrain stays as fallback if a tile id is unmapped.
+- **Done when:** Arid biome levels render with Sunny Land tiles instead of solid-color rectangles; smoke CI passes; PR body describes the tile-id → atlas-coord mapping.
+
+### T-190 — Replace eco biome tile rendering with Sunny Land Forest tileset  [P3]
+- **Status:** Todo · **Tool:** `claude-code-sonnet` · **Tier:** M · **Autonomous-eligible:** yes-with-review · **Depends on:** T-189 *(LevelRenderer / TileRenderer contention)*
+- **Files:** `LevelRenderer.kt`, `TileRenderer.kt`, eco biome level defs
+- **Goal:** Same pattern as T-189, eco biome → `assets/tilesets/sunnyland-forest/environment/layers/tileset.png`. Parallax: `background.png` + `middleground.png` from same pack.
+
+### T-191 — Replace wind biome tile rendering with PixelFrog Terrain  [P3]
+- **Status:** Todo · **Tool:** `claude-code-sonnet` · **Tier:** M · **Autonomous-eligible:** yes-with-review · **Depends on:** T-190
+- **Files:** `LevelRenderer.kt`, `TileRenderer.kt`, wind biome level defs
+- **Goal:** Wind biome → `assets/sprites/pixelfrog/Terrain/Terrain (16x16).png`. May require palette shift toward cool-blue/cyan to read as "windy sky"; document the choice in PR body.
+
+### T-192 — Smog Sprite enemy: sprite swap  [P3]
+- **Status:** Todo · **Tool:** `claude-code-sonnet` · **Tier:** S · **Autonomous-eligible:** yes-with-review · **Depends on:** T-180
+- **Files:** `entities/SmogSprite.kt`, `LevelRenderer.kt`
+- **Goal:** Replace SmogSprite's dark-grey ShapeRenderer oval with the Sunny Land Forest `bee` sprite (4-frame flying patroller animation). Hit-flash composition preserved (T-098). High-contrast silhouette path (T-170) unchanged.
+
+### T-193 — Drift Husk enemy: sprite swap  [P3]
+- **Status:** Todo · **Tool:** `claude-code-sonnet` · **Tier:** S · **Autonomous-eligible:** yes-with-review · **Depends on:** T-192 *(LevelRenderer + entity-render path consistency)*
+- **Files:** `entities/DriftHusk.kt`, `LevelRenderer.kt`
+- **Goal:** Drift Husk → SL Forest `piranha-plant` (ambush-static — fits drop-down archetype). High-contrast preserved.
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════
      SPRINT D wave 13 — small autonomous cleanups (2026-05-14)
      T-194 / T-198 spec'd during the 8-hour autonomous run for cheap
      ship-in-flight value.
