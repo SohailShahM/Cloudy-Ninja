@@ -43,7 +43,21 @@ data class GameState(
      * Additive field per T-113 migration scaffold: legacy saves load with an
      * empty set (default value, no migration required).
      */
-    val collectedHiddenTokens: Set<String> = emptySet()
+    val collectedHiddenTokens: Set<String> = emptySet(),
+    /**
+     * T-146: Per-achievement unlock timestamps (epoch milliseconds, UTC).
+     * Recorded by [com.sohai.platformer.progression.AchievementUnlocker.tryUnlock]
+     * the moment a new achievement is unlocked. AchievementsScreen renders these
+     * as "Unlocked: YYYY-MM-DD" (in user's local timezone) under each unlocked row.
+     *
+     * Legacy unlocks (in `unlockedAchievements` but absent from this map) render
+     * "Unlocked: ?" — additive field per T-113 migration scaffold: pre-T-146 saves
+     * load with an empty map (default value, no migration required).
+     *
+     * Keyed by achievement id (matches [com.sohai.platformer.progression.AchievementRegistry]);
+     * value is `System.currentTimeMillis()` captured at unlock.
+     */
+    val achievementTimestamps: Map<String, Long> = emptyMap()
 )
 
 @Serializable

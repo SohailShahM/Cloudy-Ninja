@@ -23,6 +23,9 @@ import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.progression.Achievement
 import com.sohai.platformer.progression.AchievementRegistry
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * T-108: AchievementsScreen
@@ -92,11 +95,14 @@ class AchievementsScreen(
         list.top().left()
         list.defaults().left().expandX().fillX().padBottom(10f)
 
-        val unlocked = loadUnlockedSet(currentSlotIndex)
+        val slotState = loadSlotState(currentSlotIndex)
+        val unlocked = slotState.unlockedAchievements
+        val timestamps = slotState.achievementTimestamps
         val sorted = sortByUnlockedThenRegistration(AchievementRegistry.ALL, unlocked)
         for (achievement in sorted) {
             val isUnlocked = achievement.id in unlocked
-            list.add(buildAchievementRow(achievement, isUnlocked)).row()
+            val unlockedAtMs = if (isUnlocked) timestamps[achievement.id] else null
+            list.add(buildAchievementRow(achievement, isUnlocked, unlockedAtMs)).row()
         }
 
         val scroll = VisScrollPane(list)
@@ -144,8 +150,17 @@ class AchievementsScreen(
      * `[ICON 32×32]   TITLE (bold)  /  description (italic-ish)  /  status`.
      *
      * Locked rows render the icon at 50% alpha and use muted grey text.
+     *
+     * T-146: when [isUnlocked] is true, a "Unlocked: YYYY-MM-DD" line is appended
+     * under the status row. [unlockedAtMs] = epoch ms in UTC; rendered in the
+     * user's local timezone as ISO date. A null value (legacy unlock with no
+     * recorded timestamp) renders the fallback "Unlocked: ?".
      */
-    private fun buildAchievementRow(achievement: Achievement, isUnlocked: Boolean): VisTable {
+    private fun buildAchievementRow(
+        achievement: Achievement,
+        isUnlocked: Boolean,
+        unlockedAtMs: Long?
+    ): VisTable {
         val row = VisTable()
         row.background("window")
         row.pad(10f)
@@ -184,20 +199,53 @@ class AchievementsScreen(
         val statusStyle = Label.LabelStyle(rowBodyFont, statusColor)
         textCol.add(Label(Strings.get(statusKey), statusStyle)).left().row()
 
+        // T-146: unlock-timestamp line under each unlocked row. Locked rows
+        // get no timestamp line at all.
+        if (isUnlocked) {
+            val tsText = if (unlockedAtMs != null) {
+                Strings.format(StringKey.ACHIEVEMENT_UNLOCKED_AT, formatUnlockDate(unlockedAtMs))
+            } else {
+                Strings.get(StringKey.ACHIEVEMENT_UNLOCKED_AT_UNKNOWN)
+            }
+            val tsStyle = Label.LabelStyle(rowBodyFont, Color(0.7f, 0.85f, 0.95f, 1f))
+            textCol.add(Label(tsText, tsStyle)).left().padTop(2f).row()
+        }
+
         row.add(textCol).left().expandX().fillX()
         return row
     }
+
+    /**
+     * T-146: Format an unlock-timestamp (epoch ms, UTC) as an ISO date
+     * (`YYYY-MM-DD`) in the user's local timezone. Stable, locale-independent,
+     * unambiguous — matches the ticket constraint.
+     */
+    private fun formatUnlockDate(epochMs: Long): String =
+        DATE_FORMATTER.format(Instant.ofEpochMilli(epochMs).atZone(ZoneId.systemDefault()))
 
     // -------------------------------------------------------------------------
     // Data helpers
     // -------------------------------------------------------------------------
 
-    /** Reads the unlocked achievement-ids for [slotIndex]; empty if no save. */
-    private fun loadUnlockedSet(slotIndex: Int): Set<String> {
+    /**
+     * Lightweight projection of the slot save used by [rebuild] — just the
+     * unlocked set + per-id timestamp map. Empty defaults if the slot has no
+     * save on disk. Loading once per rebuild instead of twice (once for the
+     * set, once for the map) keeps disk reads at parity with the pre-T-146
+     * behavior.
+     */
+    private data class SlotSummary(
+        val unlockedAchievements: Set<String>,
+        val achievementTimestamps: Map<String, Long>
+    )
+
+    private fun loadSlotState(slotIndex: Int): SlotSummary {
         val file = STATS_SLOT_FILES[slotIndex]
-        if (!SaveManager.hasSave(file)) return emptySet()
+        if (!SaveManager.hasSave(file)) {
+            return SlotSummary(emptySet(), emptyMap())
+        }
         val state = SaveManager.loadGame(file)
-        return state.unlockedAchievements
+        return SlotSummary(state.unlockedAchievements, state.achievementTimestamps)
     }
 
     /**
@@ -256,5 +304,12 @@ class AchievementsScreen(
 
     companion object {
         private const val ICON_SIZE = 32f
+
+        /**
+         * T-146: ISO-format date (YYYY-MM-DD), no time component. Locale-
+         * independent pattern so the value is unambiguous across regions.
+         */
+        private val DATE_FORMATTER: DateTimeFormatter =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd")
     }
 }
