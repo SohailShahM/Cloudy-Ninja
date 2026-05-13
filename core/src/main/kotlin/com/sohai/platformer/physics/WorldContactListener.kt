@@ -251,15 +251,19 @@ class WorldContactListener : ContactListener {
                 val platform = otherFixture.body.userData as? MovingPlatform
                 val platformBodyId = platform?.body?.hashCode() ?: otherFixture.body.hashCode()
                 if (begin) {
-                    Gdx.app.log(
-                        "ContactListener",
-                        "Platform contact BEGIN — platformBody=0x${platformBodyId.toString(16)}"
-                    )
+                    if (Constants.DEV_LOGS) {
+                        Gdx.app.log(
+                            "ContactListener",
+                            "Platform contact BEGIN — platformBody=0x${platformBodyId.toString(16)}"
+                        )
+                    }
                 } else {
-                    Gdx.app.log(
-                        "ContactListener",
-                        "Platform contact END   — platformBody=0x${platformBodyId.toString(16)}"
-                    )
+                    if (Constants.DEV_LOGS) {
+                        Gdx.app.log(
+                            "ContactListener",
+                            "Platform contact END   — platformBody=0x${platformBodyId.toString(16)}"
+                        )
+                    }
                     // Sanity check: warn if the platform body no longer appears valid.
                     // A body in a destroyed or inactive state is a red flag for stale
                     // references — exactly the scenario that triggers the JNI crash.

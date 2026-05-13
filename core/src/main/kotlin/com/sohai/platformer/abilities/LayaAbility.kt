@@ -224,7 +224,9 @@ class LayaAbility(
         SoundManager.play("ability_laya")
         spawnWindEffect(playerPos, windDirection)
 
-        Gdx.app.log("LayaAbility", "Wind Dash at (${playerPos.x}, ${playerPos.y}) dir=${if (facingRight) "RIGHT" else "LEFT"}")
+        if (com.sohai.platformer.Constants.DEV_LOGS) {
+            Gdx.app.log("LayaAbility", "Wind Dash at (${playerPos.x}, ${playerPos.y}) dir=${if (facingRight) "RIGHT" else "LEFT"}")
+        }
     }
 
     private fun spawnWindEffect(epicenter: Vector2, windDirection: Float) {
