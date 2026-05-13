@@ -172,6 +172,20 @@ class GameScreen(
         SoundManager.setUiVolume(settings.volUi)
 
         ecoTokens.addAll(level.getEcoTokenPositions().map { EcoToken(world, it.x, it.y) })
+        // T-107: hidden eco-tokens are tagged isHidden=true so the renderer
+        // can apply a golden tint and LevelRunState can route collection to
+        // the cross-run persistence path. Skip spawning if this level's
+        // hidden token was already collected in a previous session.
+        val alreadyCollected = com.sohai.platformer.persist.SaveManager
+            .loadGame(SAVE_SLOT_FILE)
+            .collectedHiddenTokens
+        if (level.id !in alreadyCollected) {
+            ecoTokens.addAll(
+                level.getHiddenEcoTokenPositions().map {
+                    EcoToken(world, it.x, it.y, isHidden = true)
+                }
+            )
+        }
         snapshotPickups.addAll(level.getSnapshotPickups(world))
 
         hud = Hud(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)

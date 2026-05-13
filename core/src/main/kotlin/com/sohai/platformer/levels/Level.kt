@@ -36,6 +36,13 @@ abstract class Level {
     /** Eco-token spawn positions in world meters (x, y). */
     open fun getEcoTokenPositions(): List<Vector2> = emptyList()
 
+    /**
+     * T-107: Hidden ("golden") eco-token spawn positions in world meters.
+     * Placed in out-of-the-way spots; rendered with a golden tint; tracked
+     * separately in [com.sohai.platformer.persist.GameState.collectedHiddenTokens].
+     */
+    open fun getHiddenEcoTokenPositions(): List<Vector2> = emptyList()
+
     /** Cloud Atlas snapshot pickups placed in this level. Default: none. */
     open fun getSnapshotPickups(world: World): List<SnapshotPickup> = emptyList()
 

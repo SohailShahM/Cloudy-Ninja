@@ -35,7 +35,15 @@ data class GameState(
     /** IDs of achievements unlocked across all runs */
     val unlockedAchievements: Set<String> = emptySet(),
     /** Total enemy stomps across all sessions for this slot (used for stomp_10 achievement) */
-    val totalStomps: Int = 0
+    val totalStomps: Int = 0,
+    /**
+     * T-107: IDs of hidden ("golden") eco-tokens collected across all sessions.
+     * Token id is the level id (one hidden token per campaign level: level1,
+     * level2, level3). Collecting all 3 unlocks the `collector` achievement.
+     * Additive field per T-113 migration scaffold: legacy saves load with an
+     * empty set (default value, no migration required).
+     */
+    val collectedHiddenTokens: Set<String> = emptySet()
 )
 
 @Serializable

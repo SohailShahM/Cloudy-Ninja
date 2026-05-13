@@ -59,7 +59,9 @@ val ACHIEVEMENT_IDS: List<String> = listOf(
     "stomp_10",
     "boss_defeated",
     "world_1_clear",
-    "all_clear"
+    "all_clear",
+    // T-107: hidden eco-token meta-achievement
+    "collector"
 )
 
 fun main(args: Array<String>) {
@@ -104,6 +106,7 @@ fun renderIcon(id: String): BufferedImage {
             "boss_defeated"  -> drawCrown(g)
             "world_1_clear"  -> drawShieldWithOne(g)
             "all_clear"      -> drawTrophy(g)
+            "collector"      -> drawGoldenTokenTrio(g)
             else -> error("No draw routine for achievement id: $id")
         }
     } finally {
@@ -314,4 +317,25 @@ private fun drawTrophy(g: Graphics2D) {
     // Highlight on cup.
     g.color = FG
     g.fillRect(6, 4, 1, 3)
+}
+
+/**
+ * T-107: three golden eco-tokens arranged in a small triangle — one per
+ * campaign level. Drawn with the gold ACCENT colour to match the in-game
+ * hidden-token render path. Highlight pip on each token gives it a coin-y
+ * "shiny" feel at 16x16.
+ */
+private fun drawGoldenTokenTrio(g: Graphics2D) {
+    g.color = ACCENT
+    // Token 1: top-center.
+    g.fillRect(6, 2, 4, 4)
+    // Token 2: bottom-left.
+    g.fillRect(2, 9, 4, 4)
+    // Token 3: bottom-right.
+    g.fillRect(10, 9, 4, 4)
+    // Coin highlight pips (one off-white pixel per token for that "shine").
+    g.color = FG
+    g.fillRect(7, 3, 1, 1)
+    g.fillRect(3, 10, 1, 1)
+    g.fillRect(11, 10, 1, 1)
 }
