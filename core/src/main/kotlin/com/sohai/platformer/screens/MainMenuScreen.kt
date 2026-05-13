@@ -6,14 +6,18 @@ import com.badlogic.gdx.Input
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
+import com.badlogic.gdx.graphics.Pixmap
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.Touchable
+import com.badlogic.gdx.scenes.scene2d.ui.Container
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
@@ -75,6 +79,14 @@ class MainMenuScreen(private val game: Game) : Screen {
      */
     private var buildInfoLabel: Label? = null
 
+    /**
+     * Backing texture for the title scrim (T-173). A 1×1 black-with-alpha
+     * Pixmap stretched behind the title Label via a [TextureRegionDrawable]
+     * background on a [Container]. Kept as a field so [dispose] can release
+     * the GPU resource on screen exit. Lazily created in [titleScrimDrawable].
+     */
+    private var titleScrimTexture: Texture? = null
+
     init {
         // T-171 (Phase A): MainMenuScreen is the one screen migrated to the
         // GlobalInputRouter. The legacy `Gdx.input.inputProcessor = stage`
@@ -100,9 +112,17 @@ class MainMenuScreen(private val game: Game) : Screen {
         root.setFillParent(true)
         root.center()
 
-        // Title
+        // Title (T-173): wrap the title Label in a Container with a dark
+        // semi-transparent scrim background so the text reads cleanly against
+        // any menu backdrop. The Container's pad() values give the scrim a
+        // ~16px halo around the text so it doesn't read as a tight box; the
+        // title position, font and string are unchanged from before.
         val title = VisLabel(Strings.get(StringKey.MAIN_TITLE))
-        root.add(title).padBottom(40f).row()
+        val titleScrim = Container(title)
+        titleScrim.background = titleScrimDrawable()
+        titleScrim.pad(TITLE_SCRIM_PAD_VERTICAL, TITLE_SCRIM_PAD_HORIZONTAL,
+                       TITLE_SCRIM_PAD_VERTICAL, TITLE_SCRIM_PAD_HORIZONTAL)
+        root.add(titleScrim).padBottom(40f).row()
 
         // --- Three slot cards ---
         val slotsRow = VisTable()
@@ -127,6 +147,30 @@ class MainMenuScreen(private val game: Game) : Screen {
         buildInfoLabel = label
         stage.addActor(label)
         repositionBuildInfoLabel()
+    }
+
+    /**
+     * Lazily builds (and caches via [titleScrimTexture]) the [TextureRegionDrawable]
+     * used as the title's background scrim (T-173). The source is a 1×1
+     * black-with-alpha Pixmap stretched by the [Container]'s layout; alpha
+     * [TITLE_SCRIM_ALPHA] is the contrast-vs-aesthetic compromise documented
+     * with that constant. The texture is owned by this screen and freed in
+     * [dispose].
+     */
+    private fun titleScrimDrawable(): TextureRegionDrawable {
+        val existing = titleScrimTexture
+        val tex = if (existing != null) {
+            existing
+        } else {
+            val pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
+            pixmap.setColor(0f, 0f, 0f, TITLE_SCRIM_ALPHA)
+            pixmap.fill()
+            val t = Texture(pixmap)
+            pixmap.dispose()
+            titleScrimTexture = t
+            t
+        }
+        return TextureRegionDrawable(tex)
     }
 
     /**
@@ -556,6 +600,10 @@ class MainMenuScreen(private val game: Game) : Screen {
         // next event dispatch.
         GlobalInputRouter.popScreen(stage)
         stage.dispose()
+        // T-173: free the title scrim's GPU texture. Safe to call once — the
+        // field is nulled so a defensive double-dispose is a no-op.
+        titleScrimTexture?.dispose()
+        titleScrimTexture = null
     }
 
     // -------------------------------------------------------------------------
@@ -594,6 +642,28 @@ class MainMenuScreen(private val game: Game) : Screen {
          * stage to the build-info label (T-100). 8px per ticket spec.
          */
         const val BUILD_INFO_PADDING = 8f
+
+        /**
+         * Alpha of the title scrim (T-173). 0.5 is the documented compromise:
+         * dark enough to guarantee readable contrast over the menu's
+         * `(0.1, 0.15, 0.2)` clear color without fully blacking out the
+         * background or reading as a hard UI panel. Tune up toward 0.6 if
+         * later menu backgrounds are brighter.
+         */
+        const val TITLE_SCRIM_ALPHA = 0.5f
+
+        /**
+         * Horizontal halo padding around the title text inside its scrim
+         * Container (T-173). Wider than the vertical pad so the scrim reads
+         * as a banner, not a tight box, when the title is short.
+         */
+        const val TITLE_SCRIM_PAD_HORIZONTAL = 24f
+
+        /**
+         * Vertical halo padding around the title text inside its scrim
+         * Container (T-173). Roughly the spec'd 16px.
+         */
+        const val TITLE_SCRIM_PAD_VERTICAL = 16f
 
         /**
          * Pure helper for T-099: given a per-slot unlocked-count list (typically
