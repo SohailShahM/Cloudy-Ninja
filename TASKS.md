@@ -463,11 +463,113 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 ═══════════════════════════════════════════════════════════════ -->
 
 <!-- ═══════════════════════════════════════════════════════════════
-     SPRINT D wave 10 — architectural smells captured this session
-     T-169..T-171 spec'd 2026-05-13 by claude-code-opus while the
-     final per-bus-feature wave was landing. Each addresses a real
-     pragmatism-vs-cleanness call made earlier in the project.
+     SPRINT D wave 11 — demo-readiness feedback (2026-05-13 very late)
+     User ran DEMO_PREFLIGHT_CHECKLIST.md and reported issues from a
+     ~6-minute play session. T-173..T-178 spec'd in response.
+     Highest-priority thread: T-177 asset-pack research unblocks T-046
+     graphics overhaul which is the meta-fix for "visuals are trash."
 ═══════════════════════════════════════════════════════════════ -->
+
+### T-173 — MainMenu title contrast (scrim behind logo text)  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** demo-readiness feedback 2026-05-13 — "main logo barely readable, only if you know what it is you are reading"
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt`
+- **Goal:** Add a dark gradient or solid-color scrim behind the "Cloudy Ninja" title text so it reads cleanly against the MainMenu background. Don't change the font or size yet — confirm scrim alone fixes legibility. Implementation: insert a `Pixmap`-backed `Drawable` or a `ShapeRenderer` filled-rect behind the title `Label`, with alpha ~0.4-0.6 and bounds slightly larger than the title's text extent.
+- **Done when:** Title is readable at a glance without prior knowledge of what it says; existing MainMenu visual identity preserved otherwise; smoke CI passes.
+- **Constraints:** Don't change font or text — scrim only. Don't add new dependencies. Reuse Scene2D / VisUI widgets if a `Stack` or `Container.background` solves it more cleanly than a manual rect.
+
+### T-174 — Investigate invisible barrier at level start  [P1]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M  *(starts as investigation; may spawn fix-tickets per-level)*
+- **Autonomous-eligible:** yes-with-surface  *(if root cause is non-obvious, surface to QUESTIONS.md instead of guessing)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** demo-readiness feedback 2026-05-13 — "invisible barrier at the start of some levels that doesn't allow you to jump very high"
+- **Files:** TBD — likely `assets/maps/*.tmx` (look for ceiling tiles or hidden colliders near spawn), `levels/Level0_0.kt`, `levels/TmxLevelLoader.kt` (or similar), `screens/LevelRunState.kt` (spawn + camera setup)
+- **Goal:** Find the source of the player-reported "invisible ceiling near spawn." Suspect causes (investigate in order):
+  1. **Box2D fixture** in the TMX collider layer that's invisible because the renderer skips zero-alpha or off-screen tiles. Grep the .tmx files for collision objects near the spawn coords + check the loader for any "hide tile but keep collider" pattern.
+  2. **Camera viewport clamp** that prevents the player from moving above the visible screen, indirectly capping jump height.
+  3. **Hardcoded ceiling collider** in Level0_0.kt or a base level class for "keep player in room."
+  4. Per-character jump-height limit that's being incorrectly applied at spawn.
+- **Done when:** Either (A) root cause identified + fixed in a PR with before/after diff and a Kotest spec that asserts jump-height-at-spawn is the expected value for the active character; OR (B) investigation completes inconclusive and the findings (suspect files + observations + reproduction steps) are documented in QUESTIONS.md so the user can re-test against fixes in the next pass.
+- **Constraints:** **Do NOT speculatively delete colliders** or modify levels without first locating the actual barrier. If multiple candidates exist, document all + ask before fix. Reproduce: spawn into Level 0-0 (hub), Level 1 (first real level), and any other levels you can reach — jump as high as possible at the spawn point; compare achieved Y to player jump-height stat. Surface in PR body which levels exhibited the issue.
+
+### T-175 — Movement responsiveness: reduce horizontal slide  [P1]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M  *(implementation is small; user-feel iteration is the variable cost)*
+- **Autonomous-eligible:** yes-baseline-then-human-iterate  *(ship a snappy baseline; user play-tests; iterate from there)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** demo-readiness feedback 2026-05-13 — "the character runs/slides too far when they are moving left or right, we are unable to do precise movements"
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/entities/PlayerController.kt` (or wherever the player physics constants live — grep for `linearDamping`, `friction`, `move`, `accel`)
+- **Goal:** Tune the player's ground-movement physics toward a **Celeste-like snappy baseline**: quick acceleration to max speed, **fast deceleration to a stop when input is released**, minimal air control (or a setting we can iterate on). Specifically:
+  - Increase `linearDamping` on the player Box2D body OR apply an explicit per-frame velocity dampener when no horizontal input is held.
+  - Reduce the "release coast" time to ~3-5 frames at 60Hz (i.e. player stops within ~50-80ms of releasing the key).
+  - Keep top movement speed the same — this is about stopping, not slowing.
+  - Add tuning constants near the top of the file with brief comments so future iteration is one-edit.
+- **Done when:** A baseline tuning ships; PR body lists the constants changed (old → new); user is expected to play-test and iterate via follow-up tickets. Smoke CI must still pass (existing autopilot relies on movement working at all, but it doesn't measure snappiness).
+- **Constraints:** **Don't change jump physics** — vertical feel is a separate question (see T-176 for Laya's specific issue). **Don't reduce top speed.** Hold off air-control changes for a follow-up unless trivially co-located. If the existing code already has tunable constants for damping, **change those values** rather than rewriting the physics integration.
+
+### T-176 — Laya Wind Dash: dynamic camera + slow descent  [P1]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes  *(code; wings/cape animation is deferred to art overhaul)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** demo-readiness feedback 2026-05-13 — "the second character jumps out of the screen and we cannot see where they will land. We need the ability for the camera to zoom out as the character jumps out of the screen and slow down their landing"
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/entities/LayaAbility.kt` (or the wind-dash logic — grep), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt` (camera viewport / zoom), possibly `core/src/main/kotlin/com/sohai/platformer/entities/PlayerController.kt` (vertical gravity scaling during dash)
+- **Goal:** Two coupled fixes for Laya's Wind Dash readability:
+  1. **Slow-descent glide** — after the Wind Dash's apex (when vy turns negative), apply a gravity multiplier of ~0.4-0.5 for the descent phase, restoring 1.0 when the player lands or input resumes. Result: Crimson-Desert-glider-style float-down. Tuning constant near the top of the file.
+  2. **Dynamic camera zoom-out** — when the player's screen-space Y exceeds the top viewport edge (or is within ~10% of it), interpolate the camera's `viewportHeight` outward toward 1.4× normal, returning to 1.0× once player is back in safe view. Smooth lerp (0.1/frame, similar to T-144 look-ahead). Cap the zoom-out so it doesn't keep growing if the player wall-jumps indefinitely.
+- **Done when:** Wind Dash users can see where they're going to land throughout the dash + descent; PR body includes the gravity multiplier value, descent duration estimate, and camera zoom range chosen. Smoke CI passes (autopilot doesn't use Wind Dash specifically but the camera math must not break Level 1/2/3 smoke).
+- **Constraints:** **Don't add wings/cape animation** — that's art and lives under T-046 / T-178 once asset direction is settled. Spec only covers physics + camera. **Don't break the existing camera shake** (T-169 unified path) or look-ahead (T-144) — the zoom-out is an additional offset, not a replacement.
+
+### T-177 — Anime-style asset pack evaluation (research)  [P1]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(or any agent that can web-search and write a structured comparison)*
+- **Tier:** S  *(deliverable is a markdown doc, ~2 hours of agent search)*
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_  *(but BLOCKS T-046 graphics overhaul + T-178 lighting rework)*
+- **GDD ref:** demo-readiness feedback 2026-05-13 — "I would like for this game to have anime like assets"; existing T-046 (graphics overhaul) is the umbrella ticket
+- **Files:** new `research/anime-asset-pack-evaluation.md`
+- **Goal:** Survey readily-available anime-style 2D platformer asset packs across **itch.io, OpenGameArt, Humble Bundle, GameDev Market, and the indie-game-art subreddit**. Output a structured comparison with at least 8-12 candidates evaluated against:
+  - **License terms** (CC0 / CC-BY / paid-one-time / paid-per-game / royalty-free / commercial-use OK)
+  - **Coverage** — does the pack cover: 3 character sheets (idle / run / jump / fall / wall-slide / dash + ability cast), tilesets (3 biome themes per Cloudy-Ninja's worlds: arid / wind / eco), enemy sprites (SmogSprite + DriftHusk equivalents), boss-scale sprite, projectile / VFX particles, UI flourishes?
+  - **Aesthetic match** — "anime" is broad; categorize each pack as (a) shoujo-soft, (b) shounen-action, (c) chibi/cute, (d) studio-Ghibli-naturalistic, (e) cyberpunk-anime. Note which would match Cloudy-Ninja's eco-restoration theme best.
+  - **Cost** — direct asset cost; integration effort estimate (how many days to swap from ShapeRenderer + Kenney to this pack); per-asset gap analysis.
+  - **Sample links / preview images** — direct URL where possible.
+- **Done when:** `research/anime-asset-pack-evaluation.md` ships in a PR with the comparison + a top-3 recommendation. PR body includes the agent's pick + reasoning + estimated integration timeline. The user will pick the winner and that decision feeds T-046 / T-178.
+- **Constraints:** **Don't buy anything** — links and license terms only; the user makes the purchase decision. **Don't fork licensing into Cloudy-Ninja's repo** — even free packs need a NOTICE.md attribution path; describe what each requires. **Surface to QUESTIONS.md** any pack that's gorgeous but licensing is ambiguous — better to flag than silently recommend.
+
+### T-178 — Scene lighting + torch effect rework  [P2]
+- **Status:** Todo
+- **Tool:** `human-then-claude-code-sonnet`  *(art direction is user's call; implementation is mechanical)*
+- **Tier:** L
+- **Autonomous-eligible:** **no**  *(visual judgment + tied to T-046 art direction)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-177  *(asset pack pick determines lighting mood + palette)*
+- **GDD ref:** demo-readiness feedback 2026-05-13 — "the scene is too dark the torch light effect is weird"
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/rendering/TorchLight.kt` (or whatever owns the torch effect — grep), `screens/LevelRenderer.kt`, possibly `assets/shaders/` (if shader-based)
+- **Goal:** Rework the scene-lighting + torch-light effect to read clearly at the chosen art direction. Currently the scene is too dark globally and the torch light effect looks "weird" (presumably: too sharp / too dim / poorly blended / wrong color). Specifics depend on T-177's pack choice.
+- **Done when:** Scene reads at a glance; torch effect feels intentional; user confirms with a play-through. Specific success criteria locked once art direction is chosen.
+- **Constraints:** **Hold until T-177 lands** and user picks a pack. Lighting rework is wasted effort if the art direction changes; nail the direction first.
+
+
 
 ### T-169 — Consolidate dual screen-shake systems  [P2]
 - **Status:** Todo
