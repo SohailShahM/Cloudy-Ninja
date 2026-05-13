@@ -275,19 +275,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
      (shake/duck), mute shortcut, slot-delete confirm, i18n audit.
 ═══════════════════════════════════════════════════════════════ -->
 
-### T-111 — SoundManager unknown-id: log → error  [P3]
-- **Status:** Todo
-- **Tool:** `copilot-agent`  *(autonomous from GitHub Issue)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** HANDOFF.md source-side quirk #1 — `SoundManager` unknown-id uses `Gdx.app.log` not `Gdx.app.error`; IS an error state
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/audio/SoundManager.kt`, `core/src/test/kotlin/com/sohai/platformer/audio/SoundManagerTest.kt`
-- **Goal:** In the unknown-sound-id branch of `SoundManager.play()` (search for `Gdx.app.log` referring to unknown ids), switch to `Gdx.app.error(...)`. Update the existing test to assert error-level logging instead of info.
-- **Done when:** Unknown sound id triggers an error-level log; existing tests pass; smoke CI passes.
-
 ### T-118 — Master mute keyboard shortcut (M key)  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -327,25 +314,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Change `defaultKeybinds()` for `"swap"` from `Input.Keys.S` to `Input.Keys.Q`. In `SettingsManager.load()` add a tiny migration: if a loaded `Settings` has `swap = Input.Keys.S` AND the user has never opened the Controls panel (track a new `keybindsCustomized: Boolean = false` flag), upgrade to `Q`. If the user HAS opened Controls, respect their saved binding even if it's still S. Add `keybindsCustomized` setter to fire on any rebind in `SettingsScreen`.
 - **Done when:** Fresh installs default to Q for swap; players who already touched Controls keep their bindings; players who never touched Controls auto-upgrade on next launch; test covers all three cases.
 - **Constraints:** Save-data-adjacent. Existing saves without `keybindsCustomized` field treated as `false` (i.e., legacy user gets the upgrade — they wouldn't be filing bug reports about S working). Cite T-073 research in the PR description.
-
-### T-122 — Wire 3 high-confidence i18n strings to StringKey (T-120 follow-up)  [P3]
-- **Status:** Todo
-- **Tool:** `copilot-agent`  *(Copilot dogfood — single-purpose, file-isolated)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-098, T-101  *(LevelRenderer + Strings contention)*
-- **GDD ref:** `research/i18n-coverage.md` (T-120 deliverable) — 3 high-confidence hardcoded English-phrase hits
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/VictoryScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`
-- **Goal:** Add 3 new `StringKey` entries and replace the literals at:
-  - `VictoryScreen.kt:61` — `"−%.2fs under best"` → `StringKey.VICTORY_DELTA_UNDER` (format arg: seconds)
-  - `VictoryScreen.kt:62` — `"+%.2fs slower"` → `StringKey.VICTORY_DELTA_OVER`
-  - `LevelRenderer.kt:500` — `"[Locked]"` → `StringKey.HUB_PORTAL_LOCKED`
-  Use `Strings.format(key, ...)` consistently with the existing 130+ keys pattern.
-- **Done when:** The 3 literals are gone from source; smoke CI passes; existing tests pass.
-- **Constraints:** Only these 3 strings. Do NOT broaden scope to the 7 numeric format templates from the audit — those are deferred until a second locale lands.
-
 
 <!-- ═══════════════════════════════════════════════════════════════
      ALPHA BLOCKERS — surfaced mid-autonomous-run by completed audits.
@@ -1368,6 +1336,24 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Goal:** On first launch, show a 1-second minimum splash with a horizontal progress bar tracking asset preload (atlas pack, music tracks via `ProceduralMusicGenerator`, 8 SFX). Transition to `MainMenuScreen` when preload completes AND the 1s minimum has elapsed. The minimum prevents flash-frames on fast machines.
 - **Commit/PR:** PR #83
 - **Tool:** `claude-code-sonnet`
+
+### T-111 — SoundManager unknown-id: log → error
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Switched unknown-sound-id branch from `Gdx.app.log` to `Gdx.app.error`. Closes HANDOFF source-side quirk #1. Originally drafted by Copilot via PR #68 but that PR became blocked behind GitHub Actions bot-contributor approval policy + the `gh pr close/reopen` deletes-runs gotcha; re-submitted byte-identical from a Claude branch with Copilot Co-authored-by preserved.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/audio/SoundManager.kt`, `core/src/test/kotlin/com/sohai/platformer/audio/SoundManagerTest.kt`
+- **Goal:** In the unknown-sound-id branch of `SoundManager.play()`, switch from `Gdx.app.log` (info) to `Gdx.app.error`. Update the existing test to assert error-level logging.
+- **Commit/PR:** PR #134 (superseded original Copilot PR #68 which was closed)
+- **Tool:** `copilot-agent` (drafted) → `claude-code-opus` (re-submitted)
+
+### T-122 — Wire 3 high-confidence i18n strings to StringKey (T-120 follow-up)
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Routed 3 hardcoded literals through `Strings.kt` via new `VICTORY_DELTA_UNDER`, `VICTORY_DELTA_OVER`, `HUB_PORTAL_LOCKED` keys (T-120 audit follow-up). Originally drafted by Copilot via PR #85 but that branch was ~50 commits stale of main and the rebase wasn't clean; re-applied the same logical diff manually from a fresh Claude branch with Copilot Co-authored-by preserved.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/VictoryScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`
+- **Goal:** Add 3 new `StringKey` entries and replace the literals at `VictoryScreen.kt:61-62` and `LevelRenderer.kt`.
+- **Commit/PR:** PR #135 (superseded original Copilot PR #85 which was closed)
+- **Tool:** `copilot-agent` (drafted) → `claude-code-opus` (re-submitted)
 
 <!--
 Template for moving a task here:
