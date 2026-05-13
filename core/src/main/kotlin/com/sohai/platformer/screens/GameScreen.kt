@@ -189,7 +189,7 @@ class GameScreen(
             }
         )
         screenFade = ScreenFade(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
-        screenFade.fadeIn(speed = 1.5f)
+        screenFade.fadeFromBlack(speed = 1.5f)
 
         // ── Wire particle callbacks from player ───────────────────────────────
         // renderer is created below; player callbacks reference renderer via lambda closure.

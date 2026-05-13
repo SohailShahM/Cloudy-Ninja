@@ -18,15 +18,15 @@ import sun.misc.Unsafe
  * skip the GL-touching constructor.
  *
  * Semantics observed in [ScreenFade]:
- *   • `fadeIn(speed)`  — sets alpha=1f, targetAlpha=0f, speed=speed.
- *                        Alpha lerps DOWN toward 0 (screen becomes clear).
- *   • `fadeOut(speed)` — sets alpha=0f, targetAlpha=1f, speed=speed.
- *                        Alpha lerps UP toward 1 (screen goes to black).
- *   • `update(delta)`  — step alpha by `delta * speed` toward target,
- *                        clamped at target. `speed` is units-of-alpha per second:
- *                        with speed=1 a full 0→1 fade takes 1.0s,
- *                        with speed=2 it takes 0.5s.
- *   • `render()` early-outs when alpha ≤ 0.002f.
+ *   • `fadeFromBlack(speed)` — sets alpha=1f, targetAlpha=0f, speed=speed.
+ *                              Alpha lerps DOWN toward 0 (screen becomes clear).
+ *   • `fadeToBlack(speed)`   — sets alpha=0f, targetAlpha=1f, speed=speed.
+ *                              Alpha lerps UP toward 1 (screen goes to black).
+ *   • `update(delta)`        — step alpha by `delta * speed` toward target,
+ *                              clamped at target. `speed` is units-of-alpha per second:
+ *                              with speed=1 a full 0→1 fade takes 1.0s,
+ *                              with speed=2 it takes 0.5s.
+ *   • `render()`             — early-outs when alpha ≤ 0.002f.
  *
  * Note: ScreenFade has no public `isComplete` field — "complete" here means
  * `alpha == targetAlpha` (within float tolerance).
@@ -88,7 +88,7 @@ class ScreenFadeTest : BehaviorSpec({
     fun isComplete(sf: ScreenFade): Boolean =
         kotlin.math.abs(getAlpha(sf) - getTarget(sf)) < eps
 
-    // ── 1. fadeIn semantics ───────────────────────────────────────────────────
+    // ── 1. fadeFromBlack semantics ────────────────────────────────────────────
 
     given("an allocated ScreenFade with arbitrary current state") {
         val sf = allocBare()
@@ -96,8 +96,8 @@ class ScreenFadeTest : BehaviorSpec({
         setTarget(sf, 0.7f)
         setSpeed(sf, 9f)
 
-        `when`("fadeIn(speed = 1.0f) is invoked") {
-            sf.fadeIn(1.0f)
+        `when`("fadeFromBlack(speed = 1.0f) is invoked") {
+            sf.fadeFromBlack(1.0f)
 
             then("alpha is reset to 1f (start black, fade to clear)") {
                 getAlpha(sf) shouldBe (1f plusOrMinus eps)
@@ -113,16 +113,16 @@ class ScreenFadeTest : BehaviorSpec({
         }
     }
 
-    // ── 2. fadeOut semantics ──────────────────────────────────────────────────
+    // ── 2. fadeToBlack semantics ──────────────────────────────────────────────
 
-    given("an allocated ScreenFade ready for fadeOut") {
+    given("an allocated ScreenFade ready for fadeToBlack") {
         val sf = allocBare()
         setAlpha(sf, 0.5f)
         setTarget(sf, 0.5f)
         setSpeed(sf, 1f)
 
-        `when`("fadeOut(speed = 2.0f) is invoked") {
-            sf.fadeOut(2.0f)
+        `when`("fadeToBlack(speed = 2.0f) is invoked") {
+            sf.fadeToBlack(2.0f)
 
             then("alpha resets to 0f (start clear, fade to black)") {
                 getAlpha(sf) shouldBe (0f plusOrMinus eps)
@@ -138,9 +138,9 @@ class ScreenFadeTest : BehaviorSpec({
         }
     }
 
-    // ── 3. update() lerp toward target — fade OUT direction ───────────────────
+    // ── 3. update() lerp toward target — fade-to-black direction ──────────────
 
-    given("a ScreenFade mid-fadeOut at alpha=0 target=1 speed=1") {
+    given("a ScreenFade mid-fadeToBlack at alpha=0 target=1 speed=1") {
         val sf = allocBare()
         setAlpha(sf, 0f)
         setTarget(sf, 1f)
@@ -159,16 +159,16 @@ class ScreenFadeTest : BehaviorSpec({
         }
     }
 
-    // ── 4. fadeOut full-duration: speed=2 → completes in 0.5s ────────────────
+    // ── 4. fadeToBlack full-duration: speed=2 → completes in 0.5s ─────────────
 
-    given("a ScreenFade primed with fadeOut(speed=2f)") {
+    given("a ScreenFade primed with fadeToBlack(speed=2f)") {
         val sf = allocBare()
         setAlpha(sf, 0f); setTarget(sf, 1f); setSpeed(sf, 2f)
 
         `when`("update(0.5f) is called once") {
             sf.update(0.5f)
 
-            then("alpha reaches the target 1f (full fade-out in 0.5s)") {
+            then("alpha reaches the target 1f (full fade-to-black in 0.5s)") {
                 getAlpha(sf) shouldBe (1f plusOrMinus eps)
             }
 
@@ -180,7 +180,7 @@ class ScreenFadeTest : BehaviorSpec({
 
     // ── 5. update() clamps to target — no overshoot ──────────────────────────
 
-    given("a ScreenFade near the end of a fadeIn (alpha=0.1, target=0, speed=1)") {
+    given("a ScreenFade near the end of a fadeFromBlack (alpha=0.1, target=0, speed=1)") {
         val sf = allocBare()
         setAlpha(sf, 0.1f); setTarget(sf, 0f); setSpeed(sf, 1f)
 
@@ -197,14 +197,14 @@ class ScreenFadeTest : BehaviorSpec({
         }
     }
 
-    // ── 6. fadeIn mid-fadeOut reverses direction ──────────────────────────────
+    // ── 6. fadeFromBlack mid-fadeToBlack reverses direction ───────────────────
 
-    given("a fadeOut in progress at alpha=0.4, target=1, speed=1") {
+    given("a fadeToBlack in progress at alpha=0.4, target=1, speed=1") {
         val sf = allocBare()
         setAlpha(sf, 0.4f); setTarget(sf, 1f); setSpeed(sf, 1f)
 
-        `when`("fadeIn(speed=1f) is invoked, then update(0.25f)") {
-            sf.fadeIn(1f)             // resets alpha=1, target=0
+        `when`("fadeFromBlack(speed=1f) is invoked, then update(0.25f)") {
+            sf.fadeFromBlack(1f)        // resets alpha=1, target=0
             // sanity: direction is now negative (alpha 1 → 0)
             getAlpha(sf) shouldBe (1f plusOrMinus eps)
             getTarget(sf) shouldBe (0f plusOrMinus eps)
@@ -233,17 +233,17 @@ class ScreenFadeTest : BehaviorSpec({
         }
     }
 
-    // ── 8. onFadeOutComplete callback fires exactly when target reached ──────
+    // ── 8. onFadeToBlackComplete callback fires exactly when target reached ──
 
-    given("a fadeOut with an onComplete callback") {
+    given("a fadeToBlack with an onComplete callback") {
         val sf = allocBare()
 
-        `when`("fadeOut completes via repeated update() calls") {
+        `when`("fadeToBlack completes via repeated update() calls") {
             var fired = 0
-            // Manually wire the callback via reflection — the public fadeOut()
+            // Manually wire the callback via reflection — the public fadeToBlack()
             // does the same internally.
             setAlpha(sf, 0f); setTarget(sf, 1f); setSpeed(sf, 4f)
-            sf.onFadeOutComplete = { fired += 1 }
+            sf.onFadeToBlackComplete = { fired += 1 }
 
             // 0.25 * 4 = 1.0 → reaches target in a single step.
             sf.update(0.25f)
@@ -257,7 +257,7 @@ class ScreenFadeTest : BehaviorSpec({
         `when`("update is called again past completion") {
             var fired = 0
             setAlpha(sf, 0f); setTarget(sf, 1f); setSpeed(sf, 4f)
-            sf.onFadeOutComplete = { fired += 1 }
+            sf.onFadeToBlackComplete = { fired += 1 }
             sf.update(0.25f)   // hits target — fires once
             sf.update(0.25f)   // already at target — neither branch runs
 
