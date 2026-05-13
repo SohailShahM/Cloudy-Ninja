@@ -1,6 +1,8 @@
 package com.sohai.platformer.entities
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.math.Vector2
 import com.badlogic.gdx.physics.box2d.*
 import com.sohai.platformer.Constants
@@ -470,6 +472,30 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
      * Returns true if a vertical upward ray from (x, y) over [distance] meters
      * hits a non-sensor ground/wall fixture.
      */
+    /**
+     * T-170: Draw the player's high-contrast silhouette rectangle using
+     * [color] as the base. Called from [com.sohai.platformer.screens.LevelRenderer.renderPlayer]
+     * inside an open Filled ShapeRenderer block, only when the high-contrast
+     * accessibility flag is on.
+     *
+     * Bounds: 0.28m wide x 0.42m tall, centred horizontally on the body and
+     * vertically offset to match the sprite's body+legs footprint (the same
+     * geometry the pre-T-170 LevelRenderer overlay used at lines 665-673).
+     *
+     * The caller is responsible for pre-multiplying the death-fade
+     * `playerAlpha` into [color]'s alpha channel so the silhouette fades out
+     * along with the sprite during the death animation.
+     */
+    fun drawHighContrast(renderer: ShapeRenderer, color: Color) {
+        val p = body.position
+        renderer.color = color
+        // 28x42 px at PPM=100 → 0.28x0.42 m. Match the sprite's body
+        // footprint: body centre is at p.y; sprite extends from sy = p.y - 0.32
+        // up by ~0.64 (the 64px sprite). The silhouette covers the body + a
+        // bit of leg, centred on the same horizontal axis as the sprite.
+        renderer.rect(p.x - 0.14f, p.y - 0.20f, 0.28f, 0.42f)
+    }
+
     private fun ceilingHit(world: World, x: Float, y: Float, distance: Float): Boolean {
         rcHit = false
         rcFrom.set(x, y)
