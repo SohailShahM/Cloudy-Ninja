@@ -1,6 +1,14 @@
 package com.sohai.platformer
 
 object Constants {
+    // ─── Build identity (T-100) ──────────────────────────────────────────────
+    // Manually maintained for the alpha pre-launch window. Bump these by hand
+    // when cutting a release; do NOT try to auto-derive from git/gradle yet
+    // (the build script doesn't expose either, and we want repeatable headless
+    // smoke output).
+    const val BUILD_VERSION = "0.1.0"
+    const val BUILD_DATE    = "2026-05-12"
+
     // Virtual resolution for camera/HUD viewport.
     const val VIRTUAL_WIDTH = 1280f
     const val VIRTUAL_HEIGHT = 720f
