@@ -460,19 +460,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** MainMenu has background music; volume responds to Music slider; ducks correctly on Settings open (per T-117 pattern if applicable); smoke CI passes.
 - **Constraints:** Procedural only (no new audio file assets). Keep under 30 lines added to the generator.
 
-### T-135 — Per-level eco-token completion % in StatsScreen  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-107  *(uses hidden eco-token state)*
-- **GDD ref:** GAME_PLAN.md (completionist engagement — visible progress per level)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/StatsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** Add a per-level row to StatsScreen showing eco-token collection % (regular + hidden combined). Format: `Level 1: 8/10 tokens (80%)`. Show all 3 campaign levels. Hidden token discovery rate also appears as a small bonus row: `Hidden: 2/3 found`.
-- **Done when:** StatsScreen displays per-level completion; numbers reflect actual save data; smoke CI passes.
-- **Constraints:** StatsScreen-only. Don't add any new save fields — read from existing T-107 + per-level token state.
 
 
 
@@ -517,6 +504,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-135 — Per-level eco-token completion % in StatsScreen  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-135-stats-token-completion
+- **Started:** 2026-05-13
+- **Depends on:** T-107  *(uses hidden eco-token state)*
+- **GDD ref:** GAME_PLAN.md (completionist engagement — visible progress per level)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/StatsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Add a per-level row to StatsScreen showing eco-token collection % (regular + hidden combined). Format: `Level 1: 8/10 tokens (80%)`. Show all 3 campaign levels. Hidden token discovery rate also appears as a small bonus row: `Hidden: 2/3 found`.
+- **Done when:** StatsScreen displays per-level completion; numbers reflect actual save data; smoke CI passes.
+- **Constraints:** StatsScreen-only. Don't add any new save fields — read from existing T-107 + per-level token state.
 
 ### T-131 — README badges (build status + license + Kotlin version)  [P3]
 - **Status:** In Progress
