@@ -407,7 +407,7 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Tool:** `claude-code-sonnet`
 - **Tier:** S
 - **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
+- **Agent:** claude-code-sub-agent *(re-dispatched 2026-05-13 — prior agent died silently)*
 - **Branch:** claude/T-104-splash-preload
 - **Started:** 2026-05-12
 - **Depends on:** _none_

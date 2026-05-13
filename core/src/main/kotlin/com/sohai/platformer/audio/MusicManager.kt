@@ -20,6 +20,13 @@ import com.sohai.platformer.persist.SettingsManager
  */
 object MusicManager {
 
+    /**
+     * Track ids that the splash preload (T-104) and any future preload
+     * pass should check / prime. Kept in sync with the three tracks
+     * [ProceduralMusicGenerator] emits.
+     */
+    val PRELOAD_TRACKS: List<String> = listOf("ambient_arid", "ambient_wind", "ambient_eco")
+
     private var current: Music? = null
     private var next: Music? = null
     private var currentTrackName: String? = null
@@ -167,6 +174,29 @@ object MusicManager {
             currentTrackName = null
         }
         isFadingIn = false
+    }
+
+    /**
+     * Preload-hook used by the cold-start splash (T-104). Verifies each
+     * track id in [PRELOAD_TRACKS] has a file handle on disk and logs a
+     * warning for any missing entries.
+     *
+     * Intentionally **does not** allocate [Music] instances — `Music` is a
+     * streaming resource and the user may have disabled music in settings.
+     * The check still surfaces broken / missing assets early so the player
+     * doesn't hit a silent failure when they hit "New Game".
+     *
+     * Safe to call multiple times; safe to call before [Gdx.audio] exists
+     * (it only touches [Gdx.files]).
+     */
+    fun preloadAll() {
+        for (trackName in PRELOAD_TRACKS) {
+            val path = "audio/music/$trackName.wav"
+            val handle = Gdx.files.internal(path)
+            if (!handle.exists()) {
+                Gdx.app.log("MusicManager", "Preload: missing track $path (will be silent)")
+            }
+        }
     }
 
     /**
