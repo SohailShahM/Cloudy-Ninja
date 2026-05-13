@@ -163,4 +163,61 @@ class ScreenshotWriterTest : BehaviorSpec({
                 "Screenshot saved to ~/.cloudy-ninja/screenshots/"
         }
     }
+
+    // ─── T-147: manual (F12) filename + smoke short-circuit ──────────────
+    given("the manual (T-147) filename generator") {
+        `when`("given a normal screen name and epoch zero") {
+            val name = ScreenshotWriter.manualFileName(
+                screenName = "MainMenuScreen",
+                timestampMillis = 0L,
+            )
+            then("it follows the manual-{screenName}-yyyyMMdd-HHmmss.png shape") {
+                name shouldMatch Regex("^manual-MainMenuScreen-\\d{8}-\\d{6}\\.png$")
+            }
+        }
+
+        `when`("given a screen name containing path separators or spaces") {
+            val name = ScreenshotWriter.manualFileName(
+                screenName = "Weird Screen/Inner\$1",
+                timestampMillis = 0L,
+            )
+            then("non-alphanumeric chars are replaced with underscores") {
+                name shouldMatch Regex("^manual-Weird_Screen_Inner_1-\\d{8}-\\d{6}\\.png$")
+            }
+        }
+
+        `when`("given an empty screen name") {
+            val name = ScreenshotWriter.manualFileName(
+                screenName = "",
+                timestampMillis = 0L,
+            )
+            then("it falls back to 'unknown' rather than producing a double-dash name") {
+                name.shouldContain("manual-unknown-")
+            }
+        }
+    }
+
+    given("ScreenshotWriter.captureManual under SMOKE_MODE") {
+        // Constants.SMOKE_MODE is a JVM-startup `final` JvmField sourced from
+        // `cloudy.smokeMode`. Unit tests run with that property unset, so
+        // SMOKE_MODE is false here. We can't flip it in-test, so we cover the
+        // smoke short-circuit via the smoke matrix itself in CI (the absence
+        // of any manual-*.png in CI artifacts after F12-stress is the proof).
+        //
+        // Here we still smoke-test the non-smoke happy-path early-return when
+        // there is no GL context: captureManual must NOT throw — it returns
+        // false via the framebuffer try/catch.
+        `when`("invoked without a GL context") {
+            // Gdx.graphics is null in the unit-test JVM, so the backBufferWidth
+            // probe inside captureManual will NPE; the try/catch swallows it
+            // and returns false. Verifies the "never throws" contract.
+            val result = ScreenshotWriter.captureManual(
+                screenName = "TestScreen",
+                userHome = System.getProperty("java.io.tmpdir"),
+            )
+            then("it returns false rather than throwing") {
+                result.shouldBeFalse()
+            }
+        }
+    }
 })

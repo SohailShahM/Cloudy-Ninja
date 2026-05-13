@@ -1,6 +1,8 @@
 package com.sohai.platformer
 
 import com.badlogic.gdx.Game
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 import com.kotcrab.vis.ui.VisUI
 import com.sohai.platformer.audio.MusicManager
 import com.sohai.platformer.audio.ProceduralMusicGenerator
@@ -10,6 +12,7 @@ import com.sohai.platformer.persist.CrashReporter
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.rendering.DisplayScale
 import com.sohai.platformer.screens.SplashScreen
+import com.sohai.platformer.util.ScreenshotWriter
 
 /** [com.badlogic.gdx.ApplicationListener] implementation shared by all platforms. */
 class Main : Game() {
@@ -51,6 +54,47 @@ class Main : Game() {
             // 1-second minimum-duration gate when Constants.SMOKE_MODE is true.
             setScreen(SplashScreen(this))
         }
+    }
+
+    /**
+     * T-147: Global F12-anytime screenshot hotkey.
+     *
+     * Polled per-frame here (rather than registered as an [com.badlogic.gdx.InputAdapter])
+     * because every screen sets `Gdx.input.inputProcessor = stage` in its own
+     * `init {}` / `show()`, which would clobber any root-level multiplexer we
+     * installed in `create()`. Polling sidesteps that input-chain churn entirely
+     * — `isKeyJustPressed` is per-frame edge-triggered, so the screen's own
+     * processor still receives the key event normally.
+     *
+     * Smoke mode is handled inside [ScreenshotWriter.captureManual]; we still
+     * skip even the keypress probe under SMOKE_MODE so the smoke autopilot's
+     * stress-typing can never accidentally allocate a pixmap.
+     *
+     * The active-screen name is taken from `screen?.javaClass?.simpleName` —
+     * e.g. `MainMenuScreen`, `GameScreen`, `VictoryScreen`. `sanitizeLevelId`
+     * in [ScreenshotWriter.manualFileName] strips any odd characters before
+     * the filename is built.
+     *
+     * Toast: log-only (`Gdx.app.log`) — there is no global Stage at the [Main]
+     * level (Stage lives per-Screen) and adding one would be a refactor well
+     * outside the T-147 scope. The path is logged so the user can find the
+     * file. Visual toast is a follow-up ticket if anyone asks for it.
+     */
+    override fun render() {
+        if (!Constants.SMOKE_MODE && Gdx.input.isKeyJustPressed(Input.Keys.F12)) {
+            try {
+                val screenName = screen?.javaClass?.simpleName ?: "unknown"
+                val ok = ScreenshotWriter.captureManual(screenName)
+                if (ok) {
+                    Gdx.app?.log("T-147", "${ScreenshotWriter.TOAST_TEXT} ($screenName)")
+                }
+                // On failure ScreenshotWriter already logged via Gdx.app.error.
+            } catch (t: Throwable) {
+                // Defensive: never let a screenshot attempt take down the render loop.
+                Gdx.app?.error("T-147", "F12 screenshot handler crashed: ${t.message}")
+            }
+        }
+        super.render()
     }
 
     override fun resize(width: Int, height: Int) {

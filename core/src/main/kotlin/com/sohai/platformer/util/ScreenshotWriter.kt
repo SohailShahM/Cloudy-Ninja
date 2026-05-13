@@ -5,6 +5,7 @@ import com.badlogic.gdx.files.FileHandle
 import com.badlogic.gdx.graphics.Pixmap
 import com.badlogic.gdx.graphics.PixmapIO
 import com.badlogic.gdx.utils.ScreenUtils
+import com.sohai.platformer.Constants
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -72,6 +73,23 @@ object ScreenshotWriter {
         val fmt = SimpleDateFormat(FILENAME_TIMESTAMP, Locale.ROOT)
         val safeLevelId = sanitizeLevelId(levelId)
         return "victory-$safeLevelId-${fmt.format(Date(timestampMillis))}.png"
+    }
+
+    /**
+     * T-147: Build the **manual** (F12 hotkey) screenshot filename. Pure.
+     *
+     * Format: `manual-{screenName}-{yyyyMMdd-HHmmss}.png` in the JVM's default
+     * time zone. The [screenName] is sanitized to `[A-Za-z0-9_-]` with the
+     * same rule as [screenshotFileName] so a screen class whose `simpleName`
+     * picks up an anonymous-class `$1` suffix can't produce a malformed path.
+     */
+    fun manualFileName(
+        screenName: String,
+        timestampMillis: Long = System.currentTimeMillis(),
+    ): String {
+        val fmt = SimpleDateFormat(FILENAME_TIMESTAMP, Locale.ROOT)
+        val safe = sanitizeLevelId(screenName)
+        return "manual-$safe-${fmt.format(Date(timestampMillis))}.png"
     }
 
     /** Resolve the screenshot directory under the JVM's user-home. Does not create it. */
@@ -163,6 +181,60 @@ object ScreenshotWriter {
         }
 
         val target = FileHandle(File(dir, screenshotFileName(levelId, timestampMillis)))
+        return write(pixmap, target)
+    }
+
+    /**
+     * T-147: F12-hotkey entry point. Snapshot the current framebuffer and
+     * write a PNG into the user-home screenshots dir with the manual filename
+     * prefix (`manual-{screenName}-...`).
+     *
+     * Unlike [captureAndWrite] (where the VictoryScreen call site is guarded
+     * by an explicit `if (Constants.SMOKE_MODE) return` because that screen
+     * also wants to skip its toast), the global F12 hotkey can fire from
+     * anywhere — including smoke runs that wouldn't otherwise touch the
+     * screenshot path at all. We short-circuit on smoke mode HERE so the
+     * single F12 hook in [com.sohai.platformer.Main] stays a one-liner and
+     * smoke CI never allocates a pixmap.
+     *
+     * Returns `true` only if a PNG actually landed on disk. Never throws.
+     */
+    fun captureManual(
+        screenName: String,
+        timestampMillis: Long = System.currentTimeMillis(),
+        userHome: String = System.getProperty("user.home"),
+    ): Boolean {
+        // T-147: smoke CI must never touch the runner's home dir or the
+        // framebuffer. Short-circuit BEFORE pixmap allocation, matching the
+        // ScreenshotWriter contract spelled out in the class doc.
+        if (Constants.SMOKE_MODE) return false
+
+        // Mirror CrashReporter's directory-creation idiom (same as captureAndWrite).
+        val dir = screenshotDir(userHome)
+        try {
+            if (!dir.exists() && !dir.mkdirs()) {
+                Gdx.app?.error("ScreenshotWriter", "Could not create dir: ${dir.absolutePath}")
+                return false
+            }
+        } catch (t: Throwable) {
+            Gdx.app?.error("ScreenshotWriter", "mkdirs failed: ${t.message}")
+            return false
+        }
+
+        @Suppress("DEPRECATION") // see note on captureAndWrite — same reason.
+        val pixmap: Pixmap = try {
+            ScreenUtils.getFrameBufferPixmap(
+                0,
+                0,
+                Gdx.graphics.backBufferWidth,
+                Gdx.graphics.backBufferHeight,
+            )
+        } catch (t: Throwable) {
+            Gdx.app?.error("ScreenshotWriter", "Framebuffer capture failed: ${t.message}")
+            return false
+        }
+
+        val target = FileHandle(File(dir, manualFileName(screenName, timestampMillis)))
         return write(pixmap, target)
     }
 }
