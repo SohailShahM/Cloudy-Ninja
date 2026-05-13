@@ -1,0 +1,4 @@
+# Python dependencies for visual-checkpoint analysis tooling
+# (used by scripts/foot_offset_autotuner.py and related T-A14/T-A16 scripts).
+Pillow>=10.0
+numpy>=1.24
