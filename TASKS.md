@@ -239,19 +239,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add `hitFlashTimer: Float = 0f` to `Enemy`. `takeDamage()` sets it to 0.2f. `update(delta)` decrements. `LevelRenderer` reads `enemy.hitFlashTimer` and lerps base color toward white `(1, 1, 1, 1)` by `clamp(timer / 0.2f)`. Don't touch defeat path; just hit-feedback frames.
 - **Done when:** Visible hit-flash on Seed-Slamming SmogSprite + DriftHusk; unchanged when not hit; smoke CI passes.
 
-### T-100 — Game version + build info on MainMenu (bottom corner)  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-091
-- **GDD ref:** GAME_PLAN.md (release readiness — let players report exact version)
-- **Files:** `screens/MainMenuScreen.kt`, `Constants.kt` (add `BUILD_VERSION` + `BUILD_DATE`), `i18n/Strings.kt`
-- **Goal:** Add `BUILD_VERSION` and `BUILD_DATE` constants in `Constants.kt` (manually maintained for alpha). MainMenu shows a tiny right-bottom label: `v{0} · {1}` (e.g. `v0.1.0 · 2026-05-12`). Style: `FontManager.getShared(11)`, dim grey `(0.5f, 0.5f, 0.5f, 0.6f)`, 8px from corner. Add `StringKey.MENU_BUILD_INFO`.
-- **Done when:** Label visible on MainMenu; reads from constants; smoke CI passes.
-
 ### T-102 — Controller (gamepad) input support  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -507,6 +494,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-100 — Game version + build info on MainMenu (bottom corner)  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-100-version-label
+- **Started:** 2026-05-13
+- **Depends on:** T-091
+- **GDD ref:** GAME_PLAN.md (release readiness — let players report exact version)
+- **Files:** `screens/MainMenuScreen.kt`, `Constants.kt` (add `BUILD_VERSION` + `BUILD_DATE`), `i18n/Strings.kt`
+- **Goal:** Add `BUILD_VERSION` and `BUILD_DATE` constants in `Constants.kt` (manually maintained for alpha). MainMenu shows a tiny right-bottom label: `v{0} · {1}` (e.g. `v0.1.0 · 2026-05-12`). Style: `FontManager.getShared(11)`, dim grey `(0.5f, 0.5f, 0.5f, 0.6f)`, 8px from corner. Add `StringKey.MENU_BUILD_INFO`.
+- **Done when:** Label visible on MainMenu; reads from constants; smoke CI passes.
 
 ### T-099 — Achievement progress counter on MainMenu  [P3]
 - **Status:** In Progress
