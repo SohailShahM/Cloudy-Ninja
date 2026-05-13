@@ -558,6 +558,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Goal:** Below the slot cards on MainMenu, render `Achievements: {0}/12 unlocked` showing the **max** count across the 3 save slots. Style: `FontManager.getShared(14)`, light grey, 12px padded. Use `Strings.format(StringKey.MENU_ACHIEVEMENT_PROGRESS, count, total)` — new key. If all 12 unlocked: `MENU_ACHIEVEMENT_PROGRESS_COMPLETE` rendered in gold `(1f, 0.85f, 0.1f, 1f)`.
 - **Done when:** Counter visible reflecting save data; both states verified; smoke CI passes.
 
+### T-098 — Enemy hit-flash on takeDamage (200ms white tint)  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent *(re-dispatched 2026-05-13 — prior agent died silently)*
+- **Branch:** `claude/T-098-enemy-hit-flash`
+- **Started:** 2026-05-12
+- **Depends on:** T-029, T-062
+- **GDD ref:** GAME_PLAN.md (combat juice)
+- **Files:** `entities/Enemy.kt` (abstract base — add `hitFlashTimer`), `entities/SmogSprite.kt` + `entities/DriftHusk.kt` (set timer in takeDamage), `screens/LevelRenderer.kt` (lerp color toward white when timer > 0)
+- **Goal:** Add `hitFlashTimer: Float = 0f` to `Enemy`. `takeDamage()` sets it to 0.2f. `update(delta)` decrements. `LevelRenderer` reads `enemy.hitFlashTimer` and lerps base color toward white `(1, 1, 1, 1)` by `clamp(timer / 0.2f)`. Don't touch defeat path; just hit-feedback frames.
+- **Done when:** Visible hit-flash on Seed-Slamming SmogSprite + DriftHusk; unchanged when not hit; smoke CI passes.
+
 ### T-123 — HTML5 / web-demo viability spike  [P3]
 - **Status:** In Progress
 - **Tool:** `claude-code-sub-agent`  *(research-only, but technical — needs codebase-aware judgement)*

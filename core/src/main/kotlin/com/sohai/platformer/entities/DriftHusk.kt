@@ -62,6 +62,9 @@ class DriftHusk private constructor(
      */
     var hitTerrain: Boolean = false
 
+    /** T-098: scratch Color reused per draw call to avoid allocation on the hit-flash lerp. */
+    private val tmpColor: Color = Color()
+
     /**
      * Feed the current player x-coordinate into the husk so its trigger
      * logic can evaluate it on the next [update]. Called per-frame from
@@ -72,6 +75,9 @@ class DriftHusk private constructor(
     }
 
     override fun update(delta: Float) {
+        // T-098: tick the on-hit white-flash timer every frame (cheap no-op when 0).
+        tickHitFlash(delta)
+
         if (isDead) {
             body.linearVelocity = Vector2.Zero
             return
@@ -126,8 +132,8 @@ class DriftHusk private constructor(
         renderer.color = WISP_COLOR
         renderer.ellipse(px - HALF_W * 0.85f, py + 0.05f, HALF_W * 1.7f, HALF_H * 0.7f)
 
-        // Floating purple oval body
-        renderer.color = BODY_COLOR
+        // Floating purple oval body (T-098: tinted toward white for [hitFlashTimer] frames after a hit).
+        renderer.color = applyHitFlash(BODY_COLOR, tmpColor)
         renderer.ellipse(px - HALF_W, py - HALF_H, HALF_W * 2f, HALF_H * 2f)
     }
 

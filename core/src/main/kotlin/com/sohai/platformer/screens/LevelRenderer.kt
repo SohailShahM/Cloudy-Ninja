@@ -425,13 +425,17 @@ class LevelRenderer(
             shapeRenderer.circle(pos.x, pos.y, Projectile.RADIUS)
         }
 
-        // Enemies
+        // Enemies (T-098: each enemy's draw() lerps its body colour toward white
+        // by clamp(enemy.hitFlashTimer / Enemy.HIT_FLASH_SECONDS) for the brief
+        // post-hit feedback flash. Outside the flash window the colour is
+        // byte-identical to its pre-T-098 value.)
         for (enemy in enemies) {
             enemy.draw(shapeRenderer)
         }
 
         // T-062: Drift Husks (drop-from-above) -- draw() handles its own
-        // visibility (skips while in COOLDOWN state).
+        // visibility (skips while in COOLDOWN state). T-098 hit-flash applies
+        // here too via the same Enemy.applyHitFlash helper.
         for (husk in driftHusks) {
             husk.draw(shapeRenderer)
         }
