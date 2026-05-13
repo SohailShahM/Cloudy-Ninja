@@ -34,7 +34,7 @@ import io.mockk.verify
  * Contract notes (verified by the tests below):
  *  - `play(name)` resolves to `Sound.play(volume, pitch, pan=0f)` — the 3-arg
  *    libGDX overload, not the 1-arg one.
- *  - Unknown ids call `Gdx.app.log(...)` (NOT `error(...)`) and do not throw.
+ *  - Unknown ids call `Gdx.app.error(...)` and do not throw.
  *  - `setVolume(v)` clamps via `coerceIn(0f, 1f)` — so 2f -> 1f, -0.5f -> 0f.
  *  - Volume changes apply on the NEXT `play`, not retroactively.
  *  - `volume` and `uiVolume` are separate buses.
@@ -198,10 +198,9 @@ class SoundManagerTest : BehaviorSpec({
             // Should not throw.
             SoundManager.play("definitely_not_a_real_sound")
 
-            then("Gdx.app.log is invoked and no exception escapes") {
-                // Source uses log(), not error(). Test the real contract.
+            then("Gdx.app.error is invoked and no exception escapes") {
                 verify(atLeast = 1) {
-                    Gdx.app.log("SoundManager", match<String> {
+                    Gdx.app.error("SoundManager", match<String> {
                         it.contains("unknown sound") &&
                             it.contains("definitely_not_a_real_sound")
                     })

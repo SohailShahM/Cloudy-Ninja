@@ -86,7 +86,7 @@ object SoundManager : Disposable {
     fun play(name: String, pitch: Float = 1f) {
         if (!enabled) return
         sounds[name]?.play(volume, pitch, 0f)
-            ?: Gdx.app.log("SoundManager", "play() called for unknown sound: $name")
+            ?: Gdx.app.error("SoundManager", "play() called for unknown sound: $name")
     }
 
     /** Play a UI sound using the UI bus volume configured via [setUiVolume]. */
