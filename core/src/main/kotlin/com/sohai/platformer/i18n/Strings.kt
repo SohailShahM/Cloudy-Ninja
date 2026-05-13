@@ -63,6 +63,8 @@ enum class StringKey {
     SETTINGS_RES_2160,
     // T-144: Camera look-ahead toggle (in motion direction)
     SETTINGS_CAMERA_LOOK_AHEAD,
+    // T-142: Speedrun timer toggle — high-precision MM:SS.mmm HUD overlay
+    SETTINGS_SPEEDRUN_TIMER,
 
     // ── Settings: Audio ──────────────────────────────────────────────────────
     // T-105: master volume + mute toggle sit above the per-bus sliders.
@@ -378,6 +380,10 @@ object Strings {
         StringKey.SETTINGS_SHOW_FPS      to " Show FPS (console)",
         // T-144: Camera look-ahead toggle
         StringKey.SETTINGS_CAMERA_LOOK_AHEAD to " Camera look-ahead (shifts view in direction of motion)",
+        // T-142: Speedrun-timer toggle label. When on, GameScreen renders a
+        // high-precision MM:SS.mmm timer in the top-left of the HUD, in
+        // addition to the existing best-time / level-timer elements.
+        StringKey.SETTINGS_SPEEDRUN_TIMER    to " Speedrun timer (millisecond HUD overlay)",
         StringKey.SETTINGS_RES_720       to "1280 × 720  (HD)",
         StringKey.SETTINGS_RES_1080      to "1920 × 1080  (Full HD)",
         StringKey.SETTINGS_RES_1440      to "2560 × 1440  (2K / QHD)",

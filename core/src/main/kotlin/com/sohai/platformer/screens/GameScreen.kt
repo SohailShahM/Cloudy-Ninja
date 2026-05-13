@@ -17,6 +17,7 @@ import com.badlogic.gdx.physics.box2d.World
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.badlogic.gdx.utils.viewport.Viewport
 import com.sohai.platformer.Constants
+import com.sohai.platformer.FontManager
 import com.sohai.platformer.abilities.EboAbility
 import com.sohai.platformer.abilities.LayaAbility
 import com.sohai.platformer.abilities.ZephyrAbility
@@ -46,6 +47,7 @@ import com.sohai.platformer.rendering.ParticleSystem
 import com.sohai.platformer.rendering.ScreenFade
 import com.sohai.platformer.rendering.SpriteFactory
 import com.sohai.platformer.rendering.TileRenderer
+import com.sohai.platformer.util.SpeedrunTimerFormat
 import com.sohai.platformer.world.ObstacleKind
 import com.sohai.platformer.world.ObstacleManager
 
@@ -494,6 +496,15 @@ class GameScreen(
         hud.stage.act(clampedDelta)
         hud.stage.draw()
 
+        // Layer 4a: T-142 speedrun-timer overlay (top-left). Reads the
+        // existing levelTimer (no new clock); coexists with the top-right
+        // best-time / level-timer block in [Hud]. Off by default — when
+        // disabled this branch is a single boolean check per frame and
+        // smoke CI is byte-identical to pre-T-142.
+        if (SettingsManager.load().speedrunTimer) {
+            renderSpeedrunTimerOverlay(runState.levelTimer)
+        }
+
         // Layer 4.5: achievement toast (above HUD, below pause/fade)
         achievementToast.render(spriteBatch)
 
@@ -624,6 +635,43 @@ class GameScreen(
         // Restore identity-ish projection for subsequent renderers that rely
         // on the world-camera matrix (level fade overlay is next).
         shapeRenderer.projectionMatrix.setToOrtho2D(0f, 0f, width, height)
+    }
+
+    /**
+     * T-142: render the speedrun-timer overlay at the top-left of the HUD.
+     *
+     * Drawn directly via [SpriteBatch] in the HUD's virtual coordinate space
+     * (1280 × 720) so the position matches the existing top-left
+     * character / spirit labels owned by [Hud]. Reads from the existing
+     * [LevelRunState.levelTimer] (seconds, Float) — no new clock, no
+     * recomputation. Positioning mirrors the HUD's top-left padding
+     * (padTop=20, padLeft=40) and offsets vertically so the timer sits
+     * just below the spirit pip row.
+     */
+    private fun renderSpeedrunTimerOverlay(levelTimerSeconds: Float) {
+        val text = SpeedrunTimerFormat.format(levelTimerSeconds)
+        // Match the HUD stage's virtual projection so x/y are in virtual px.
+        spriteBatch.projectionMatrix.setToOrtho2D(
+            0f, 0f,
+            Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT
+        )
+        val font = FontManager.getShared(14)
+        // libGDX BitmapFont.draw uses a top-left origin in world space —
+        // y is the *baseline* of the first line. Anchor below the spirit
+        // pip row (charLabel + spiritLabel each ~22px; padTop=20). 70 px
+        // from the top, 40 px from the left, leaves a clean margin under
+        // the HUD's existing top-left labels.
+        val x = 40f
+        val y = Constants.VIRTUAL_HEIGHT - 70f
+        spriteBatch.begin()
+        // Slight backdrop tint for legibility over light parallax (NoOp on
+        // most levels but cheap insurance). Using the font's own color rather
+        // than a separate shape pass keeps this to a single batch begin/end.
+        val prior = font.color.cpy()
+        font.color = com.badlogic.gdx.graphics.Color(0.85f, 0.95f, 1f, 0.95f)
+        font.draw(spriteBatch, text, x, y)
+        font.color = prior
+        spriteBatch.end()
     }
 
     override fun resize(width: Int, height: Int) {
