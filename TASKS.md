@@ -442,19 +442,9 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
      mid-autonomous-run).
 ═══════════════════════════════════════════════════════════════ -->
 
-### T-136 — Atomic save writes (write-to-temp-then-rename)  [P2]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-113  *(builds on save format scaffold)*
-- **GDD ref:** GAME_PLAN.md (alpha durability — a crash mid-save must not corrupt the player's saved file)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/SaveManager.kt`, `core/src/test/kotlin/com/sohai/platformer/persist/SaveManagerTest.kt`
-- **Goal:** Rewrite the save-write path to use atomic semantics: write JSON to `<slot>.tmp`, fsync, then atomic-rename to `<slot>`. If any step fails, the original `<slot>` file remains untouched and loadable. Cross-platform: use `java.nio.file.Files.move(..., REPLACE_EXISTING, ATOMIC_MOVE)` with a fallback for filesystems that don't support `ATOMIC_MOVE`.
-- **Done when:** Mid-write crash (simulated by deliberately throwing between temp write and rename) leaves original save intact; test covers the crash-mid-write path; smoke CI passes.
-- **Constraints:** **Save-data-adjacent.** Existing saves must still load. Don't change the schema. Don't add a new field.
+
+
+
 
 ### T-137 — First-run tutorial overlay on Sky Sanctuary entry  [P3]
 - **Status:** Todo
@@ -569,6 +559,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-136 — Atomic save writes (write-to-temp-then-rename)  [P2]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-136-atomic-save-writes
+- **Started:** 2026-05-13
+- **Depends on:** T-113  *(builds on save format scaffold)*
+- **GDD ref:** GAME_PLAN.md (alpha durability — a crash mid-save must not corrupt the player's saved file)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/SaveManager.kt`, `core/src/test/kotlin/com/sohai/platformer/persist/SaveManagerTest.kt`
+- **Goal:** Rewrite the save-write path to use atomic semantics: write JSON to `<slot>.tmp`, fsync, then atomic-rename to `<slot>`. If any step fails, the original `<slot>` file remains untouched and loadable. Cross-platform: use `java.nio.file.Files.move(..., REPLACE_EXISTING, ATOMIC_MOVE)` with a fallback for filesystems that don't support `ATOMIC_MOVE`.
+- **Done when:** Mid-write crash (simulated by deliberately throwing between temp write and rename) leaves original save intact; test covers the crash-mid-write path; smoke CI passes.
+- **Constraints:** **Save-data-adjacent.** Existing saves must still load. Don't change the schema. Don't add a new field.
 
 ### T-132 — High-contrast mode toggle (a11y)  [P3]
 - **Status:** In Progress
