@@ -432,20 +432,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Death triggers overlay; stats are accurate per-run; Retry restarts level; Quit returns to MainMenu; smoke CI passes (autopilot dies sometimes — verify it doesn't lock up on the overlay).
 - **Constraints:** Read cause-of-death from existing LevelRunState death-cause field if one exists; otherwise add a `DeathCause` enum. Don't broaden scope — no leaderboards, no telemetry.
 
-### T-131 — README badges (build status + license + Kotlin version)  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`  *(or copilot-agent — single-file README edit)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (community readiness — alpha launch presentation polish)
-- **Files:** `README.md`
-- **Goal:** Add badges to top of README: (1) CI build status — `github.com/SohailShahM/Cloudy-Ninja/actions/workflows/ci.yml/badge.svg`, (2) AI smoke status — same path with `ai-smoke.yml`, (3) license — proprietary badge linked to `LICENSE`, (4) Kotlin version — derived from gradle, (5) libGDX version. Use shields.io for static text badges; native GH badges for workflow status. Group above first heading.
-- **Done when:** Badges render; all link targets correct; no broken images; CI passes.
-- **Constraints:** README-only. Don't restructure existing sections; just add the badge block at the very top.
-
 ### T-132 — High-contrast mode toggle (a11y)  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -545,6 +531,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-131 — README badges (build status + license + Kotlin version)  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`  *(or copilot-agent — single-file README edit)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-131-readme-badges
+- **Started:** 2026-05-13
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (community readiness — alpha launch presentation polish)
+- **Files:** `README.md`
+- **Goal:** Add badges to top of README: (1) CI build status — `github.com/SohailShahM/Cloudy-Ninja/actions/workflows/ci.yml/badge.svg`, (2) AI smoke status — same path with `ai-smoke.yml`, (3) license — proprietary badge linked to `LICENSE`, (4) Kotlin version — derived from gradle, (5) libGDX version. Use shields.io for static text badges; native GH badges for workflow status. Group above first heading.
+- **Done when:** Badges render; all link targets correct; no broken images; CI passes.
+- **Constraints:** README-only. Don't restructure existing sections; just add the badge block at the very top.
 
 ### T-106 — Extract `LevelEntityFactory` from GameScreen  [P3]
 - **Status:** In Progress
