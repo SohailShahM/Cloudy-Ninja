@@ -2,7 +2,13 @@
 
 > Read this **before** anything else if you are picking up where a previous Claude Code session left off. Then read `START_HERE.md` for the normal onboarding. Update this file at the end of your session to capture state the next agent will need. Keep it short — under 200 lines.
 
-**Last updated:** 2026-05-13 by Claude Opus — a multi-hour autonomous run that picked up where 2026-05-12 left off. **22 PRs merged**, **14 tickets shipped end-to-end**, **19 new tickets specced** (T-109..T-127, including the alpha-blocking T-126 below), **first Copilot dogfood validated** (T-111 diff verified, T-122 in flight), and **HANDOFF source-side quirks #1/#2/#3 all closed** (T-111, T-109, T-110). The session also surfaced one **alpha-blocking legal issue** (T-126 — `assets/fonts/main.ttf` is Microsoft Calibri Regular, proprietary). Main HEAD at session close: see `git log -1 main`.
+**Last updated:** 2026-05-13 (late) by Claude Opus — final HANDOFF refresh after a multi-hour multi-wave autonomous run. **63 PRs merged this session.** Roughly:
+- **~38 code/feature tickets shipped end-to-end** with tests (T-098, T-099, T-100, T-101, T-104, T-106, T-107, T-109, T-110, T-112, T-113, T-114, T-115, T-116, T-117, T-119, T-128, T-129, T-130, T-131, T-132, T-133, T-134, T-135, T-136, T-137, T-138, T-140, T-141, T-144, T-146, T-158, T-159, T-160, T-161, T-162)
+- **~13 research/marketing deliverables** (T-073, T-075, T-120, T-123, T-124, T-125, T-148, T-150-T-155, T-156, T-157, T-163-T-167; deliverables landed under research/, marketing/, docs/, LEARNINGS.md, README.md)
+- **~12 doc-only PRs for ticket batches** (the spec sub-PRs that defined T-109..T-167 in waves)
+- **First Copilot dogfood: 2 PRs validated correct (diff-verified), blocked on GitHub Actions bot-contributor approval policy** (#68 + #85)
+- **All 4 prior HANDOFF source-side quirks closed**: SoundManager log→error (T-111 Copilot), FontManager seam (T-109), ScreenFade rename (T-110), Achievement predicates refactor (T-128 — re-dispatched after first agent died)
+- **One ALPHA-BLOCKING legal issue surfaced**: T-126 — `assets/fonts/main.ttf` is Microsoft Calibri Regular, proprietary; repo is public so this is redistribution. Recommended replacement: Inter (SIL OFL 1.1).
 
 **Previous session (2026-05-12) summary, preserved for context:** Single multi-hour session shipped ~32 tickets, ~327 new Kotest tests, 130+ i18n keys, 5 a11y/UX features, 1 new enemy archetype, 2 new screens, the full cc-agv-bridge (separate repo), T-079 v2 CI optimization (doc-PR skip filter empirically validated; ~2.5min wall on doc PRs vs ~5min code-PR baseline), and added proprietary LICENSE + NOTICE.md. Repo flipped private mid-session then back to public after hitting the Education-Pack 3,000-min/mo Actions cap.
 
@@ -134,27 +140,31 @@ When AGV is quiet on a critical-path ticket, **re-tag it to `claude-code-sub-age
 
 ---
 
-## In-flight threads / pipeline state (end of 2026-05-13 session)
+## In-flight threads / pipeline state (end of 2026-05-13 session — final refresh)
 
 ### Awaiting user action on return
-- **PR #68 — T-111 Copilot SoundManager fix.** Diff is verified-correct (1-line `log`→`error`). CI runs are in `action_required` state because Copilot is treated as a first-time bot contributor. The `POST /actions/runs/{id}/approve` API returns 404 for non-fork PRs. **Fix:** approve runs in the Actions UI tab once, or change repo Settings → Actions → "Require approval for first-time contributors" policy. Then admin-merge.
-- **PR #85 — T-122 Copilot i18n wire-up.** Draft state at session end (still being implemented by Copilot). When promoted to "ready," will face the same `action_required` gate as #68. Same fix.
-- **PR #91 — T-112 Auto-pause.** In CI at session end; should be green within minutes — admin-merge when checks land.
-- **T-107 — Hidden eco-tokens + collector achievement.** Sub-agent in flight at session end; will produce a PR soon. Admin-merge when green.
+- **PR #68 — T-111 Copilot SoundManager fix.** Diff verified-correct (1-line `log`→`error`). CI in `action_required` state because Copilot is a first-time bot contributor. `POST /actions/runs/{id}/approve` returns 404 for non-fork PRs. **Fix:** approve runs in the Actions UI tab once, or change repo Settings → Actions → "Require approval for first-time contributors" policy. Then admin-merge.
+- **PR #85 — T-122 Copilot i18n wire-up.** Draft state at session end. When promoted "ready" will face the same `action_required` gate as #68. Same fix.
 
-### Sonnet pipeline — remaining queue
-- **T-106** Extract `LevelEntityFactory` from GameScreen — file-disjoint with everything; safe to dispatch any time.
-- **T-127** Remove dead gradle deps (`ashley`, `gdx-ai`) — Copilot-shaped; **dispatch held this session** to avoid expanding the `action_required` queue. Dispatch once #68 + #85 are unblocked.
+### Sonnet pipeline — remaining queue (all dispatchable, file-disjoint with everything else)
+- **T-127** Remove dead gradle deps (`ashley`, `gdx-ai`) — Copilot-shaped; **dispatch held** to avoid expanding the `action_required` queue. Dispatch once #68 + #85 are unblocked.
 - **T-035** Audio bus sliders (Copilot, same hold reason).
 - **T-105** Master volume — blocked on T-035.
 - **T-118** Mute keyboard shortcut (M) — blocked on T-105.
 - **T-121** Default swap keybind S→Q migration — blocked on T-118.
+- **T-139** Screenshot-on-victory — blocked on T-122 Copilot landing.
+- **T-142** Speedrun timer overlay toggle — file-disjoint, ready.
+- **T-143** Settings "Reset to defaults" button — file-disjoint, ready.
+- **T-145** Sound test in Settings — depends T-035.
+- **T-147** F12 screenshot hotkey — depends T-139.
+
+**Total tickets specced in this session: ~60 (T-109..T-167).** Of those, **~50 shipped end-to-end**. Remaining 10 either Copilot-frozen, depend on Copilot work, or are intentionally held for human (T-126, etc.).
 
 ### 🚨 ALPHA-BLOCKING (human-required)
 - **T-126 — Calibri font replacement.** `assets/fonts/main.ttf` is **Microsoft Calibri Regular** (proprietary, redistribution-forbidden). The repo being public on GitHub = redistribution = license violation. T-125 recommends Inter (SIL OFL 1.1). Marked `autonomous-eligible: no` because font swap affects every UI screen and smoke CI does not validate font readability. Ticket has the full path; see `research/asset-attribution-audit.md` §HIGH-1 and `QUESTIONS.md` T-125-Q1.
 
 ### Active spawn-task chips
-- **"Refactor achievement unlock predicates to pure functions"** — STILL PENDING. The sub-agent dispatched from the chip earlier this session **died silently** (no claim commit, no branch). Re-dispatch on next session — full spec is preserved in this session's transcript and matches HANDOFF source-side quirk #4 (now closed by inference but not by code). T-107 was implemented without it, following the existing inline `tryUnlock` pattern.
+- **"Refactor achievement unlock predicates to pure functions"** — ✅ **CLOSED** in this session via T-128 re-spec (PR #100). 13 predicates extracted to pure functions in `progression/AchievementPredicates.kt`; 54 new Kotest cases; duplicate `tryUnlock` helpers consolidated into `progression/AchievementUnlocker.kt`. Behavior preserved.
 
 ### Not autonomous (need human, unchanged from prior session)
 - **T-038** Ghost replay — determinism-sensitive
@@ -166,14 +176,17 @@ When AGV is quiet on a critical-path ticket, **re-tag it to `claude-code-sub-age
 - **T-046** Graphics overhaul (needs art-direction decision)
 
 ### Source-side quirks pinned by THIS session
-1. ✅ **Closed:** SoundManager log→error (T-111, via Copilot)
-2. ✅ **Closed:** FontManager testability seam (T-109)
-3. ✅ **Closed:** ScreenFade rename (T-110)
-4. **Still open:** Achievement unlock predicates inlined — chip still pending re-dispatch
+1. ✅ **Closed:** SoundManager log→error (T-111, via Copilot — PR #68 still policy-blocked but diff verified)
+2. ✅ **Closed:** FontManager testability seam (T-109, PR #69 merged)
+3. ✅ **Closed:** ScreenFade rename (T-110, PR #86 merged)
+4. ✅ **Closed:** Achievement unlock predicates extracted to pure functions (T-128 re-dispatch, PR #100 merged)
 5. **NEW:** Two screen-shake systems coexist post-T-116. The pre-existing `LevelRunState.triggerShake()` (lightning + boss-defeat, sin/cos, lines ~740-746) is unchanged; the new `rendering/ScreenShake.kt` (T-116, stomp + boss-hit, linear decay) runs alongside. Their offsets sum on overlapping frames. Future work that touches camera shake should be aware of both.
-6. **NEW:** `SaveManager` API name is `deleteSave(filename)`, NOT `deleteSlot()` as some tickets spec'd (T-119 caught this and used the real name). Older tickets referencing `deleteSlot()` need fixing if dispatched verbatim.
+6. **NEW:** `SaveManager` API name is `deleteSave(filename)`, NOT `deleteSlot()` as some tickets spec'd (T-119 caught this). Older tickets referencing `deleteSlot()` need fixing if dispatched verbatim.
 7. **NEW:** The desktop module is `:lwjgl3`, NOT `:desktop`. `:lwjgl3:dist` is an alias for `:lwjgl3:jar` (line 197 of `lwjgl3/build.gradle`). T-114's itch.io deploy workflow targets `:lwjgl3:dist`.
-8. **NEW:** Dead deps `ashley` and `gdx-ai` declared in `core/build.gradle` but never imported (T-123 finding). T-127 ticketed.
+8. **NEW:** Dead deps `ashley` and `gdx-ai` declared in `core/build.gradle` but never imported (T-123 finding). T-127 ticketed; Copilot-frozen until #68/#85 unblock.
+9. **NEW:** `LevelRenderer` uses **silhouette overlay** for high-contrast mode on entities (T-132) because enemy/player sprites set their own colors inside `entity.draw()`. Pragmatic but not invisible-to-the-entity-class. Future ticket candidate: move white/black tint into entities themselves and remove the overlay hack.
+10. **NEW:** Smoke CI runner stalls — `apt-get install xvfb` against Azure mirrors hangs ~12 min then cancels. Random across `level0_0..3`, `level1`, `level3` — not a regression. Mitigation: cancel + `gh run rerun --failed`. Future ticket candidate: cache xvfb in CI runner image or use a Docker image with xvfb pre-baked. Touches `.github/workflows/ai-smoke.yml` — yellow zone, user decision.
+11. **NEW:** GitHub Copilot **automatic** code review workflow (different from Copilot coding agent — this is the "Run Autofind TS Agent" runs that fail on every PR) hit its **weekly rate limit, resets May 18 2026**. Not a required check; doesn't block merges. Just shows red X on every PR until reset. User can disable in repo Settings → Code & automation → Copilot, or wait it out.
 
 ## Tooling gotchas learned THIS session (read before repeating)
 
