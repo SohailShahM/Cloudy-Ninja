@@ -7,7 +7,7 @@ import com.sohai.platformer.audio.ProceduralMusicGenerator
 import com.sohai.platformer.audio.ProceduralSoundGenerator
 import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.rendering.DisplayScale
-import com.sohai.platformer.screens.MainMenuScreen
+import com.sohai.platformer.screens.SplashScreen
 
 /** [com.badlogic.gdx.ApplicationListener] implementation shared by all platforms. */
 class Main : Game() {
@@ -17,11 +17,15 @@ class Main : Game() {
         DisplayScale.init()
 
         VisUI.load(VisUI.SkinScale.X2)
-        ProceduralSoundGenerator.generateAll()
-        ProceduralMusicGenerator.generateAll()
-        SoundManager.init()
+
         val smokeLevel = System.getProperty("cloudy.smokeLevel")
         if (smokeLevel != null) {
+            // Smoke path: do all preload work synchronously here so the smoke
+            // matrix doesn't pay a per-job splash tax. Skip the splash entirely.
+            ProceduralSoundGenerator.generateAll()
+            ProceduralMusicGenerator.generateAll()
+            SoundManager.init()
+
             val level = com.sohai.platformer.levels.LevelManager.getLevel(smokeLevel)
             if (level != null) {
                 setScreen(com.sohai.platformer.screens.GameScreen(level, this))
@@ -30,7 +34,10 @@ class Main : Game() {
                 com.badlogic.gdx.Gdx.app.exit()
             }
         } else {
-            setScreen(MainMenuScreen(this))
+            // T-104: cold-start splash drives preload one frame at a time so the
+            // user sees a real progress bar. SplashScreen itself fast-skips the
+            // 1-second minimum-duration gate when Constants.SMOKE_MODE is true.
+            setScreen(SplashScreen(this))
         }
     }
 

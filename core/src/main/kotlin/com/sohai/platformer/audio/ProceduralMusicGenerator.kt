@@ -32,6 +32,27 @@ object ProceduralMusicGenerator {
         writeIfMissing("audio/music/ambient_eco.wav",  makeWav(ambientEco()))
     }
 
+    /**
+     * Generate a single music track by id. Used by the cold-start splash
+     * (T-104) to spread WAV generation across multiple frames so a progress
+     * bar can advance one step per track. Unknown ids are ignored.
+     *
+     * Safe to call multiple times — the on-disk write is skipped if the
+     * file already exists.
+     */
+    fun generateOne(trackId: String) {
+        val dir = Gdx.files.local("audio/music")
+        if (!dir.exists()) dir.mkdirs()
+
+        val samples: FloatArray = when (trackId) {
+            "ambient_arid" -> ambientArid()
+            "ambient_wind" -> ambientWind()
+            "ambient_eco"  -> ambientEco()
+            else           -> return
+        }
+        writeIfMissing("audio/music/$trackId.wav", makeWav(samples))
+    }
+
     private fun writeIfMissing(path: String, data: ByteArray) {
         val f = Gdx.files.local(path)
         if (!f.exists()) {
