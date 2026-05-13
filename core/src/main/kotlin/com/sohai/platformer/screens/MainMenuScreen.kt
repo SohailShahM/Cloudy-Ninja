@@ -14,12 +14,14 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
+import com.sohai.platformer.FontManager
 import com.sohai.platformer.atlas.CloudAtlasLibrary
 import com.sohai.platformer.i18n.StringKey
 import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.levels.LevelManager
 import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
+import com.sohai.platformer.progression.AchievementRegistry
 
 /** Filenames for the three save slots (index 0-2). */
 private val SLOT_FILES = arrayOf("save_slot_0.json", "save_slot_1.json", "save_slot_2.json")
@@ -73,6 +75,9 @@ class MainMenuScreen(private val game: Game) : Screen {
             slotsRow.add(card).top().width(220f).padBottom(8f)
         }
         root.add(slotsRow).row()
+
+        // --- Achievement progress counter (T-099) ---
+        root.add(buildAchievementProgressLabel()).pad(12f).row()
 
         // --- Bottom navigation buttons ---
         root.add(buildNavButtons()).padTop(36f).row()
@@ -162,6 +167,23 @@ class MainMenuScreen(private val game: Game) : Screen {
         if (state.lastPlayed.isNotEmpty()) {
             card.add(VisLabel(Strings.format(StringKey.LAST_PLAYED, state.lastPlayed))).padBottom(4f).row()
         }
+    }
+
+    /**
+     * Builds the achievement progress label shown below the slot row (T-099).
+     *
+     * Reads all 3 save slots, takes the **max** count across them, and renders
+     * `Achievements: {count}/{total} unlocked` in light grey at font size 14.
+     * If every achievement is unlocked, the gold "complete" variant is used
+     * instead. `total` comes from `AchievementRegistry.ALL.size` so the label
+     * stays correct if achievements are added/removed later.
+     */
+    private fun buildAchievementProgressLabel(): Label {
+        val count = maxUnlockedAcrossSlots()
+        val total = AchievementRegistry.ALL.size
+        val (text, color) = achievementProgressTextAndColor(count, total)
+        val font = FontManager.getShared(14)
+        return Label(text, Label.LabelStyle(font, color))
     }
 
     /** Builds the row of bottom-navigation buttons (Level Select, Cloud Atlas, Settings, Quit). */
@@ -321,5 +343,43 @@ class MainMenuScreen(private val game: Game) : Screen {
         val m = cal.get(java.util.Calendar.MONTH) + 1
         val d = cal.get(java.util.Calendar.DAY_OF_MONTH)
         return "%04d-%02d-%02d".format(y, m, d)
+    }
+
+    /**
+     * Returns the **max** number of unlocked achievements across the three
+     * save slots (T-099). Empty / unparseable slots contribute 0.
+     */
+    private fun maxUnlockedAcrossSlots(): Int =
+        SLOT_FILES.maxOf { filename ->
+            if (SaveManager.hasSave(filename)) {
+                SaveManager.loadGame(filename).unlockedAchievements.size
+            } else {
+                0
+            }
+        }
+
+    companion object {
+        /**
+         * Pure helper for T-099: given a per-slot unlocked-count list (typically
+         * size 3), returns the max. Empty input returns 0. Exposed so headless
+         * tests can verify the max-across-slots aggregation without booting GL.
+         */
+        fun maxUnlockedAcrossSlotCounts(perSlotCounts: List<Int>): Int =
+            if (perSlotCounts.isEmpty()) 0 else perSlotCounts.max()
+
+        /**
+         * Pure helper for T-099: picks the appropriate template+color for the
+         * achievement progress label, mirroring [buildAchievementProgressLabel]
+         * but without requiring a [BitmapFont]. Returns the rendered text and
+         * its display color.
+         */
+        fun achievementProgressTextAndColor(count: Int, total: Int): Pair<String, Color> =
+            if (count >= total && total > 0) {
+                Strings.format(StringKey.MENU_ACHIEVEMENT_PROGRESS_COMPLETE, total) to
+                    Color(1f, 0.85f, 0.1f, 1f)
+            } else {
+                Strings.format(StringKey.MENU_ACHIEVEMENT_PROGRESS, count, total) to
+                    Color(0.75f, 0.75f, 0.75f, 1f)
+            }
     }
 }
