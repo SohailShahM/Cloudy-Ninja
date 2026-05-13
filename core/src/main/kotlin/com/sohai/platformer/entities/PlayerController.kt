@@ -8,6 +8,7 @@ import com.badlogic.gdx.physics.box2d.*
 import com.sohai.platformer.Constants
 import com.sohai.platformer.abilities.CharacterAbility
 import com.sohai.platformer.input.InputManager
+import com.sohai.platformer.rendering.SheetAnimState
 
 class PlayerController(world: World, x: Float, y: Float, var ability: CharacterAbility? = null) {
     val body: Body
@@ -95,6 +96,60 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
         private const val FOOTSTEP_INTERVAL_M = 0.12f
         private const val FOOTSTEP_OFFSET_X = 0.10f   // ~half-width of player body in meters
         private const val FOOTSTEP_OFFSET_Y = 0.32f   // foot position below body center
+
+        /**
+         * T-186: cooldown-ratio threshold above which the player is still
+         * playing the ATTACK1 animation. Picked so the animation runs for
+         * ~0.4–0.5s after the ability fires for a 1.5s-cooldown ability
+         * (Ebo's Seed Slam). See [PlayerController.isAbilityAttackAnimActive].
+         */
+        private const val ATTACK_ANIM_COOLDOWN_THRESHOLD = 0.70f
+
+        /**
+         * T-186: vy threshold above which the player is "ascending" (JUMP).
+         * Below -eps and airborne → FALL. Within [-eps, +eps] and airborne →
+         * FALL (apex/hang frames read as the falling pose). We use 0.1f
+         * rather than the procedural CharacterAnimator's 1f so the jump pose
+         * shows during the brief apex hang at the top of the arc.
+         */
+        private const val JUMP_VY_THRESHOLD = 0.1f
+
+        /**
+         * T-186: horizontal-speed threshold above which a grounded player is
+         * RUN, not IDLE. Mirrors [com.sohai.platformer.rendering.CharacterAnimator]'s
+         * 0.5f cutoff so the sprite branch reads the same threshold as the
+         * procedural fallback used by Laya / Zephyr (T-187 / T-188 territory).
+         */
+        private const val RUN_VX_THRESHOLD = 0.5f
+
+        /**
+         * T-186: pure state-resolution helper. Takes primitive fields rather
+         * than a [PlayerController] so the logic is unit-testable without
+         * Box2D natives (tests run in JVM-only environments where the native
+         * Body cannot be constructed).
+         *
+         * Transition priority (high → low): DEATH > TAKE_HIT > ATTACK1 >
+         * JUMP > FALL > RUN > IDLE.
+         *
+         * Wall-slide is not yet mapped — MH1 ships no wall-slide sheet and we
+         * fall back to IDLE there. Tracked as `// T-046 wall-slide gap`.
+         */
+        fun computeAnimState(
+            isDead: Boolean,
+            isFlashing: Boolean,
+            isAbilityAttackActive: Boolean,
+            isGrounded: Boolean,
+            velocityX: Float,
+            velocityY: Float,
+        ): SheetAnimState = when {
+            isDead                                          -> SheetAnimState.DEATH
+            isFlashing                                      -> SheetAnimState.TAKE_HIT
+            isAbilityAttackActive                           -> SheetAnimState.ATTACK1
+            !isGrounded && velocityY > JUMP_VY_THRESHOLD    -> SheetAnimState.JUMP
+            !isGrounded                                     -> SheetAnimState.FALL
+            kotlin.math.abs(velocityX) > RUN_VX_THRESHOLD   -> SheetAnimState.RUN
+            else                                            -> SheetAnimState.IDLE
+        }
     }
 
 
@@ -293,6 +348,55 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
         isWindDashGliding = false
         // (No platformContacts to clear — friction-based carry has no Java state.)
     }
+
+    /**
+     * T-186: resolve the [SheetAnimState] that the sprite-sheet renderer should
+     * play this frame, based on the player's current physics + status fields.
+     *
+     * Used by [com.sohai.platformer.screens.LevelRenderer.renderPlayer] when the
+     * active character is wired to a [com.sohai.platformer.rendering.SheetCharacterAtlas]
+     * (Ebo as of T-186; Laya / Zephyr stay on the procedural path until T-187 / T-188).
+     *
+     * Transition priority (high → low): DEATH > TAKE_HIT > ATTACK1 > JUMP > FALL > RUN > IDLE.
+     *
+     * Wall-slide is intentionally not mapped — MH1 ships no wall-slide sheet so we
+     * fall back to IDLE as a visual placeholder. See `// T-046 wall-slide gap`.
+     *
+     * Delegates to [computeAnimState] so the logic is unit-testable without a
+     * live Box2D body.
+     */
+    fun currentAnimState(): SheetAnimState {
+        val abilityActive = isAbilityAttackAnimActive()
+        return computeAnimState(
+            isDead          = isDead,
+            isFlashing      = isFlashing,
+            isAbilityAttackActive = abilityActive,
+            isGrounded      = isGrounded,
+            velocityX       = body.linearVelocity.x,
+            velocityY       = body.linearVelocity.y,
+        )
+    }
+
+    /**
+     * T-186: detect whether the ability fired recently enough that we should
+     * still be playing the ATTACK1 animation. Computed from the ability's
+     * cooldown ratio: if the cooldown is just past peak (ratio near 1.0), the
+     * ability was just used. The attack animation runs for ~0.4s at the
+     * defaults in [com.sohai.platformer.rendering.AnimationStateMachine]
+     * (Attack1 has 6 frames @ 15 FPS for MH1). Beyond that window the
+     * animation has played out and we drop back to locomotion states.
+     *
+     * Returns false when no ability is assigned (defensive — the renderer
+     * never crashes on Laya / Zephyr / null-ability states).
+     */
+    private fun isAbilityAttackAnimActive(): Boolean {
+        val a = ability ?: return false
+        // 0.4s window / typical 1.5s cooldown gives a threshold of ~0.733.
+        // We use a slightly broader 0.70 to give the animation breathing room
+        // when frame-time jitters past 16.67ms.
+        return a.getCooldownRatio() > ATTACK_ANIM_COOLDOWN_THRESHOLD
+    }
+
     fun update(deltaTime: Float) {
         jumpFiredThisFrame = false   // reset each frame; set below when a jump actually fires
         val vel = body.linearVelocity
