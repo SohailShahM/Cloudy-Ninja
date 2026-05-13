@@ -26,10 +26,27 @@ object Constants {
     const val MAX_FRAME_DELTA = 1 / 20f
 
     // Player horizontal movement
-    const val PLAYER_SPEED                = 9f    // Was 8; bumped for snappier feel at 1280p
-    const val PLAYER_RUN_ACCEL            = 40f   // m/s² — accelerate to top speed over ~0.22s
-    const val PLAYER_RUN_DECEL            = 16f   // m/s² — friction deceleration when no input
-    const val PLAYER_AIR_ACCEL_MUL        = 0.65f // Air control = 65% of ground (Celeste-ish)
+    //
+    // T-175 — Movement responsiveness baseline (Celeste-like snap-to-zero).
+    // The controller writes velocity directly when a horizontal input is held
+    // (acceleration is effectively instantaneous — top speed reached in 1 frame).
+    // When no input is held, we multiply v.x by GROUND_COAST_DAMPING (grounded)
+    // or AIR_COAST_DAMPING (airborne) each frame to bleed off coast.
+    //
+    // GROUND_COAST_DAMPING = 0.55 → velocity drops to ~5% of top speed in 5
+    // frames at 60Hz (9 m/s × 0.55^5 ≈ 0.45 m/s), i.e. effectively stopped
+    // within ~80ms. Increase toward 1.0 for more slide; decrease toward 0 for
+    // an even harder stop (0 = instant kill, which feels robotic).
+    //
+    // AIR_COAST_DAMPING = 0.5 preserves the pre-T-175 air-idle behaviour
+    // (jumps cut their horizontal speed quickly when no input is held). Raise
+    // toward 0.9 if you want jumps to carry more momentum into a release.
+    const val PLAYER_SPEED                = 9f    // Top horizontal speed (m/s). UNCHANGED by T-175.
+    const val PLAYER_RUN_ACCEL            = 40f   // m/s² — currently UNUSED (controller writes velocity directly). Kept for future acceleration-based tuning.
+    const val PLAYER_RUN_DECEL            = 16f   // m/s² — currently UNUSED (replaced by GROUND_COAST_DAMPING multiplier). Kept for future acceleration-based tuning.
+    const val PLAYER_AIR_ACCEL_MUL        = 0.65f // Air control = 65% of ground (Celeste-ish). Currently UNUSED.
+    const val GROUND_COAST_DAMPING        = 0.55f // T-175: velocity multiplier per frame when grounded + no horizontal input. Lower = snappier stop.
+    const val AIR_COAST_DAMPING           = 0.5f  // T-175: velocity multiplier per frame when airborne + no horizontal input. Higher = more air momentum.
 
     // Player jump
     const val PLAYER_JUMP_IMPULSE          = 13f    // Was 12

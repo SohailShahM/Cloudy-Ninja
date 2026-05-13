@@ -244,6 +244,10 @@ class WorldContactListener : ContactListener {
             // body crash — T-017).
             val otherUserData = otherFixture.userData
             if (otherUserData == "moving_platform" || otherFixture.body.userData is MovingPlatform) {
+                // T-175: maintain a contact counter on the player so the
+                // grounded-idle coast-damping branch can skip its velocity
+                // multiplier and let Box2D friction carry us with the platform.
+                player?.onMovingPlatformFootContact(begin)
                 val platform = otherFixture.body.userData as? MovingPlatform
                 val platformBodyId = platform?.body?.hashCode() ?: otherFixture.body.hashCode()
                 if (begin) {
