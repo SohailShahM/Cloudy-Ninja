@@ -17,19 +17,40 @@ import com.sohai.platformer.FontManager
 import com.sohai.platformer.i18n.StringKey
 import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.levels.LevelManager
+import com.sohai.platformer.util.ScreenshotWriter
 
 class VictoryScreen(
     private val game: Game,
     private val finalScore: Int,
     private val bestTrialTime: Float? = null,
     private val isNewTimeBest: Boolean = false,
-    private val priorBestTime: Float? = null
+    private val priorBestTime: Float? = null,
+    /**
+     * T-139: id of the level that was just cleared. Used to compose the
+     * screenshot filename `victory-{levelId}-{yyyyMMdd-HHmmss}.png`. Defaults
+     * to `"final"` when the caller doesn't supply one (e.g. legacy tests).
+     */
+    private val clearedLevelId: String = "final"
 ) : Screen {
 
     private val viewport = FitViewport(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
     private val stage = Stage(viewport)
     private val titleFont = FontManager.getShared(36)
     private val bodyFont = FontManager.getShared(22)
+    private val toastFont = FontManager.getShared(16)
+
+    /**
+     * T-139: Small label anchored bottom-center that appears once the victory
+     * screenshot lands on disk. Hidden if the write failed or smoke mode
+     * short-circuited.
+     */
+    private val screenshotToast: Label = Label(
+        ScreenshotWriter.TOAST_TEXT,
+        Label.LabelStyle(toastFont, Color(0.85f, 0.85f, 0.85f, 1f))
+    ).apply { isVisible = false }
+
+    /** T-139: ensures we only attempt the capture once per VictoryScreen lifetime. */
+    private var screenshotAttempted = false
 
     init {
         Gdx.input.inputProcessor = stage
@@ -91,6 +112,29 @@ class VictoryScreen(
         table.add(btnReplay).size(220f, 60f)
 
         stage.addActor(table)
+
+        // T-139: bottom-center toast — populated in show() once the screenshot
+        // write returns success. Anchored manually rather than nested in the
+        // center table so it doesn't shift the menu/replay buttons.
+        screenshotToast.setPosition(
+            (Constants.VIRTUAL_WIDTH - 360f) / 2f,
+            20f
+        )
+        screenshotToast.setSize(360f, 24f)
+        stage.addActor(screenshotToast)
+    }
+
+    /**
+     * T-139: capture the framebuffer once on first VictoryScreen entry and
+     * show the toast if the write succeeded. Smoke mode short-circuits
+     * BEFORE pixmap allocation so CI never writes to the runner's home dir.
+     */
+    private fun maybeCaptureVictoryScreenshot() {
+        if (screenshotAttempted) return
+        screenshotAttempted = true
+        if (Constants.SMOKE_MODE) return
+        val ok = ScreenshotWriter.captureAndWrite(clearedLevelId)
+        screenshotToast.isVisible = ok
     }
 
     override fun render(delta: Float) {
@@ -98,6 +142,10 @@ class VictoryScreen(
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
         stage.act(delta)
         stage.draw()
+
+        // T-139: capture after stage.draw() so the framebuffer holds the
+        // rendered victory screen, not the cleared backdrop. Runs exactly once.
+        maybeCaptureVictoryScreenshot()
     }
 
     override fun resize(width: Int, height: Int) { viewport.update(width, height, true) }

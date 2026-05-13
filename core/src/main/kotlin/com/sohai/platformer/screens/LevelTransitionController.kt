@@ -140,9 +140,10 @@ class LevelTransitionController(
         } else if (game != null) {
             game.screen = VictoryScreen(
                 game, score,
-                bestTrialTime  = if (isTimeTrial) lastTrialTime else null,
-                isNewTimeBest  = trialIsNewBest,
-                priorBestTime  = if (isTimeTrial) lastPrevTime else null
+                bestTrialTime   = if (isTimeTrial) lastTrialTime else null,
+                isNewTimeBest   = trialIsNewBest,
+                priorBestTime   = if (isTimeTrial) lastPrevTime else null,
+                clearedLevelId  = level.id
             )
         }
         onDispose()
