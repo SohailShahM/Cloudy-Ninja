@@ -420,22 +420,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Hold-R-to-restart works at 0.5s; tap-R is a no-op; rebindable; persists; smoke CI passes (autopilot won't hold R — confirmed safe).
 - **Constraints:** Hold-not-tap is deliberate — accidental R presses are common. The 0.5s threshold is the standard for "are you sure?" patterns in indie games.
 
-### T-134 — MainMenu background music  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-030, T-129  *(audio gate must be in place before MainMenu plays music)*
-- **GDD ref:** GAME_PLAN.md (atmosphere — silent MainMenu undersells the game)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/ProceduralMusicGenerator.kt`
-- **Goal:** Add a 4th procedural track `ambient_menu` — softer than `ambient_arid`, more harmonic. Generate via existing `ProceduralMusicGenerator` pattern (60s loop). `MainMenuScreen` plays it on enter; transitions to level-specific track on Play. Crossfade pattern from T-030 applies.
-- **Done when:** MainMenu has background music; volume responds to Music slider; ducks correctly on Settings open (per T-117 pattern if applicable); smoke CI passes.
-- **Constraints:** Procedural only (no new audio file assets). Keep under 30 lines added to the generator.
-
-
-
 <!-- ═══════════════════════════════════════════════════════════════
      SPRINT D wave 6 — defensive saves + onboarding + polish
      T-136..T-141 batch (planned 2026-05-13 by claude-code-opus,
@@ -529,6 +513,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-134 — MainMenu background music  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-134-mainmenu-music
+- **Started:** 2026-05-13
+- **Depends on:** T-030, T-129  *(audio gate must be in place before MainMenu plays music)*
+- **GDD ref:** GAME_PLAN.md (atmosphere — silent MainMenu undersells the game)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/ProceduralMusicGenerator.kt`
+- **Goal:** Add a 4th procedural track `ambient_menu` — softer than `ambient_arid`, more harmonic. Generate via existing `ProceduralMusicGenerator` pattern (60s loop). `MainMenuScreen` plays it on enter; transitions to level-specific track on Play. Crossfade pattern from T-030 applies.
+- **Done when:** MainMenu has background music; volume responds to Music slider; ducks correctly on Settings open (per T-117 pattern if applicable); smoke CI passes.
+- **Constraints:** Procedural only (no new audio file assets). Keep under 30 lines added to the generator.
 
 ### T-141 — Cloud Atlas search/filter  [P3]
 - **Status:** In Progress
