@@ -5,6 +5,7 @@ import com.badlogic.gdx.physics.box2d.World
 import com.sohai.platformer.Constants
 import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.SnapshotPickup
+import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.world.ObstacleKind
 import com.sohai.platformer.world.ObstacleManager
 
@@ -91,6 +92,16 @@ class Level0_0 : Level() {
             "portal_world3" -> setOf("level2")            // must complete World 2
             else -> setOf("__impossible__")
         }
+
+        /**
+         * T-137: Returns true if [HubTutorialOverlay] should be shown for a
+         * player whose save reads [state]. Pure function — no I/O — so the
+         * gate is unit-testable without touching libGDX. The host screen
+         * (`GameScreen`) calls this on Level0_0 construction; on a true
+         * result, it builds the overlay and persists `tutorialSeen=true`
+         * once the player dismisses it.
+         */
+        fun shouldShowFirstRunTutorial(state: GameState): Boolean = !state.tutorialSeen
     }
 
     override fun setup(

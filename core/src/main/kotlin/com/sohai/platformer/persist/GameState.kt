@@ -57,7 +57,18 @@ data class GameState(
      * Keyed by achievement id (matches [com.sohai.platformer.progression.AchievementRegistry]);
      * value is `System.currentTimeMillis()` captured at unlock.
      */
-    val achievementTimestamps: Map<String, Long> = emptyMap()
+    val achievementTimestamps: Map<String, Long> = emptyMap(),
+    /**
+     * T-137: Whether the player has seen the first-run hub tutorial overlay.
+     * Shown once on first entry to Level0_0 (Sky Sanctuary), then dismissed
+     * for the lifetime of the save slot. Reset only by deleting the save.
+     *
+     * Additive field per T-113 migration scaffold: legacy saves load with
+     * `false` (the default), so existing pre-T-137 players will see the
+     * overlay once on their next launch — that's the conscious trade-off
+     * for not bumping `saveFormatVersion`. See the T-137 PR for rationale.
+     */
+    val tutorialSeen: Boolean = false
 )
 
 @Serializable
