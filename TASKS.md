@@ -367,18 +367,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Add a `keybind("mute")` (default `Input.Keys.M`) in `Settings.defaultKeybinds()` and the Controls section. Pressing M toggles a transient mute — internally clamps `volMaster` effective value to 0 without overwriting the slider position. Toggling off restores. Briefly flash a `[MUTED]` toast (1.5s) on toggle-on.
 - **Done when:** M-key mutes/unmutes from any screen; master slider position is preserved; rebindable in Settings; persists across sessions; smoke CI passes.
 
-### T-119 — Save slot delete confirmation modal  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-099, T-100  *(MainMenuScreen contention)*
-- **GDD ref:** GAME_PLAN.md (alpha safety — accidental slot deletion is a top-of-funnel rage bug)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** Tapping Delete on a save slot now opens a modal: `Delete slot {N}? This cannot be undone.` with `Cancel` / `Delete`. Default-focus is `Cancel`. `Esc` cancels. Only `Delete` fires `SaveManager.deleteSlot()`. Empty slots hide (or disable) the delete affordance to match existing slot-card style.
-- **Done when:** No path deletes a slot without the confirm modal; Cancel preserves the slot; smoke CI passes (verify autopilot doesn't open the modal — that path stays unaffected).
 
 
 <!-- ═══════════════════════════════════════════════════════════════
@@ -502,6 +490,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-119 — Save slot delete confirmation modal  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-119-slot-delete-confirm
+- **Started:** 2026-05-13
+- **Depends on:** T-099, T-100  *(MainMenuScreen contention)*
+- **GDD ref:** GAME_PLAN.md (alpha safety — accidental slot deletion is a top-of-funnel rage bug)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Tapping Delete on a save slot now opens a modal: `Delete slot {N}? This cannot be undone.` with `Cancel` / `Delete`. Default-focus is `Cancel`. `Esc` cancels. Only `Delete` fires `SaveManager.deleteSlot()`. Empty slots hide (or disable) the delete affordance to match existing slot-card style.
+- **Done when:** No path deletes a slot without the confirm modal; Cancel preserves the slot; smoke CI passes (verify autopilot doesn't open the modal — that path stays unaffected).
 
 ### T-115 — In-game crash report dumper  [P3]
 - **Status:** In Progress
