@@ -106,6 +106,16 @@ enum class StringKey {
     SETTINGS_ASSIST_INVINCIBLE,
     SETTINGS_ASSIST_SLOW_SPEED,
 
+    // ── Settings: Reset-to-defaults (T-143) ──────────────────────────────────
+    // Footer button + confirmation modal that restores every Settings field
+    // to its factory default. Save data is NOT affected by this action.
+    SETTINGS_RESET_ALL_BUTTON,
+    SETTINGS_RESET_ALL_CONFIRM_TITLE,
+    SETTINGS_RESET_ALL_CONFIRM_BODY,
+    SETTINGS_RESET_ALL_CONFIRM_OK,
+    SETTINGS_RESET_ALL_CONFIRM_CANCEL,
+    SETTINGS_RESET_ALL_TOAST,
+
     // ── Settings: Save controls + feedback ───────────────────────────────────
     SETTINGS_SAVE,
     SETTINGS_LOAD,
@@ -427,6 +437,17 @@ object Strings {
         StringKey.SETTINGS_ASSIST_INFINITE_SPIRITS to " Infinite Spirits (no game over)",
         StringKey.SETTINGS_ASSIST_INVINCIBLE      to " Invincible (no damage)",
         StringKey.SETTINGS_ASSIST_SLOW_SPEED      to "Slow Speed",
+
+        // Settings: Reset-to-defaults (T-143). Footer button + confirmation
+        // modal. Cancel is default-focused; ESC cancels. Save data is NOT
+        // affected — the body copy makes that promise explicit so players who
+        // misread the button label don't worry about losing progress.
+        StringKey.SETTINGS_RESET_ALL_BUTTON         to "Reset to defaults",
+        StringKey.SETTINGS_RESET_ALL_CONFIRM_TITLE  to "Reset settings?",
+        StringKey.SETTINGS_RESET_ALL_CONFIRM_BODY   to "Reset all settings to defaults? Your save data is not affected.",
+        StringKey.SETTINGS_RESET_ALL_CONFIRM_OK     to "Reset",
+        StringKey.SETTINGS_RESET_ALL_CONFIRM_CANCEL to "Cancel",
+        StringKey.SETTINGS_RESET_ALL_TOAST          to "Settings reset to defaults",
 
         // Settings: Save controls + feedback
         StringKey.SETTINGS_SAVE                  to "Save",

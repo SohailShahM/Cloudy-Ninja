@@ -294,6 +294,117 @@ class SettingsManagerTest : BehaviorSpec({
         }
     }
 
+    // ----------------------------------------------------------------------
+    // T-143: Reset-to-defaults. The footer button in SettingsScreen routes
+    // through [SettingsManager.reset]. It must:
+    //   (a) write a default Settings() to disk so reload sees defaults
+    //   (b) leave keybindsCustomized = false even when the prior state had
+    //       customized keybinds — the whole reason reset() bypasses update()
+    //       rather than reusing it
+    //   (c) be idempotent (back-to-back resets keep the same default state)
+    //   (d) NOT touch save data (we don't test save files here, but the
+    //       implementation only writes settings.json — see (a))
+    // ----------------------------------------------------------------------
+
+    given("T-143 case A: reset() from a heavily customized state") {
+
+        `when`("reset() is called after a user customized audio + keybinds") {
+            resetWorld()
+            // Seed defaults, then mutate broadly: a keybind change (which
+            // also flips keybindsCustomized to true via update()) plus
+            // several non-keybind fields across categories.
+            SettingsManager.load()
+            SettingsManager.update {
+                it.copy(
+                    volMaster = 0.42f,
+                    muted = true,
+                    showFps = true,
+                    speedrunTimer = true,
+                    reducedMotion = true,
+                    highContrast = true,
+                    screenShake = false,
+                    keybinds = it.keybinds + ("jump" to Input.Keys.K)
+                )
+            }
+            // Sanity: the customization detector should have flipped.
+            SettingsManager.resetCacheForTest()
+            SettingsManager.load().keybindsCustomized shouldBe true
+
+            // Now reset.
+            SettingsManager.reset()
+            SettingsManager.resetCacheForTest()
+            val read = SettingsManager.load()
+
+            then("audio fields are restored to defaults") {
+                read.volMaster shouldBe 1.0f
+                read.muted shouldBe false
+                read.volMusic shouldBe 0.7f
+                read.volSfx shouldBe 0.9f
+                read.volUi shouldBe 0.9f
+                read.volAmbient shouldBe 0.6f
+            }
+            then("display + accessibility fields are restored to defaults") {
+                read.showFps shouldBe false
+                read.speedrunTimer shouldBe false
+                read.reducedMotion shouldBe false
+                read.highContrast shouldBe false
+                read.screenShake shouldBe true
+                read.cameraLookAhead shouldBe true
+            }
+            then("keybinds are restored to factory defaults") {
+                read.keybinds["jump"] shouldBe Input.Keys.SPACE
+                read.keybinds["swap"] shouldBe Input.Keys.Q
+            }
+            then("keybindsCustomized stays FALSE — the key invariant: reset must NOT route through update()") {
+                read.keybindsCustomized shouldBe false
+            }
+        }
+    }
+
+    given("T-143 case B: reset() is idempotent") {
+
+        `when`("reset() is called twice in a row") {
+            resetWorld()
+            SettingsManager.load()
+            SettingsManager.update { it.copy(volMaster = 0.1f) }
+
+            val first  = SettingsManager.reset()
+            val second = SettingsManager.reset()
+
+            then("both returned states equal a fresh Settings()") {
+                first  shouldBe Settings()
+                second shouldBe Settings()
+            }
+
+            // Confirm the on-disk state matches after the second call too.
+            SettingsManager.resetCacheForTest()
+            val read = SettingsManager.load()
+
+            then("the persisted state still equals defaults after two resets") {
+                read shouldBe Settings()
+            }
+        }
+    }
+
+    given("T-143 case C: reset() persists across a cache flush") {
+
+        `when`("reset() is followed by an in-memory cache flush and reload") {
+            resetWorld()
+            SettingsManager.load()
+            SettingsManager.update { it.copy(volSfx = 0.05f, fullscreen = true) }
+            SettingsManager.reset()
+
+            // Force the next load() to hit disk.
+            SettingsManager.resetCacheForTest()
+            val read = SettingsManager.load()
+
+            then("the reload sees defaults (file was actually written, not just cached)") {
+                read.volSfx shouldBe 0.9f
+                read.fullscreen shouldBe false
+            }
+        }
+    }
+
     given("a legacy settings.json predating T-105 (no volMaster, no muted)") {
 
         `when`("load() deserialises the legacy file") {
