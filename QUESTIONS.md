@@ -69,3 +69,20 @@ _(no questions yet — autonomous agents append here as they encounter ambiguity
   **Severity:** non-blocking for the report itself; blocking only if the user wants to seriously consider these specific packs as a T-046 base.
 - **Status:** `open`
 - **Answer:** _(pending)_
+
+### 2026-05-13 — claude-code-sub-agent — T-179
+- **Question:** Three CC0 packs from the T-179 acquisition list could not be auto-fetched because itch.io's "Download Now" button is a JavaScript-gated POST flow with no direct CDN URL exposed in the page HTML — hard rule #7 (don't fight rate limits / don't guess CDN URLs) applies, and there is no surfaced CC0-redistributing GitHub mirror for these three (search exhausted). The packs are:
+  - **LuizMelo Martial Hero 2** (https://luizmelo.itch.io/martial-hero-2) — 28 KB, CC0. Storefront license is verbatim CC0; the only friction is the JS click-through.
+  - **LuizMelo Martial Hero 3** (https://luizmelo.itch.io/martial-hero-3) — 38 KB, CC0. Same situation.
+  - **ansimuz SunnyLand Forest** full pack (https://ansimuz.itch.io/sunnyland-forest) — 3.6 MB main `Sunny-land-forest-files.zip` plus optional $5 expansion. CC0. (The OGA mirror at https://opengameart.org/content/sunnyland-forest-of-illusion gave us the background+tileset subset only, which is now in `assets/tilesets/sunnyland-forest-of-illusion/`. The fuller pack contains additional character + enemy sprites we did not acquire.)
+
+  **Workaround for the next session:** Open each itch.io URL in a browser, click "Download Now → No thanks, just take me to the downloads", grab the ZIP, drop into:
+  - `assets/sprites/luizmelo/martial-hero-2/` (extract `Martial Hero 2.zip`)
+  - `assets/sprites/luizmelo/martial-hero-3/` (extract `Martial Hero 3.zip`)
+  - `assets/tilesets/sunnyland-forest/` (extract `Sunny-land-forest-files.zip` — leave the `__MACOSX/` junk out)
+
+  Then append three more entries to `NOTICE.md` following the same CC0 template used in T-179's PR for Martial Hero 1 / Pixel Adventure / Sunny Land. The asset-pack-inventory doc already names the expected paths.
+
+  **Severity:** non-blocking. T-179's PR ships 4 packs covering the core gameplay-asset spec; the 3 missing packs are nice-to-have (2 additional protagonist sheets for visual variety + a fuller forest pack for the eco biome). T-046 integration can start with what's already in the repo.
+- **Status:** `open`
+- **Answer:** _(pending)_
