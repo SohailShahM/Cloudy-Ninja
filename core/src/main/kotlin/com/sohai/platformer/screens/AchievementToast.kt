@@ -15,6 +15,7 @@ import com.kotcrab.vis.ui.widget.VisImage
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
 import com.sohai.platformer.FontManager
+import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.progression.Achievement
 
 /**
@@ -40,6 +41,11 @@ class AchievementToast(
         private const val ICON_SIZE      = 32f     // 2× the 16×16 source PNG (T-078)
         private const val ICON_TEXT_GAP  = 8f      // gap between icon and text column
         private const val TOTAL_DURATION = SLIDE_DURATION + HOLD_DURATION + FADE_DURATION
+
+        // T-138 — debounce window for the unlock chime. Multi-achievement
+        // unlocks within the same frame (e.g. boss-clear chains two awards)
+        // should produce ONE chime, not two stacked.
+        internal const val CHIME_DEBOUNCE_NS: Long = 200_000_000L  // 200ms
     }
 
     // ── State machine ─────────────────────────────────────────────────────────
@@ -52,6 +58,12 @@ class AchievementToast(
     private var phase = Phase.IDLE
     private var phaseTimer = 0f
     private var currentAchievement: Achievement? = null
+
+    // T-138 — last time the unlock chime fired, in `nanoClock()` ticks.
+    // `Long.MIN_VALUE` means "never fired" (first call always plays).
+    // `nanoClock` is overridable in tests so debounce timing is deterministic.
+    internal var nanoClock: () -> Long = System::nanoTime
+    private var lastChimeNs: Long = Long.MIN_VALUE
 
     // ── Rendering resources ───────────────────────────────────────────────────
 
@@ -129,9 +141,22 @@ class AchievementToast(
     /**
      * Queue an achievement toast. If a toast is already showing it will display
      * after the current one finishes, so they never overlap.
+     *
+     * T-138 — also fires the `achievement_unlock` chime via [SoundManager],
+     * debounced to once per 200ms so multi-achievement frames (e.g. a boss
+     * defeat awarding two badges) produce ONE chime, not a stack. The visual
+     * queue is unaffected: every call still enqueues a toast.
      */
     fun show(achievement: Achievement) {
         queue.addLast(Queued(achievement))
+
+        val now = nanoClock()
+        if (lastChimeNs == Long.MIN_VALUE || now - lastChimeNs >= CHIME_DEBOUNCE_NS) {
+            // `playUi` uses the UI volume bus (settings.volUi). SoundManager's
+            // `enabled` flag is respected internally — no extra gate needed here.
+            SoundManager.playUi("achievement_unlock")
+            lastChimeNs = now
+        }
     }
 
     fun update(delta: Float) {
