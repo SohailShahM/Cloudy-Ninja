@@ -233,10 +233,12 @@ class LevelRunState(
         totalHazards = obstacleManager.rects().count { it.kind == ObstacleKind.HAZARD }
 
         if (debugAutopilotEnabled) {
-            Gdx.app.log(
-                "LevelRunState",
-                "Autopilot ON — level=${level.id} ap=${debugAutopilotSeconds}s quit=${debugAutoQuitSeconds}s"
-            )
+            if (Constants.DEV_LOGS) {
+                Gdx.app.log(
+                    "LevelRunState",
+                    "Autopilot ON — level=${level.id} ap=${debugAutopilotSeconds}s quit=${debugAutoQuitSeconds}s"
+                )
+            }
             InputManager.setDebugOverrideEnabled(true)
             InputManager.setDebugHeld(left = false, right = true, jump = false, action = false)
         }
@@ -351,10 +353,12 @@ class LevelRunState(
         if (delta > perfDeltaMax) perfDeltaMax = delta
         if (perfLogTimer >= Constants.PERF_LOG_INTERVAL_SECONDS) {
             val avg = if (perfFrameCount > 0) perfDeltaSum / perfFrameCount else 0f
-            Gdx.app.log("Perf",
-                "fps=%.1f avgDelta=%.4f maxDelta=%.4f playerX=%.2f playerY=%.2f level=%s".format(
-                    if (avg > 0f) 1f / avg else 0f, avg, perfDeltaMax,
-                    player.body.position.x, player.body.position.y, level.id))
+            if (Constants.DEV_LOGS) {
+                Gdx.app.log("Perf",
+                    "fps=%.1f avgDelta=%.4f maxDelta=%.4f playerX=%.2f playerY=%.2f level=%s".format(
+                        if (avg > 0f) 1f / avg else 0f, avg, perfDeltaMax,
+                        player.body.position.x, player.body.position.y, level.id))
+            }
             perfLogTimer = 0f; perfFrameCount = 0; perfDeltaSum = 0f; perfDeltaMax = 0f
         }
 
@@ -820,7 +824,9 @@ class LevelRunState(
         }
 
         if (!levelCompleted && player.hasReachedExit) {
-            Gdx.app.log("LevelRunState", "Exit reached — level=${level.id}")
+            if (Constants.DEV_LOGS) {
+                Gdx.app.log("LevelRunState", "Exit reached — level=${level.id}")
+            }
             levelCompleted         = true
             levelCompletionTimer   = 4f
 
@@ -843,7 +849,9 @@ class LevelRunState(
             val state       = SaveManager.loadGame()
             val unlocked    = required.all { it in state.completedLevels }
             if (unlocked && targetLevel != null) {
-                Gdx.app.log("LevelRunState", "Portal activated 🌀 $portalId -> $targetLevel")
+                if (Constants.DEV_LOGS) {
+                    Gdx.app.log("LevelRunState", "Portal activated 🌀 $portalId -> $targetLevel")
+                }
                 player.portalContact = null
                 // Defer the actual screen swap to end-of-frame so we never call dispose()
                 // from inside the physics/update step (causes a Box2D native crash).

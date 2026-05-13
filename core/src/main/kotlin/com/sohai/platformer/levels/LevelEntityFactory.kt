@@ -103,7 +103,7 @@ object LevelEntityFactory {
                 else -> Gdx.app.error("LevelEntityFactory", "Unknown enemy type: ${def.type}")
             }
         }
-        if (enemies.isNotEmpty()) {
+        if (enemies.isNotEmpty() && Constants.DEV_LOGS) {
             Gdx.app.log("LevelEntityFactory", "Spawned ${enemies.size} enemies for level ${level.id}")
         }
         return enemies
@@ -121,7 +121,7 @@ object LevelEntityFactory {
                 )
             )
         }
-        if (driftHusks.isNotEmpty()) {
+        if (driftHusks.isNotEmpty() && Constants.DEV_LOGS) {
             Gdx.app.log("LevelEntityFactory", "Spawned ${driftHusks.size} Drift Husks for level ${level.id}")
         }
         return driftHusks
@@ -138,7 +138,9 @@ object LevelEntityFactory {
                     arenaLeft  = bdef.arenaLeftPx  / Constants.PPM,
                     arenaRight = bdef.arenaRightPx / Constants.PPM
                 )
-                Gdx.app.log("LevelEntityFactory", "Storm Sentinel spawned at (${bdef.xPx}, ${bdef.yPx}) px")
+                if (Constants.DEV_LOGS) {
+                    Gdx.app.log("LevelEntityFactory", "Storm Sentinel spawned at (${bdef.xPx}, ${bdef.yPx}) px")
+                }
                 boss
             }
             else -> {

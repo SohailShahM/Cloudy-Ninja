@@ -90,7 +90,9 @@ class EboAbility(
         SoundManager.play("ability_ebo")
         spawnRainEffect(playerPos)
 
-        Gdx.app.log("EboAbility", "Seed Slam at (${playerPos.x}, ${playerPos.y})")
+        if (com.sohai.platformer.Constants.DEV_LOGS) {
+            Gdx.app.log("EboAbility", "Seed Slam at (${playerPos.x}, ${playerPos.y})")
+        }
     }
 
     private fun spawnRainEffect(epicenter: Vector2) {

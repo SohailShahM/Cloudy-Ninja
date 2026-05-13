@@ -89,4 +89,14 @@ object Constants {
     // resetting the auto-quit timer in a fresh GameScreen instance — which
     // was hanging CI on every level reachable by horizontal walking.
     @JvmField val SMOKE_MODE: Boolean = java.lang.Boolean.getBoolean("cloudy.smokeMode")
+
+    // T-198: dev-log gate. When false (the default for `./gradlew :lwjgl3:run`
+    // and shipped player builds) per-frame / per-event verbose logs are
+    // suppressed. Pass `-Dcloudy.devLogs=true` to restore the legacy verbose
+    // stream (`[Perf]`, `[EboAbility]`, `[LayaAbility]`, `[LevelEntityFactory]`,
+    // certain `[LevelRunState]` event lines). Error-level logs
+    // (`Gdx.app.error`) and one-shot startup lines are NOT gated by this flag
+    // and remain unconditional. The smoke autopilot's `[smoke]` summary line
+    // is also unconditional — CI greps it to detect a crashed JVM.
+    @JvmField val DEV_LOGS: Boolean = java.lang.Boolean.getBoolean("cloudy.devLogs")
 }
