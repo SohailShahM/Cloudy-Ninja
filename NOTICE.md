@@ -36,6 +36,50 @@ allowed purpose, or if a copy of an asset ends up in a shipped build).
 - **Bundled subset:** the 9 PNG animation sheets (`Idle.png`, `Run.png`, `Jump.png`,
   `Fall.png`, `Attack1.png`, `Attack2.png`, `Take Hit.png`, `Take Hit - white silhouette.png`,
   `Death.png`) and the upstream `LICENSE.txt`.
+- **Modification applied:** **Downsampled in-place from 200×200 px/frame to 48×48 px/frame**
+  via nearest-neighbor interpolation (T-181) for visual coherence with the 32-px-scale
+  Pixel Adventure and Sunny Land packs. CC0 explicitly permits modification; pixel-art
+  hard edges preserved (verified: only alpha=0 and alpha=255 in output).
+
+### LuizMelo — Martial Hero 2 sprite pack
+- **Location in this repo:** `assets/sprites/luizmelo/martial-hero-2/`
+- **Original source:** https://luizmelo.itch.io/martial-hero-2
+- **Download path:** Manual download from the itch.io storefront — `Martial Hero 2.zip`
+  (28 KB) downloaded directly via the JS-gated "Download Now" button (T-181). No mirror
+  was used; the ZIP shipped a verbatim `License.txt` (preserved at
+  `assets/sprites/luizmelo/martial-hero-2/LICENSE.txt`).
+- **License:** [Creative Commons Zero v1.0 Universal (Public Domain Dedication)](https://creativecommons.org/publicdomain/zero/1.0/)
+- **Attribution required:** No (CC0 waives attribution requirements)
+- **Attribution provided anyway:** *"Martial Hero 2" sprite pack by LuizMelo
+  (https://luizmelo.itch.io/martial-hero-2) under CC0. Credits not required but provided
+  as a courtesy.* Acquired via T-181 for the T-046 graphics overhaul.
+- **Bundled subset:** 8 PNG animation sheets (`Idle.png`, `Run.png`, `Jump.png`,
+  `Fall.png`, `Attack1.png`, `Attack2.png`, `Take Hit.png`, `Death.png`) and the
+  upstream `LICENSE.txt`. Source-pack filename `Sprites/Take hit.png` renamed to
+  `Take Hit.png` to match MH1's filename convention.
+- **Modification applied:** **Downsampled in-place from 200×200 px/frame to 48×48 px/frame**
+  via nearest-neighbor interpolation (T-181). Same treatment as MH1.
+
+### LuizMelo — Martial Hero 3 sprite pack
+- **Location in this repo:** `assets/sprites/luizmelo/martial-hero-3/`
+- **Original source:** https://luizmelo.itch.io/martial-hero-3
+- **Download path:** Manual download from the itch.io storefront — `Martial Hero 3.zip`
+  (40 KB) downloaded directly via the JS-gated "Download Now" button (T-181). The ZIP
+  shipped a verbatim `License.txt` (preserved at
+  `assets/sprites/luizmelo/martial-hero-3/LICENSE.txt`).
+- **License:** [Creative Commons Zero v1.0 Universal (Public Domain Dedication)](https://creativecommons.org/publicdomain/zero/1.0/)
+- **Attribution required:** No (CC0 waives attribution requirements)
+- **Attribution provided anyway:** *"Martial Hero 3" sprite pack by LuizMelo
+  (https://luizmelo.itch.io/martial-hero-3) under CC0. Credits not required but provided
+  as a courtesy.* Acquired via T-181 for the T-046 graphics overhaul.
+- **Bundled subset:** 9 PNG animation sheets (`Idle.png`, `Run.png`, `Going Up.png`,
+  `Going Down.png`, `Attack1.png`, `Attack2.png`, `Attack3.png`, `Take Hit.png`,
+  `Death.png`) and the upstream `LICENSE.txt`. The pack's marketing `Preview.png`
+  (630×504 single still) was NOT bundled — it is not a sprite asset. Source-pack
+  subdirectory `Sprite/` flattened into the pack root to match MH1/MH2 convention.
+- **Modification applied:** **Downsampled in-place from 126×126 px/frame to 48×48 px/frame**
+  via nearest-neighbor interpolation (T-181). MH3's native frame size is smaller than
+  MH1/MH2 upstream, but downsampling to 48 keeps the three packs visually compatible.
 
 ### Pixel Frog — Pixel Adventure 1 sprite pack
 - **Location in this repo:** `assets/sprites/pixelfrog/`
@@ -67,6 +111,32 @@ allowed purpose, or if a copy of an asset ends up in a shipped build).
 - **Explicitly NOT bundled:** the pack's OGG music file (`platformer_level03_loop.ogg`)
   is under a separate credit-required license (music by Pascal Belisle, not CC0) — not
   copied into this repo.
+
+### ansimuz — Sunny Land Forest (full pack)
+- **Location in this repo:** `assets/tilesets/sunnyland-forest/`
+- **Original source:** https://ansimuz.itch.io/sunnyland-forest
+- **Download path:** Manual download from the itch.io storefront — `Sunny-land-forest-files.zip`
+  (3.8 MB) downloaded directly via the JS-gated "Download Now" button (T-181). The pack
+  shipped its license as `public-license.pdf` at the ZIP root; its text is reproduced
+  in plain text at `assets/tilesets/sunnyland-forest/LICENSE.txt` (the PDF itself is
+  not bundled — text-only is more useful for code-review tooling).
+- **License:** [Creative Commons Zero v1.0 Universal (Public Domain Dedication)](https://creativecommons.org/publicdomain/zero/1.0/) — pack's upstream `public-license.pdf` explicitly states *"All assets included in this package are licensed under the Creative Commons Zero (CC0) license, which means you can use them freely in any project, whether personal or commercial, without the need for attribution. There are no restrictions on use, modification, or redistribution of these assets."*
+- **Attribution required:** No (CC0 waives attribution requirements)
+- **Attribution provided anyway:** *"Sunny Land Forest" by Luis Zuno / @ansimuz
+  (https://ansimuz.itch.io/sunnyland-forest) under CC0. Credits not required but
+  provided as a courtesy.* Acquired via T-181 for the T-046 graphics overhaul.
+- **Bundled subset:** the `Assets/PNG/` tree from the upstream pack — **106 PNGs**
+  across `environment/` (4 parallax layers, 6 props, a preview render), `sprites/`
+  (player 7 states as individual frames; 4 enemy archetypes — bee, slug, two piranha
+  plant variants; misc — carrot, chest, enemy-death VFX, HUD, star), and `spritesheets/`
+  (horizontal-strip versions of all of the above, engine-ready).
+- **Explicitly NOT bundled:** the upstream `Assets/PSD/` tree (Photoshop sources) and
+  `Assets/GIF/` tree (preview GIFs) — recoverable from the upstream pack if needed,
+  not required for libGDX rendering.
+- **Distinct from `assets/tilesets/sunnyland-forest-of-illusion/`** — these are two
+  separate itch.io packs by the same artist (`sunnyland-forest` vs
+  `sunnyland-forest-of-illusion`) with different art, different palettes, and
+  non-overlapping content. Both are bundled deliberately.
 
 ### ansimuz — SunnyLand Forest of Illusion (background subset)
 - **Location in this repo:** `assets/tilesets/sunnyland-forest-of-illusion/`

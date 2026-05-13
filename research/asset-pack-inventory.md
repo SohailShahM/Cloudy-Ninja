@@ -1,6 +1,6 @@
-# Asset pack inventory (T-179 deliverable)
+# Asset pack inventory (T-179 + T-181 deliverable)
 
-> Snapshot taken **2026-05-13**. Companion to `research/anime-asset-pack-evaluation.md` (T-177). Lists exactly which CC0 asset packs are now bundled in this repo, where they live, what gameplay role they fill, and the gaps remaining for the T-046 graphics-overhaul integration tickets.
+> Snapshot taken **2026-05-13** (T-179) and updated **2026-05-14** (T-181 — three additional manually-downloaded packs placed; LuizMelo Martial Hero 1/2/3 downsampled in-place from upstream 200/200/126 px frames to **48 px frames** via nearest-neighbor interpolation). Companion to `research/anime-asset-pack-evaluation.md` (T-177). Lists exactly which CC0 asset packs are now bundled in this repo, where they live, what gameplay role they fill, and the gaps remaining for the T-046 graphics-overhaul integration tickets.
 
 ## What's here
 
@@ -11,7 +11,27 @@
 - **License:** Creative Commons Zero v1.0 Universal. Bundled `LICENSE.txt` verbatim: *"This pack — Martial Hero Asset Pack is Creative Commons Zero (CC-0). Can be used in commercial and non-commercial projects."* Original creator's storefront language: "This package can be used freely and commercially - CC0 (creative commons zero). Credits are not required but I would appreciate it."
 - **Files in this repo:** `assets/sprites/luizmelo/martial-hero-1/` — 9 PNG sheets (`Idle.png`, `Run.png`, `Jump.png`, `Fall.png`, `Attack1.png`, `Attack2.png`, `Take Hit.png`, `Take Hit - white silhouette.png`, `Death.png`) plus `LICENSE.txt`.
 - **Contributes to Cloudy-Ninja:** **Player character base sheet** — shounen-action martial hero, 8 animation states. Strongest "anime" silhouette in the bundled set. Candidate for **Ebo** (signature protagonist).
-- **Animation inventory:** Each PNG is a horizontal strip at **200×200 px per frame** (sheet size 1600×200 = 8 frames for `Idle.png`; other sheets vary by state). Frame counts per the creator's spec: idle 8, run 8, jump 4, fall 4, attack1 6, attack2 6, take-hit 4, death 6 — total **46 frames** across 8 states.
+- **Animation inventory (post-T-181 downsample):** Each PNG is a horizontal strip at **48×48 px per frame** (downsampled in-place from upstream 200×200 via nearest-neighbor). Frame counts unchanged: idle 8, run 8, jump 2, fall 2, attack1 6, attack2 6, take-hit 4, take-hit-silhouette 4, death 6 — total **46 frames** across 9 sheets. Sheet widths: idle 384, run 384, jump 96, fall 96, attack1 288, attack2 288, take-hit 192, take-hit-silhouette 192, death 288.
+
+### 1b. LuizMelo — Martial Hero 2
+
+- **Source URL (storefront):** https://luizmelo.itch.io/martial-hero-2
+- **Acquisition path:** Manual user download from itch.io (storefront is JS-gated; no direct CDN href). `Martial Hero 2.zip` (28 KB) acquired 2026-05-14 (T-181).
+- **License:** CC0 v1.0 Universal. Bundled `LICENSE.txt` verbatim: *"This pack - Martial Hero 2 is Creative Commons Zero (CC-0). Can be used in commercial and non-commercial projects."*
+- **Files in this repo:** `assets/sprites/luizmelo/martial-hero-2/` — 8 PNG sheets (`Idle.png`, `Run.png`, `Jump.png`, `Fall.png`, `Attack1.png`, `Attack2.png`, `Take Hit.png`, `Death.png`) plus `LICENSE.txt`. Upstream's `Sprites/Take hit.png` was renamed to `Take Hit.png` to match MH1's filename convention.
+- **Contributes to Cloudy-Ninja:** **Second player-character candidate** — slightly more polished sequel to MH1, same "anime martial hero" silhouette. Candidate for **Ebo (upgraded)** OR a sibling protagonist.
+- **Animation inventory (post-T-181 downsample):** 48×48 px/frame strips (downsampled from upstream 200×200 via nearest-neighbor). Frame counts: idle 4, run 8, jump 2, fall 2, attack1 4, attack2 4, take-hit 3, death 7 — total **34 frames**. Sheet widths: idle 192, run 384, jump 96, fall 96, attack1 192, attack2 192, take-hit 144, death 336.
+
+### 1c. LuizMelo — Martial Hero 3
+
+- **Source URL (storefront):** https://luizmelo.itch.io/martial-hero-3
+- **Acquisition path:** Manual user download from itch.io (storefront is JS-gated). `Martial Hero 3.zip` (40 KB) acquired 2026-05-14 (T-181).
+- **License:** CC0 v1.0 Universal. Bundled `LICENSE.txt` verbatim: *"This pack - Martial Hero 3 Asset Pack is Creative Commons Zero (CC-0). Can be used in commercial and non-commercial projects."*
+- **Files in this repo:** `assets/sprites/luizmelo/martial-hero-3/` — 9 PNG sheets (`Idle.png`, `Run.png`, `Going Up.png`, `Going Down.png`, `Attack1.png`, `Attack2.png`, `Attack3.png`, `Take Hit.png`, `Death.png`) plus `LICENSE.txt`. The pack's upstream marketing `Preview.png` (630×504 single still) was NOT bundled — it is not a sprite asset. Source-pack subdirectory `Sprite/` was flattened into the pack root to match MH1/MH2 convention.
+- **Contributes to Cloudy-Ninja:** **Third player-character candidate** — MH3 introduces a third attack state and uses `Going Up.png` / `Going Down.png` instead of `Jump.png` / `Fall.png` (cleaner naming for a vertical-mobility hero). Candidate for **Laya** (mobility-focused protagonist) OR ability-cast base.
+- **Animation inventory (post-T-181 downsample):** 48×48 px/frame strips (downsampled from upstream **126×126** — note this pack ships smaller native frames than MH1/MH2 — via nearest-neighbor). Frame counts: idle 10, run 8, going-up 3, going-down 3, attack1 7, attack2 6, attack3 9, take-hit 3, death 11 — total **60 frames**. Sheet widths: idle 480, run 384, going-up 144, going-down 144, attack1 336, attack2 288, attack3 432, take-hit 144, death 528.
+
+> **Naming-normalization callout for integration tickets:** Across the three Martial Hero packs, **all sheet filenames are normalized to `Title-Case.png` matching MH1's convention** (e.g. `Take Hit.png` not `Take hit.png`). However, MH3 uses `Going Up.png` / `Going Down.png` (vertical-aerial states) instead of MH1/MH2's `Jump.png` / `Fall.png`. T-046 rendering code should treat these as semantically equivalent (going-up = jump-ascent, going-down = jump-descent / fall).
 
 ### 2. Pixel Frog — Pixel Adventure 1
 
@@ -69,7 +89,29 @@
 - **Contributes to Cloudy-Ninja:**
   - **Eco / forest biome** parallax background + a small tileset
   - Castle-of-Illusion-inspired Sega-Genesis pixel feel — pairs cleanly with the Sunny Land arid pack (same artist, same line-work language)
-- **Caveat:** This OGA subset is the **background/tileset only** (~175 KB). The fuller **SunnyLand Forest** itch.io pack (~3.6 MB main, ~2.2 MB expansion) contains additional character + enemy sprites we did NOT acquire (see "Packs not acquired" below).
+- **Caveat:** This OGA subset is the **background/tileset only** (~175 KB). It is a separate itch.io pack from "Sunny Land Forest" (item 5 below), despite the similar name — see item 5's "Distinct from..." note.
+
+### 5. ansimuz — Sunny Land Forest (full pack)
+
+- **Source URL (storefront):** https://ansimuz.itch.io/sunnyland-forest
+- **Acquisition path:** Manual user download from itch.io (storefront JS-gated). `Sunny-land-forest-files.zip` (3.8 MB) acquired 2026-05-14 (T-181).
+- **License:** CC0 v1.0 Universal. Upstream `public-license.pdf` (text reproduced at `assets/tilesets/sunnyland-forest/LICENSE.txt`): *"All assets included in this package are licensed under the Creative Commons Zero (CC0) license, which means you can use them freely in any project, whether personal or commercial, without the need for attribution. There are no restrictions on use, modification, or redistribution of these assets."*
+- **Files in this repo:** `assets/tilesets/sunnyland-forest/` — **106 PNGs** from the upstream `Assets/PNG/` tree (and `LICENSE.txt`):
+  - `environment/layers/` — 4 parallax layers (`background.png` 192×240, `middleground.png` 384×240, `props.png` 544×256, `tileset.png` 320×192)
+  - `environment/props/` — 6 standalone props (`house.png`, `mushroom-brown.png`, `mushroom-red.png`, `plant.png`, `rock.png`, `tree.png`, `vine.png`) + `environment-preview.png` reference render
+  - `sprites/player/` — 7 animation states as individual frames (`player-idle`, `player-run`, `player-jump`, `player-fall`, `player-climb`, `player-duck`, `player-hurt`, `player-skip`) at ~33×32 px/frame
+  - `sprites/enemies/` — 4 enemy types (`bee`, `slug`, `piranha-plant`, `piranha-plant-attack`)
+  - `sprites/misc/` — `carrot`, `chest`, `enemy-death`, `hud`, `star`
+  - `spritesheets/` — horizontal-strip versions of all of the above, engine-ready (player sheets at 148×32 / 296×32 / 333×32; enemy sheets at ~250-300 × 21-45)
+- **NOT bundled from upstream:** `Assets/PSD/` (Photoshop sources) and `Assets/GIF/` (preview GIFs) — recoverable from the upstream pack if needed, not required for libGDX rendering.
+- **Contributes to Cloudy-Ninja:**
+  - **Eco / forest biome** richer tileset + parallax layers (complements item 4's Forest of Illusion partial)
+  - Second alternative **player character** (small woodland-style ~32×32 — alternative or companion to PixelFrog/Sunny Land players)
+  - 4 enemy archetypes for forest biome (bee = flying patroller, slug = slow ground patroller, piranha plants = ambush/static hazard)
+  - Forest props library (mushrooms, vines, trees, rocks, house) for level decoration
+  - Forest HUD/UI assets
+- **Distinct from `assets/tilesets/sunnyland-forest-of-illusion/`** (item 4): the two are separate itch.io packs by the same artist (`sunnyland-forest` vs `sunnyland-forest-of-illusion`), with different art, palettes, and zero file overlap. Both are bundled deliberately as sibling forest-biome sources.
+- **Frame sizes:** Player ~32×32, enemies 21–45 px tall (size-baked-into-art convention). Tileset 320×192 at 16×16 grid (different from FoI's 176×96).
 
 ---
 
@@ -77,71 +119,81 @@
 
 | Pack | Reason | Recommended next step |
 |---|---|---|
-| **LuizMelo Martial Hero 2** (https://luizmelo.itch.io/martial-hero-2) | itch.io storefront uses JavaScript-gated "Download Now" button. No direct CDN href exposed. No CC0-redistributing GitHub mirror surfaced in search (Martial Hero 1's mirror at `gengen1988/unity-martial-hero` is MH1-only). | User downloads the 28 KB `Martial Hero 2.zip` manually from itch.io and drops it into `assets/sprites/luizmelo/martial-hero-2/`. CC0, no license risk. |
-| **LuizMelo Martial Hero 3** (https://luizmelo.itch.io/martial-hero-3) | Same JS-gated issue. No clean GitHub mirror surfaced. | Same as MH2 — manual 38 KB download. |
-| **ansimuz SunnyLand Forest (full pack)** (https://ansimuz.itch.io/sunnyland-forest) | itch.io storefront JS-gated; OGA mirror covers only the background/tileset subset (acquired above), not the full character + enemy + props set. | User downloads `Sunny-land-forest-files.zip` (3.6 MB) from itch.io manually. The "$5 expansion" is OPTIONAL — base pack is NYOP free. |
+| **LuizMelo SunnyLand Forest expansion ($5 paid tier)** (https://ansimuz.itch.io/sunnyland-forest extra) | Optional paid expansion to the base Sunny Land Forest pack (which is itself acquired — see item 5). Adds extra enemies / bosses according to the storefront description. | Defer until/if a forest-biome integration ticket establishes a real need. The free base pack covers the documented Cloudy-Ninja spec. |
 | **Pixel Frog Pixel Adventure 1 (storefront ZIP)** | itch.io storefront JS-gated. **However** the marpor mirror gives us the full PNG set already, so this is acquired in practice — the only thing we'd gain from the storefront ZIP is bit-for-bit identity with the upstream `Pixel Adventure 1.zip`. | No action — `assets/sprites/pixelfrog/` contains the unmodified PNGs. If a hash-audit ever requires upstream-identity verification, fetch the 204 KB storefront ZIP. |
 
-A note has been added to `QUESTIONS.md` so the next interactive session can grab MH2 + MH3 + the full SunnyLand Forest pack via the click-through itch.io flow.
+### Resolved in T-181 (previously listed as not acquired)
+
+- **LuizMelo Martial Hero 2** — manual user-side download via itch.io click-through, now placed at `assets/sprites/luizmelo/martial-hero-2/`. See item 1b above.
+- **LuizMelo Martial Hero 3** — same path, now at `assets/sprites/luizmelo/martial-hero-3/`. See item 1c.
+- **ansimuz Sunny Land Forest (full pack)** — manual download, now at `assets/tilesets/sunnyland-forest/`. See item 5.
 
 ---
 
 ## Gaps remaining for T-046 integration
 
-Across the four bundled packs, what's **still missing** from Cloudy-Ninja's full asset spec:
+Across the **six** bundled packs (post-T-181), what's **still missing** from Cloudy-Ninja's full asset spec:
 
 | Asset class | Spec | Covered by bundled packs? | Gap |
 |---|---|---|---|
-| **Ebo** sprite (signature hero) | idle/run/jump/fall/wall-slide/dash/ability-cast | Partial — LuizMelo MH1 covers 8 states minus wall-slide, dash, ability-cast. PixelFrog Mask Dude has Wall Jump. | Need to author/commission **dash** + **ability-cast** frames matching MH1's 200-px line-work. |
-| **Laya** sprite | same 7 states | Partial — PixelFrog Pink Man or Virtual Guy gives full sheet incl. Wall Jump. | Different art style from MH1 — needs scaling or palette unification. |
-| **Zephyr** sprite | same 7 states | Partial — Sunny Land player covers 6 states (no wall-slide, no dash). | Same issue: cross-pack pixel-scale mismatch. |
+| **Ebo** sprite (signature hero) | idle/run/jump/fall/wall-slide/dash/ability-cast | Partial — LuizMelo MH1 (48px) covers 8 states minus wall-slide, dash, ability-cast. PixelFrog Mask Dude has Wall Jump. | Need to author **dash** + **ability-cast** + **wall-slide** frames matching MH1's 48-px line-work. |
+| **Laya** sprite | same 7 states | **Resolved — choose LuizMelo MH3** (mobility-focused triple-attack hero, 9 sheets incl. dedicated vertical-aerial states). Still need to author dash, ability-cast, wall-slide frames. | Dash + ability-cast + wall-slide author task. |
+| **Zephyr** sprite | same 7 states | **Resolved — choose LuizMelo MH2** (more polished MH1 sibling). Still need to author dash, ability-cast, wall-slide frames. OR use SL Forest player as a more pixel-cute alternative. | Dash + ability-cast + wall-slide author task. |
 | **Arid biome** tileset | desert/canyon | Yes — Sunny Land `environment/layers/tileset.png`. | None. |
-| **Wind biome** tileset | sky/cliff/cloud | Partial — PixelFrog Terrain + Background tints + Traps/Platforms read "sky-cliff" with palette swap. | A bespoke cloud-cliff tileset would land better; the LuizMelo storefront has additional environment packs ($5+) if budget unlocks. |
-| **Eco biome** tileset | lush forest/restored zone | Yes — SunnyLand Forest of Illusion `Layers/tiles.png` + back/middle parallax. | Could use a fuller forest tileset (acquire SunnyLand Forest full pack — see "not acquired" table). |
-| **Smog Sprite** enemy | small flying/floating | Yes — Sunny Land `eagle` OR PixelFrog `Bat`/`Bee`/`BlueBird`. | Pick one. |
-| **Drift Husk** enemy | ambush drop-down | Yes — PixelFrog `Plant` or `Mushroom` (drop-down idle → attack pattern). | Pick one. |
-| **Storm Sentinel** boss | large-sprite multi-state | **No.** Nothing in the bundled packs scales to boss-size. | **Commission or hand-author.** LuizMelo's catalog has "Evil Wizard 2" ($X) and a boss pack — flagged for follow-up. |
-| **VFX / projectiles** | lightning, dust burst, hit sparkles | Partial — PixelFrog `Other/Dust Particle.png` + `Other/Confetti.png`; Sunny Land `enemy-death` + `item-feedback`. | Lightning bolt VFX not covered. Hand-author or grab a CC0 VFX micropack. |
-| **UI / HUD** | icons, pause overlay, menu frames | Partial — PixelFrog `Menu/` (Buttons, Levels, Text) + existing Kenney pack. | Cloud Atlas flourishes are unique to Cloudy-Ninja — not in any pack, will be authored. |
-| **Wall-slide animation** | per character | Yes — PixelFrog `Wall Jump (32x32).png` per character. | Use PixelFrog for all three protagonists OR author matching frames for the LuizMelo hero. |
+| **Wind biome** tileset | sky/cliff/cloud | Partial — PixelFrog Terrain + Background tints read "sky-cliff" with palette swap. | A bespoke cloud-cliff tileset would land better; consider a future CC0 sky pack. |
+| **Eco biome** tileset | lush forest/restored zone | Yes — SL Forest of Illusion `Layers/tiles.png` (item 4) **AND** SL Forest `environment/layers/tileset.png` (item 5, 320×192 — bigger). Use item 5 as primary. | None — choose between the two flavors. |
+| **Smog Sprite** enemy | small flying/floating | Yes — Sunny Land `eagle`, PixelFrog `Bat`/`Bee`/`BlueBird`, or SL Forest `bee`. | Pick one (SL Forest `bee` matches forest-biome palette best). |
+| **Drift Husk** enemy | ambush drop-down | Yes — PixelFrog `Plant` or `Mushroom`, or SL Forest `slug` (slow ground patroller) or `piranha-plant` (ambush). | Pick one. |
+| **Storm Sentinel** boss | large-sprite multi-state | **No.** Nothing in the bundled packs scales to boss-size. | **Commission or hand-author.** LuizMelo's catalog has "Evil Wizard" / boss packs (paid) — flagged for follow-up. |
+| **VFX / projectiles** | lightning, dust burst, hit sparkles | Partial — PixelFrog `Other/Dust Particle.png` + `Other/Confetti.png`; Sunny Land `enemy-death` + `item-feedback`; SL Forest `enemy-death`. | **Lightning bolt VFX** still uncovered. Hand-author or grab a CC0 VFX micropack. |
+| **UI / HUD** | icons, pause overlay, menu frames, **Cloud Atlas content** | Partial — PixelFrog `Menu/` (Buttons, Levels, Text), SL Forest `hud.png`, existing Kenney pack. | **Cloud Atlas flourishes** unique to Cloudy-Ninja — not in any pack, will be authored. |
+| **Wall-slide animation** | per character | Yes for PixelFrog (`Wall Jump (32x32).png`). **No** for any LuizMelo MH1/MH2/MH3. | Author wall-slide frames for whichever LuizMelo packs are used as protagonists. |
 | **Dash animation** | per character | **No.** | Hand-author. |
 | **Ability-cast animation** | per character (one per ability) | **No.** | Hand-author per ability. |
 
+### Summary of remaining gaps for T-046
+
+After T-181, the missing-protagonist problem is **resolved** — Ebo/Laya/Zephyr can be assigned to MH1/MH2/MH3 (or one of the alternates) without acquiring further packs. What remains:
+
+1. **Storm Sentinel boss** — needs hand-authoring or a separate CC0 boss pack acquisition.
+2. **Per-character custom states** — dash + ability-cast + wall-slide frames for the three LuizMelo protagonists (must match downsampled 48-px line-work).
+3. **Lightning-bolt VFX + Cloud Atlas UI flourishes** — hand-author.
+
 ---
 
-## Integration handoff (T-180+)
+## Integration handoff (T-180+ / T-046)
 
-Recommended assignments — subject to user art-direction call:
+Recommended assignments after T-181 — subject to user art-direction call:
 
 | Cloudy-Ninja role | Recommended source | File path |
 |---|---|---|
-| **Ebo** (signature shounen hero) | LuizMelo Martial Hero 1 | `assets/sprites/luizmelo/martial-hero-1/*.png` |
-| **Laya** (mobility-focused, wall-slide-capable) | PixelFrog Ninja Frog (already pixel-anime, has Wall Jump + Double Jump) | `assets/sprites/pixelfrog/Main Characters/Ninja Frog/*.png` |
-| **Zephyr** (third hero — could be the "earnest naturalist") | Sunny Land player | `assets/tilesets/sunny-land/spritesheets/player-*.png` |
+| **Ebo** (signature shounen hero) | LuizMelo Martial Hero 1 (48px, downsampled) | `assets/sprites/luizmelo/martial-hero-1/*.png` |
+| **Laya** (mobility-focused, multi-attack) | LuizMelo Martial Hero 3 (48px, downsampled — has 3 attack states + dedicated vertical-aerial sheets) | `assets/sprites/luizmelo/martial-hero-3/*.png` |
+| **Zephyr** (third hero — polished sibling silhouette) | LuizMelo Martial Hero 2 (48px, downsampled) | `assets/sprites/luizmelo/martial-hero-2/*.png` |
 | **Arid biome tileset** | Sunny Land | `assets/tilesets/sunny-land/environment/layers/tileset.png` |
-| **Eco biome tileset** | SunnyLand Forest of Illusion | `assets/tilesets/sunnyland-forest-of-illusion/Layers/tiles.png` |
+| **Eco biome tileset (primary)** | Sunny Land Forest (full pack) | `assets/tilesets/sunnyland-forest/environment/layers/tileset.png` |
+| **Eco biome parallax (alternate)** | SunnyLand Forest of Illusion | `assets/tilesets/sunnyland-forest-of-illusion/Layers/{back,middle}.png` |
 | **Wind biome tileset** | PixelFrog Terrain (recoloured to sky palette) | `assets/sprites/pixelfrog/Terrain/Terrain (16x16).png` |
-| **Smog Sprite enemy** | PixelFrog Bat or Sunny Land eagle | `assets/sprites/pixelfrog/Enemies/Bat/` OR `assets/tilesets/sunny-land/sprites/eagle/` |
-| **Drift Husk enemy** | PixelFrog Mushroom or Plant | `assets/sprites/pixelfrog/Enemies/Mushroom/` OR `.../Plant/` |
-| **UI buttons / menu chrome** | PixelFrog Menu + existing Kenney | `assets/sprites/pixelfrog/Menu/` |
+| **Smog Sprite enemy** | Sunny Land Forest `bee` (or PixelFrog Bat / Sunny Land eagle) | `assets/tilesets/sunnyland-forest/spritesheets/enemies/bee.png` |
+| **Drift Husk enemy** | Sunny Land Forest `piranha-plant` (ambush) or PixelFrog Mushroom | `assets/tilesets/sunnyland-forest/spritesheets/enemies/piranha-plant.png` |
+| **UI buttons / menu chrome** | PixelFrog Menu + SL Forest `hud.png` + existing Kenney | `assets/sprites/pixelfrog/Menu/` + `assets/tilesets/sunnyland-forest/spritesheets/misc/hud.png` |
+| **Alternate player (small/cute)** | PixelFrog Ninja Frog (has Wall Jump + Double Jump already) | `assets/sprites/pixelfrog/Main Characters/Ninja Frog/*.png` |
 
-### Critical sprite-frame-dimension consistency check
+### Sprite-frame-dimension consistency (post-T-181)
 
-The bundled character sheets are at three different scales:
+T-181 **resolved the cross-pack pixel-scale mismatch** flagged in the T-179 inventory:
 
-| Pack | Character frame size | Sheet format |
+| Pack | Character frame size (current, post-T-181) | Sheet format |
 |---|---|---|
-| LuizMelo Martial Hero 1 | **200×200 px per frame** | Horizontal strip, 1600×200 for 8-frame idle |
+| LuizMelo Martial Hero 1 | **48×48 px per frame** (downsampled in-place from 200×200, nearest-neighbor) | Horizontal strip, 384×48 for 8-frame idle |
+| LuizMelo Martial Hero 2 | **48×48 px per frame** (downsampled in-place from 200×200, nearest-neighbor) | Horizontal strip, 192×48 for 4-frame idle |
+| LuizMelo Martial Hero 3 | **48×48 px per frame** (downsampled in-place from 126×126, nearest-neighbor) | Horizontal strip, 480×48 for 10-frame idle |
 | Sunny Land player | **~33×32 px per frame** | Individual frames AND horizontal strips |
-| PixelFrog Main Characters | **32×32 px per frame** (with one 96×96 fx) | Horizontal strips, e.g. `Idle (32x32).png` at 352×32 |
+| PixelFrog Main Characters | **32×32 px per frame** | Horizontal strips, e.g. `Idle (32x32).png` at 352×32 |
+| Sunny Land Forest player | **~37×32 px per frame** | Individual frames AND `spritesheets/player/*.png` strips |
 
-**This is a known integration risk.** LuizMelo's hero is ~6× the pixel scale of the other two. Three options for T-180:
-1. **Standardize down** — re-render Martial Hero at 32-pixel scale (loses detail).
-2. **Standardize up** — re-render PixelFrog/Sunny Land at 200-pixel scale (loses pixel-art charm, requires re-art).
-3. **Two-tier camera** — use Martial Hero as a "cinematic" boss-character zoom while keeping the other two at 32-px ambient zoom. Probably not viable for a unified platformer.
-
-The realistic path is **(1)** — downscale LuizMelo's MH1 to fit a 32–48 px target. The sheet structure (state-per-PNG) makes that mechanical. Flagged for the integration-ticket author.
+All five character sources now sit in the **32–48 px range** — within a single zoom level. T-046 rendering code reads the LuizMelo sheets at **48 px frame size**, not 200/126. The downsample was nearest-neighbor (pixel-art-correct: hard edges, no anti-aliasing introduced — verified post-resize that output PNGs contain only alpha=0 and alpha=255).
 
 ### Frame-count consistency
 
-Across all three protagonists, every basic state (idle/run/jump/fall) is covered. Wall-jump is covered by PixelFrog. Dash + ability-cast are the universal gap and must be authored regardless of which packs are chosen.
+Across the three LuizMelo Martial Hero protagonists (post-T-181), every basic state (idle/run/jump-or-going-up/fall-or-going-down/take-hit/death/attack) is covered. MH3 uses `Going Up.png` / `Going Down.png` instead of `Jump.png` / `Fall.png` — treat as semantic equivalents. **Wall-slide, dash, and ability-cast** are the universal gap across all three packs and must be authored regardless of which is chosen.
