@@ -115,6 +115,15 @@ enum class StringKey {
     GAME_OVER_TRY_AGAIN,
     GAME_OVER_MAIN_MENU,
 
+    // ── Death recap overlay (T-130) ──────────────────────────────────────────
+    DEATH_RECAP_TITLE,
+    DEATH_RECAP_RETRY,
+    DEATH_RECAP_QUIT,
+    DEATH_CAUSE_ENEMY,
+    DEATH_CAUSE_HAZARD,
+    DEATH_CAUSE_FALL,
+    DEATH_CAUSE_BOSS_ATTACK,
+
     // ── HUD ──────────────────────────────────────────────────────────────────
     HUD_BTN_LEFT,
     HUD_BTN_RIGHT,
@@ -268,6 +277,11 @@ enum class StringKey {
     SPIRIT_DEATH,
     // Pause
     PAUSE_HINT,
+    // Death recap (T-130) — formatted body rows
+    DEATH_RECAP_CAUSE,
+    DEATH_RECAP_TIME,
+    DEATH_RECAP_STOMPS,
+    DEATH_RECAP_TOKENS,
     // Victory
     VICTORY_FINAL_SCORE,
     VICTORY_TRIAL_TIME,
@@ -384,6 +398,15 @@ object Strings {
         StringKey.GAME_OVER_SUBTITLE   to "All spirit charges depleted",
         StringKey.GAME_OVER_TRY_AGAIN  to "Try Again",
         StringKey.GAME_OVER_MAIN_MENU  to "Main Menu",
+
+        // Death recap overlay (T-130)
+        StringKey.DEATH_RECAP_TITLE       to "YOU DIED",
+        StringKey.DEATH_RECAP_RETRY       to "Retry?",
+        StringKey.DEATH_RECAP_QUIT        to "Quit to menu",
+        StringKey.DEATH_CAUSE_ENEMY       to "enemy contact",
+        StringKey.DEATH_CAUSE_HAZARD      to "lethal hazard",
+        StringKey.DEATH_CAUSE_FALL        to "fell off the world",
+        StringKey.DEATH_CAUSE_BOSS_ATTACK to "boss attack",
 
         // HUD
         StringKey.HUD_BTN_LEFT         to "<",
@@ -527,6 +550,11 @@ object Strings {
         StringKey.CHARACTER_ABILITY_SWAP     to "{0}: {1}",
         StringKey.SPIRIT_DEATH               to "{0} fell ({1} spirits left)",
         StringKey.PAUSE_HINT                 to "Press {0} to resume",
+        // Death recap (T-130) — body rows
+        StringKey.DEATH_RECAP_CAUSE          to "Cause: {0}",
+        StringKey.DEATH_RECAP_TIME           to "Time: {0}",
+        StringKey.DEATH_RECAP_STOMPS         to "Stomps: {0}",
+        StringKey.DEATH_RECAP_TOKENS         to "Eco-tokens: {0}",
         StringKey.VICTORY_FINAL_SCORE        to "Final Score: {0}",
         StringKey.VICTORY_TRIAL_TIME         to "Trial Time: {0}",
     )

@@ -116,6 +116,8 @@ class GameScreen(
     private var atlasOverlay: CloudAtlasOverlay? = null
     private var levelCompleteOverlay: LevelCompleteOverlay? = null
     private var gameOverOverlay: GameOverOverlay? = null
+    /** T-130: shown after the T-097 death animation completes. Re-created per death. */
+    private var deathRecapOverlay: DeathRecapOverlay? = null
 
     // ── Boss ─────────────────────────────────────────────────────────────────
     private var sentinel: StormSentinel? = null
@@ -283,6 +285,37 @@ class GameScreen(
             )
             Gdx.input.inputProcessor = gameOverOverlay!!.stage
         }
+        // T-130: show the death-recap overlay after the death animation
+        // finishes (or instantly on the reducedMotion/instant-respawn path).
+        // Suppressed under SMOKE_MODE so the autopilot's frame budget is not
+        // disrupted — the existing rapid-respawn loop continues unchanged.
+        runState.onDeathRecap = { cause, t, stomps, tokens ->
+            if (game != null && !Constants.SMOKE_MODE && deathRecapOverlay == null) {
+                val s = SettingsManager.load()
+                val overlay = DeathRecapOverlay(
+                    onRetry = {
+                        // Restart the level — matches the existing pause-overlay
+                        // restart path. Dispose self at the end of the frame
+                        // via the same pattern used by other transitions.
+                        game.screen = GameScreen(level, game, isTimeTrial = isTimeTrial)
+                        dispose()
+                    },
+                    onQuit = {
+                        game.screen = MainMenuScreen(game)
+                        dispose()
+                    },
+                    reducedMotion = s.reducedMotion,
+                )
+                overlay.show(DeathRecapOverlay.Snapshot(
+                    cause          = cause,
+                    timeIntoLevel  = t,
+                    stompsThisRun  = stomps,
+                    tokensThisRun  = tokens,
+                ))
+                deathRecapOverlay = overlay
+                Gdx.input.inputProcessor = overlay.stage
+            }
+        }
         transitionCtrl = LevelTransitionController(
             level, game, screenFade, ecoTokens,
             CHECKPOINT_AUTOSAVE_FILE,
@@ -414,6 +447,14 @@ class GameScreen(
         // Layer 9: game-over card
         gameOverOverlay?.render()
 
+        // Layer 9b: death-recap card (T-130). Advances its own timer so
+        // auto-dismiss fires even though gameplay update is gated by isPaused
+        // checks elsewhere. Real-time delta keeps the 3s wall-clock honest.
+        deathRecapOverlay?.let { overlay ->
+            overlay.tick(clampedDelta)
+            overlay.render()
+        }
+
         // Transitions (end of render so dispose is never called mid-frame).
         // In smoke-test mode (cloudy.smokeMode=true) we suppress level-change
         // transitions so the autopilot can't hop into a new GameScreen and
@@ -447,6 +488,7 @@ class GameScreen(
         atlasOverlay?.resize(width, height)
         levelCompleteOverlay?.resize(width, height)
         gameOverOverlay?.resize(width, height)
+        deathRecapOverlay?.resize(width, height)
         achievementToast.resize(width, height)
     }
 
@@ -489,6 +531,7 @@ class GameScreen(
         atlasOverlay?.dispose();       atlasOverlay        = null
         levelCompleteOverlay?.dispose(); levelCompleteOverlay = null
         gameOverOverlay?.dispose();     gameOverOverlay      = null
+        deathRecapOverlay?.dispose();   deathRecapOverlay    = null
         ecoTokens.forEach { world.destroyBody(it.body) }
         ecoTokens.clear()
         obstacleManager.clear()

@@ -14,6 +14,7 @@ import com.sohai.platformer.abilities.EboAbility
 import com.sohai.platformer.abilities.LayaAbility
 import com.sohai.platformer.abilities.ZephyrAbility
 import com.sohai.platformer.audio.SoundManager
+import com.sohai.platformer.entities.DeathCause
 import com.sohai.platformer.entities.DriftHusk
 import com.sohai.platformer.entities.EcoToken
 import com.sohai.platformer.entities.Enemy
@@ -97,6 +98,17 @@ class LevelRunState(
     var levelCompleted = false
     var levelCompletionTimer = 0f
     val activatedCheckpoints = mutableSetOf<String>()
+
+    // ── Per-run stats (T-130: feeds the death-recap overlay) ──────────────────
+    /** Stomps performed during the current run (resets when [LevelRunState] is rebuilt). */
+    var stompsThisRun: Int = 0
+        private set
+    /** Eco-tokens collected during the current run (resets when [LevelRunState] is rebuilt). */
+    var tokensThisRun: Int = 0
+        private set
+    /** Cause of the most recent death this run. Updated immediately on death detection. */
+    var lastDeathCause: DeathCause = DeathCause.ENEMY
+        private set
 
     // ── Boss ─────────────────────────────────────────────────────────────────
 
@@ -198,6 +210,14 @@ class LevelRunState(
     var onAtlasCollected: ((SnapshotPickup) -> Unit)? = null
     /** Called when spirit health hits 0; GameScreen creates the game-over overlay. */
     var onGameOverStart: (() -> Unit)? = null
+    /**
+     * T-130: called once per death after the T-097 death animation finishes
+     * (or immediately under reducedMotion / SMOKE_MODE) so [GameScreen] can
+     * show the death-recap overlay. Receives the latest run-stat snapshot.
+     * Not invoked on the final "game over" death — [onGameOverStart] handles
+     * that path with its own overlay.
+     */
+    var onDeathRecap: ((cause: DeathCause, timeIntoLevel: Float, stompsThisRun: Int, tokensThisRun: Int) -> Unit)? = null
     /**
      * Set when a portal is activated; [GameScreen] reads this at end-of-frame and
      * performs the actual screen transition + dispose there (never mid-update).
@@ -468,6 +488,8 @@ class LevelRunState(
                 newTotalStomps = stompState.totalStomps + 1
                 SaveManager.saveGame(stompState.copy(totalStomps = newTotalStomps), saveSlotFile)
                 stompTriggered = true
+                // T-130: per-run counter for the death-recap overlay.
+                stompsThisRun++
             }
 
             // Fire first_enemy + stomp_10 in a single evaluate pass.
@@ -510,6 +532,8 @@ class LevelRunState(
                     newTotalStomps = stompState.totalStomps + 1
                     SaveManager.saveGame(stompState.copy(totalStomps = newTotalStomps), saveSlotFile)
                     stompTriggered = true
+                    // T-130: per-run counter for the death-recap overlay.
+                    stompsThisRun++
                 }
                 val fireFirstEnemy = !achievFirstEnemyFired
                 if (fireFirstEnemy) achievFirstEnemyFired = true
@@ -576,8 +600,9 @@ class LevelRunState(
         val assistSettings = SettingsManager.load()
         SoundManager.setVolume(assistSettings.volSfx)
 
+        val fellOff = player.body.position.y < -10f / Constants.PPM
         val playerDied = !isGameOver && !assistSettings.assistInvincible &&
-            (player.isDead || player.body.position.y < -10f / Constants.PPM)
+            (player.isDead || fellOff)
 
         // T-097: Death-animation gate.
         // When [animateDeath] is true we fade the player + zoom the camera over
@@ -606,8 +631,17 @@ class LevelRunState(
                 performDeathRespawn(assistSettings)
                 // Brief 0.2s screen flash (0 → 1 alpha at speed 5/s).
                 screenFade.fadeToBlack(speed = DEATH_FLASH_SPEED)
+                // T-130: surface the death-recap overlay AFTER the animation
+                // completes. GameScreen owns the overlay lifecycle; it decides
+                // whether to suppress under SMOKE_MODE.
+                onDeathRecap?.invoke(lastDeathCause, levelTimer, stompsThisRun, tokensThisRun)
             }
         } else if (playerDied) {
+            // T-130: determine cause-of-death once at the moment death is
+            // detected. Fall-below-killplane overrides any contact-listener
+            // tag (a hazard contact + a subsequent fall reads as FALL).
+            lastDeathCause = if (fellOff) DeathCause.FALL else player.lastDeathCause
+
             // Instant feedback (sfx, shake, hitstop, sparkle, spirit-health
             // decrement) fires the moment death is detected, regardless of
             // whether we animate or respawn instantly.
@@ -642,6 +676,10 @@ class LevelRunState(
                 } else {
                     // reducedMotion or SMOKE_MODE → original instant-respawn path.
                     performDeathRespawn(assistSettings)
+                    // T-130: surface the recap on the instant-respawn path too.
+                    // GameScreen suppresses under SMOKE_MODE so smoke autopilot
+                    // is unaffected; reducedMotion players still see a recap.
+                    onDeathRecap?.invoke(lastDeathCause, levelTimer, stompsThisRun, tokensThisRun)
                 }
             }
         } else if (!isGameOver && assistSettings.assistInvincible &&
@@ -663,6 +701,10 @@ class LevelRunState(
             if (comboTimer > 0f) comboMultiplier = (comboMultiplier + 1).coerceAtMost(4)
             score      += collected.size * 10 * comboMultiplier
             comboTimer  = 1.5f
+            // T-130: per-run counter for the death-recap overlay (all eco-tokens
+            // count, including hidden ones — the recap just shows "how much did
+            // I collect before dying", not the eco_sweep gating).
+            tokensThisRun += collected.size
             hud.updateScore(score)
             SoundManager.play("collect_token")
             if (comboMultiplier > 1) hud.showCombo(comboMultiplier)
