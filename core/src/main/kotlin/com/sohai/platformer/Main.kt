@@ -6,12 +6,18 @@ import com.sohai.platformer.audio.MusicManager
 import com.sohai.platformer.audio.ProceduralMusicGenerator
 import com.sohai.platformer.audio.ProceduralSoundGenerator
 import com.sohai.platformer.audio.SoundManager
+import com.sohai.platformer.persist.CrashReporter
+import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.rendering.DisplayScale
 import com.sohai.platformer.screens.SplashScreen
 
 /** [com.badlogic.gdx.ApplicationListener] implementation shared by all platforms. */
 class Main : Game() {
     override fun create() {
+        // T-115: Install the crash dumper before any other init runs, so any
+        // exception thrown during the rest of create() still produces a file.
+        installCrashHandler()
+
         // Compute font/sprite DPI scale from the actual physical window size.
         // Must happen before any FontManager or SpriteFactory calls.
         DisplayScale.init()
@@ -55,5 +61,72 @@ class Main : Game() {
         SoundManager.dispose()
         FontManager.disposeShared()
         VisUI.dispose()
+    }
+
+    /**
+     * T-115: Wire `Thread.setDefaultUncaughtExceptionHandler` to dump a crash report
+     * to `<userHome>/.cloudy-ninja/crashes/crash-{yyyyMMdd-HHmmss}.log`.
+     *
+     * In smoke mode (`Constants.SMOKE_MODE` is true), we log to stderr only — CI must
+     * not write to the runner's home directory and we want the smoke matrix output to
+     * stay self-contained.
+     */
+    private fun installCrashHandler() {
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            try {
+                val osInfo = CrashReporter.currentOsInfo()
+                val jdkInfo = CrashReporter.currentJdkInfo()
+                val slotMetadata = collectSlotMetadata()
+                val report = CrashReporter.format(
+                    throwable = throwable,
+                    gameVersion = Constants.BUILD_VERSION,
+                    osInfo = osInfo,
+                    jdkInfo = jdkInfo,
+                    slotMetadata = slotMetadata,
+                )
+
+                if (Constants.SMOKE_MODE) {
+                    // Smoke path: stderr only, no file write.
+                    System.err.println("=== Cloudy Ninja crash (smoke mode, file write skipped) ===")
+                    System.err.println("Thread: ${thread.name}")
+                    System.err.println(report)
+                } else {
+                    val written = CrashReporter.writeCrashFile(report)
+                    if (written != null) {
+                        System.err.println("Cloudy Ninja crashed. Crash report: ${written.absolutePath}")
+                    } else {
+                        // Fall back to stderr if we couldn't create the dir / write the file.
+                        System.err.println("=== Cloudy Ninja crash (file write failed) ===")
+                        System.err.println("Thread: ${thread.name}")
+                        System.err.println(report)
+                    }
+                }
+            } catch (inner: Throwable) {
+                // Never let the handler itself throw — that would mask the real crash.
+                System.err.println("CrashReporter handler failed: ${inner.message}")
+                throwable.printStackTrace(System.err)
+            }
+        }
+    }
+
+    /**
+     * Snapshot save-slot metadata (slot index + completedLevels count) for the crash log.
+     *
+     * **PII:** Only the index and count cross the boundary. We never embed save contents
+     * (character names, etc.) in the crash report.
+     */
+    private fun collectSlotMetadata(): List<CrashReporter.SlotMetadata> {
+        // Mirrors `MainMenuScreen.SLOT_FILES` / `StatsScreen.STATS_SLOT_FILES`.
+        val slotFiles = listOf("save_slot_0.json", "save_slot_1.json", "save_slot_2.json")
+        return slotFiles.mapIndexed { index, filename ->
+            val count = try {
+                if (SaveManager.hasSave(filename)) {
+                    SaveManager.loadGame(filename).completedLevels.size
+                } else null
+            } catch (t: Throwable) {
+                null
+            }
+            CrashReporter.SlotMetadata(slotIndex = index, completedLevelCount = count)
+        }
     }
 }
