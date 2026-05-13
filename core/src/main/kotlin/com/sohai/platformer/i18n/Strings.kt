@@ -15,6 +15,11 @@ enum class StringKey {
     MAIN_BTN_LOAD,
     MAIN_BTN_DELETE,
     MAIN_BTN_DELETE_CONFIRM,
+    // T-119: Save-slot delete confirmation modal
+    MENU_DELETE_SLOT_CONFIRM_TITLE,
+    MENU_DELETE_SLOT_CONFIRM_BODY,
+    MENU_DELETE_SLOT_CONFIRM_DELETE,
+    MENU_DELETE_SLOT_CONFIRM_CANCEL,
     MAIN_BTN_NEW_GAME,
     MAIN_BTN_LEVEL_SELECT,
     MAIN_BTN_CLOUD_ATLAS,
@@ -268,6 +273,11 @@ object Strings {
         StringKey.MAIN_BTN_LOAD           to "Load",
         StringKey.MAIN_BTN_DELETE         to "Delete",
         StringKey.MAIN_BTN_DELETE_CONFIRM to "Confirm?",
+        // T-119: Save-slot delete confirmation modal. {0} is the 1-based slot number.
+        StringKey.MENU_DELETE_SLOT_CONFIRM_TITLE  to "Delete slot {0}?",
+        StringKey.MENU_DELETE_SLOT_CONFIRM_BODY   to "This cannot be undone.",
+        StringKey.MENU_DELETE_SLOT_CONFIRM_DELETE to "Delete",
+        StringKey.MENU_DELETE_SLOT_CONFIRM_CANCEL to "Cancel",
         StringKey.MAIN_BTN_NEW_GAME       to "New Game",
         StringKey.MAIN_BTN_LEVEL_SELECT   to "Level Select",
         StringKey.MAIN_BTN_CLOUD_ATLAS    to "Cloud Atlas",

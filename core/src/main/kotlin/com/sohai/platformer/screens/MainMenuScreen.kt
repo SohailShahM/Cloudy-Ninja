@@ -2,12 +2,16 @@ package com.sohai.platformer.screens
 
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.math.Vector2
+import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
+import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.Stage
+import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.viewport.ScreenViewport
@@ -39,13 +43,28 @@ class MainMenuScreen(private val game: Game) : Screen {
     private val stage: Stage = Stage(ScreenViewport())
 
     /**
-     * Tracks which slot is currently waiting for delete confirmation.
-     * -1 means no slot is pending confirmation.
+     * The currently-open delete confirmation modal (T-119), or null when no
+     * modal is showing. The modal is a stage actor that overlays the menu
+     * with a dim backdrop + centered Cancel/Delete card. Cancel is default-
+     * focused; Esc cancels. Tracked so [escKeyListener] knows whether to
+     * intercept and so callers can detect modal state in tests.
      */
-    private var pendingDeleteSlot: Int = -1
+    private var deleteModal: VisTable? = null
 
-    /** Mutable references to the per-slot delete buttons so we can update their labels. */
-    private val deleteButtons = arrayOfNulls<VisTextButton>(3)
+    /**
+     * Stage-level ESC handler (T-119). When the delete modal is open, ESC
+     * dismisses it (cancel-equivalent). When closed, ESC is a no-op so the
+     * existing menu-level behavior (none currently) is unaffected.
+     */
+    private val escKeyListener: InputListener = object : InputListener() {
+        override fun keyDown(event: InputEvent?, keycode: Int): Boolean {
+            if (keycode == Input.Keys.ESCAPE && deleteModal != null) {
+                hideDeleteModal()
+                return true
+            }
+            return false
+        }
+    }
 
     /**
      * Bottom-right build-info label (T-100). Kept as a stage-level actor (not
@@ -56,6 +75,9 @@ class MainMenuScreen(private val game: Game) : Screen {
 
     init {
         Gdx.input.inputProcessor = stage
+        // Stage-level ESC handler so the modal can be dismissed via keyboard
+        // regardless of which actor has scene-graph focus (T-119).
+        stage.addListener(escKeyListener)
         buildUi()
     }
 
@@ -165,12 +187,14 @@ class MainMenuScreen(private val game: Game) : Screen {
             })
             card.add(loadBtn).width(160f).height(40f).padBottom(8f).row()
 
-            // Delete button (two-click confirm)
+            // Delete button — opens a confirmation modal (T-119).
+            // Empty slots intentionally have no delete affordance (the else
+            // branch below renders a New-Game button instead), matching the
+            // existing slot-card style.
             val deleteBtn = VisTextButton(Strings.get(StringKey.MAIN_BTN_DELETE))
-            deleteButtons[slotIndex] = deleteBtn
             deleteBtn.addListener(object : ClickListener() {
                 override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                    handleDeleteClick(slotIndex, filename)
+                    showDeleteModal(slotIndex, filename)
                 }
             })
             card.add(deleteBtn).width(160f).height(40f).row()
@@ -297,7 +321,7 @@ class MainMenuScreen(private val game: Game) : Screen {
 
     /** Load an existing save and open GameScreen. */
     private fun loadSlot(slotIndex: Int, state: GameState) {
-        pendingDeleteSlot = -1
+        hideDeleteModal()
         val cp = state.checkpoint
         val hasValidCheckpoint = cp.levelName == state.level && (cp.x != 0f || cp.y != 0f)
         val resume = if (hasValidCheckpoint) Vector2(cp.x, cp.y) else null
@@ -306,7 +330,7 @@ class MainMenuScreen(private val game: Game) : Screen {
 
     /** Start a fresh game in the given slot, saving an initial state. */
     private fun startNewGameInSlot(slotIndex: Int) {
-        pendingDeleteSlot = -1
+        hideDeleteModal()
         val filename = SLOT_FILES[slotIndex]
         val initialState = GameState(
             level       = "level0_0",
@@ -316,26 +340,140 @@ class MainMenuScreen(private val game: Game) : Screen {
         openGameAtLevel("level0_0")
     }
 
+    // -------------------------------------------------------------------------
+    // Delete confirmation modal (T-119)
+    //
+    // Replaces the previous "click delete twice" affordance with an explicit
+    // modal so accidental taps can't silently destroy a slot — alpha rage-bug
+    // hygiene. The modal is a stage-level [Group] containing a dim backdrop
+    // (with its own swallow-touches listener so background buttons stay
+    // inert) and a centered card with Cancel + Delete buttons. Cancel is the
+    // default-focused actor so Enter/Space activate Cancel, and Esc dismisses
+    // the modal via [escKeyListener] regardless of keyboard focus.
+    // -------------------------------------------------------------------------
+
     /**
-     * Two-click delete: first click sets pending confirmation and relabels the button;
-     * second click (or click on any other delete) confirms deletion and rebuilds the UI.
+     * Opens the delete confirmation modal for [slotIndex]. Idempotent: if a
+     * modal is already open it's torn down first so the new one replaces it
+     * cleanly. Only [confirmDeleteSlot] should ever call into
+     * [SaveManager.deleteSave]; this guarantees the modal sits on every
+     * delete code path.
      */
-    private fun handleDeleteClick(slotIndex: Int, filename: String) {
-        if (pendingDeleteSlot == slotIndex) {
-            // Second click — confirmed
-            SaveManager.deleteSave(filename)
-            pendingDeleteSlot = -1
-            // Rebuild UI to reflect the now-empty slot
-            buildUi()
-        } else {
-            // First click — ask for confirmation
-            // Reset any previously pending slot
-            if (pendingDeleteSlot != -1) {
-                deleteButtons[pendingDeleteSlot]?.setText(Strings.get(StringKey.MAIN_BTN_DELETE))
-            }
-            pendingDeleteSlot = slotIndex
-            deleteButtons[slotIndex]?.setText(Strings.get(StringKey.MAIN_BTN_DELETE_CONFIRM))
+    private fun showDeleteModal(slotIndex: Int, filename: String) {
+        // Replace any existing modal — only one at a time.
+        hideDeleteModal()
+
+        val modal = buildDeleteModalGroup(
+            slotIndex = slotIndex,
+            onCancel  = { hideDeleteModal() },
+            onConfirm = { confirmDeleteSlot(filename) }
+        )
+        stage.addActor(modal)
+        deleteModal = modal
+
+        // Set default focus to the Cancel button so Enter/Space dismiss the
+        // modal safely (per T-119 spec). The cancel button is tagged with
+        // userObject == "cancel" by [buildDeleteModalGroup].
+        val cancelBtn = modal.findActor<Actor>("delete_modal_cancel")
+        if (cancelBtn != null) {
+            stage.keyboardFocus = cancelBtn
         }
+    }
+
+    /**
+     * Dismisses the delete modal if one is open. Safe to call when no modal
+     * exists. Restores keyboard focus to the stage root so subsequent
+     * interactions aren't trapped inside the (now-removed) modal.
+     */
+    private fun hideDeleteModal() {
+        val modal = deleteModal ?: return
+        modal.remove()
+        deleteModal = null
+        stage.keyboardFocus = null
+    }
+
+    /**
+     * Performs the actual slot deletion. Sole call site for
+     * [SaveManager.deleteSave] from the main menu — keeps the "no path
+     * deletes a slot without the confirm modal" invariant from the ticket
+     * spec local to this single method.
+     */
+    private fun confirmDeleteSlot(filename: String) {
+        SaveManager.deleteSave(filename)
+        hideDeleteModal()
+        // Rebuild UI to reflect the now-empty slot.
+        buildUi()
+    }
+
+    /**
+     * Constructs the modal scene-graph. The returned [VisTable] fills the
+     * parent (the stage) and centers a "card" sub-table with the title, body
+     * and Cancel/Delete buttons. A no-op click listener on the outer table
+     * swallows touches so menu buttons behind the modal stay inert while
+     * it's open (defensive — Scene2D doesn't auto-block input on overlay
+     * actors).
+     *
+     * Buttons are tagged via [Actor.name] (`delete_modal_cancel`,
+     * `delete_modal_confirm`) so callers can look them up for focus or
+     * direct invocation in tests.
+     */
+    private fun buildDeleteModalGroup(
+        slotIndex: Int,
+        onCancel: () -> Unit,
+        onConfirm: () -> Unit
+    ): VisTable {
+        // Outer fill-parent table = the dim-backdrop / touch-swallow layer.
+        val modal = VisTable()
+        modal.name = "delete_modal_root"
+        modal.setFillParent(true)
+        modal.center()
+        modal.touchable = Touchable.enabled
+        // Swallow background clicks so menu buttons below don't receive them.
+        // Tapping outside the card does NOT auto-dismiss — that would
+        // reintroduce the very rage-bug T-119 is fixing.
+        modal.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) { /* swallow */ }
+        })
+
+        // Inner card.
+        val card = VisTable()
+        card.background("window")
+        card.pad(24f)
+
+        val titleText = Strings.format(
+            StringKey.MENU_DELETE_SLOT_CONFIRM_TITLE,
+            slotIndex + 1
+        )
+        card.add(VisLabel(titleText)).padBottom(8f).row()
+        card.add(VisLabel(Strings.get(StringKey.MENU_DELETE_SLOT_CONFIRM_BODY)))
+            .padBottom(20f).row()
+
+        // Button row: Cancel (left, default-focused) + Delete (right).
+        val buttonRow = VisTable()
+        buttonRow.defaults().width(120f).height(40f).padLeft(8f).padRight(8f)
+
+        val cancelBtn = VisTextButton(Strings.get(StringKey.MENU_DELETE_SLOT_CONFIRM_CANCEL))
+        cancelBtn.name = "delete_modal_cancel"
+        cancelBtn.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                onCancel()
+            }
+        })
+        buttonRow.add(cancelBtn)
+
+        val deleteBtn = VisTextButton(Strings.get(StringKey.MENU_DELETE_SLOT_CONFIRM_DELETE))
+        deleteBtn.name = "delete_modal_confirm"
+        deleteBtn.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                onConfirm()
+            }
+        })
+        buttonRow.add(deleteBtn)
+
+        card.add(buttonRow).row()
+
+        modal.add(card)
+        return modal
     }
 
     private fun openGameAtLevel(levelId: String, resumeCheckpoint: Vector2? = null) {
@@ -457,5 +595,31 @@ class MainMenuScreen(private val game: Game) : Screen {
          */
         fun buildInfoLabelPosition(stageWidth: Float, labelWidth: Float): Pair<Float, Float> =
             (stageWidth - labelWidth - BUILD_INFO_PADDING) to BUILD_INFO_PADDING
+
+        /**
+         * Pure helper for T-119: returns the rendered title for the delete-
+         * confirm modal given a 1-based slot number. Verifies the
+         * `MENU_DELETE_SLOT_CONFIRM_TITLE` template wiring without booting GL.
+         */
+        fun deleteModalTitle(oneBasedSlot: Int): String =
+            Strings.format(StringKey.MENU_DELETE_SLOT_CONFIRM_TITLE, oneBasedSlot)
+
+        /**
+         * Pure helper for T-119: returns the rendered body copy for the
+         * delete-confirm modal. Currently a static string; exposed via the
+         * companion so tests pin the exact warning wording (the "this cannot
+         * be undone" reassurance is the entire point of the modal).
+         */
+        fun deleteModalBody(): String =
+            Strings.get(StringKey.MENU_DELETE_SLOT_CONFIRM_BODY)
+
+        /** Name used to look up the Cancel button in the modal via [findActor]. */
+        const val DELETE_MODAL_CANCEL_NAME = "delete_modal_cancel"
+
+        /** Name used to look up the Delete (confirm) button in the modal. */
+        const val DELETE_MODAL_CONFIRM_NAME = "delete_modal_confirm"
+
+        /** Name used to look up the modal's root [VisTable] actor. */
+        const val DELETE_MODAL_ROOT_NAME = "delete_modal_root"
     }
 }
