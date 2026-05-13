@@ -76,7 +76,15 @@ data class Settings(
     // [colorBlindMode] (both can be on; high-contrast wins when both apply to
     // the same role). Default false keeps existing saves byte-identical and
     // renders byte-identically to pre-T-132.
-    val highContrast: Boolean = false
+    val highContrast: Boolean = false,
+
+    // Display feel: camera look-ahead in motion direction (T-144). When true
+    // (the default), the camera smoothly offsets up to ±48px in the direction
+    // the player is moving so more of the level ahead is visible. Players who
+    // prefer a static camera can toggle this off; in that case the camera
+    // re-centres on the player without bias. Coexists with screen shake — the
+    // two offsets sum on each frame. Default true keeps the feel-good preset.
+    val cameraLookAhead: Boolean = true
 )
 
 /**

@@ -58,6 +58,8 @@ enum class StringKey {
     SETTINGS_RES_1080,
     SETTINGS_RES_1440,
     SETTINGS_RES_2160,
+    // T-144: Camera look-ahead toggle (in motion direction)
+    SETTINGS_CAMERA_LOOK_AHEAD,
 
     // ── Settings: Audio ──────────────────────────────────────────────────────
     SETTINGS_MUSIC,
@@ -338,6 +340,8 @@ object Strings {
         StringKey.SETTINGS_FULLSCREEN    to " Fullscreen",
         StringKey.SETTINGS_SPRITES_HINT  to "Sprites sharpen fully at next launch.",
         StringKey.SETTINGS_SHOW_FPS      to " Show FPS (console)",
+        // T-144: Camera look-ahead toggle
+        StringKey.SETTINGS_CAMERA_LOOK_AHEAD to " Camera look-ahead (shifts view in direction of motion)",
         StringKey.SETTINGS_RES_720       to "1280 × 720  (HD)",
         StringKey.SETTINGS_RES_1080      to "1920 × 1080  (Full HD)",
         StringKey.SETTINGS_RES_1440      to "2560 × 1440  (2K / QHD)",
