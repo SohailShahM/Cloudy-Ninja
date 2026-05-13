@@ -16,6 +16,15 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
     val isTouchingWallRight get() = wallRightContactCount > 0
     val isTouchingWallLeft get() = wallLeftContactCount > 0
     var isDead = false
+    /**
+     * T-130: cause-of-death tag set by whatever code path flips [isDead]. Read
+     * by [com.sohai.platformer.screens.LevelRunState] at the moment death is
+     * processed so the death-recap overlay can show "enemy / hazard / fall /
+     * boss attack". Defaults to [DeathCause.ENEMY] (most common path); the
+     * fall-below-killplane check in LevelRunState overrides to [DeathCause.FALL]
+     * before reading. Cleared on respawn.
+     */
+    var lastDeathCause: DeathCause = DeathCause.ENEMY
     var hasReachedExit = false
     /** Set by WorldContactListener when the player contacts a portal sensor (e.g. "portal_world0"). Null when not touching any portal. */
     var portalContact: String? = null

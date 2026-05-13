@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.physics.box2d.*
 import com.sohai.platformer.effects.WaterDroplet
 import com.sohai.platformer.physics.CleanseEventQueue
+import com.sohai.platformer.entities.DeathCause
 import com.sohai.platformer.entities.EcoToken
 import com.sohai.platformer.entities.Enemy
 import com.sohai.platformer.entities.MovingPlatform
@@ -119,6 +120,8 @@ class WorldContactListener : ContactListener {
                     ScreenShake.trigger(SHAKE_AMPLITUDE, SHAKE_DURATION)
                 } else if (!player.isFlashing) {
                     // Lateral contact: kill the player
+                    // T-130: tag the cause so the death-recap overlay can show it.
+                    player.lastDeathCause = DeathCause.ENEMY
                     player.isDead = true
                 }
             }
@@ -185,6 +188,8 @@ class WorldContactListener : ContactListener {
             val playerFixture = if (udA == "hazard") fixB else fixA
             val player = playerFixture.body.userData as? PlayerController
             if (player != null && !player.isFlashing) {
+                // T-130: tag cause for the death-recap overlay.
+                player.lastDeathCause = DeathCause.HAZARD
                 player.isDead = true
             }
         }
@@ -196,12 +201,20 @@ class WorldContactListener : ContactListener {
             when {
                 projA != null && fixB.body.userData is PlayerController -> {
                     val player = fixB.body.userData as PlayerController
-                    if (!player.isFlashing) player.isDead = true
+                    if (!player.isFlashing) {
+                        // T-130: projectile = boss attack (only StormSentinel
+                        // currently spawns projectiles).
+                        player.lastDeathCause = DeathCause.BOSS_ATTACK
+                        player.isDead = true
+                    }
                     projA.hitWall = true  // expire on contact
                 }
                 projB != null && fixA.body.userData is PlayerController -> {
                     val player = fixA.body.userData as PlayerController
-                    if (!player.isFlashing) player.isDead = true
+                    if (!player.isFlashing) {
+                        player.lastDeathCause = DeathCause.BOSS_ATTACK
+                        player.isDead = true
+                    }
                     projB.hitWall = true
                 }
                 projA != null && (udB == "ground" || udB == "hazard" || udB == "hazard_cleaned"
