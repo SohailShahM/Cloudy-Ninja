@@ -636,6 +636,16 @@ class GameScreen(
         )
         rayHandler.updateAndRender()
 
+        // T-209: revert the dynamic camera zoom-out that [renderWorld]
+        // applied (and deliberately did NOT revert internally). The world,
+        // player sprite, portal labels, and dynamic lighting above all
+        // share the zoomed projection so the player sprite stays visible
+        // and correctly scaled relative to the zoomed-out world. We
+        // revert here — after the last world-space draw and before the
+        // HUD (which uses its own viewport) — so the next frame's
+        // [LevelRunState.update] sees the base `camera.viewportHeight`.
+        renderer.revertCameraZoom()
+
         // Layer 4: HUD
         hud.stage.act(clampedDelta)
         hud.stage.draw()
