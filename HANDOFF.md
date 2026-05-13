@@ -2,109 +2,97 @@
 
 > Read this **before** anything else if you are picking up where a previous Claude Code session left off. Then read `START_HERE.md` for the normal onboarding. Update this file at the end of your session to capture state the next agent will need. Keep it short — under 200 lines.
 
-**Last updated:** 2026-05-13 (very late) by Claude Opus — Sprint D wave-10 dispatch-heavy session, picking up directly from the previous handoff. **14 PRs merged + 5 specs + 1 LEARNINGS entry + 4 direct-to-main housekeeping pushes.** Roughly:
+**Last updated:** 2026-05-14 by Claude Opus — extended dispatch-heavy session running through user feedback + 8-hour autonomous run. **12 PRs merged + 1 PR awaiting user review + 4 specs filed + 1 LEARNINGS entry.**
 
-- **13 code/feature tickets shipped end-to-end** with tests: T-126 (Calibri→Inter), T-127 (dead deps), T-139 (screenshot-on-victory), T-105 (master volume + mute), T-147 (F12 hotkey), T-118 (M-key mute), T-121 (swap S→Q migration), T-145 (sound test), T-142 (speedrun timer), T-169 (consolidate dual shake), T-143 (reset to defaults), T-170 (silhouette → entities), T-171 (GlobalInputRouter Phase A).
-- **5 specs added**: T-168 (visual font verify; human), T-169/170 (implemented same session), T-171 (Phase A done), T-172 (router Phase B).
-- **Alpha-blocking T-126 Calibri CLOSED.** Inter (SIL OFL 1.1) shipped via PR #137; no Microsoft-proprietary fonts remain in the repo. **T-168 visual-verify is the pre-alpha gate** — human eye across ~17 FontManager surfaces, not autonomous-eligible.
-- **Two architectural smells from prior HANDOFF closed**: dual screen-shake systems (T-169), silhouette overlay hack (T-170). Hit-flash now also visible in high-contrast mode as a positive side-effect of T-170.
-- **Queue-audit discovery**: T-035 was already shipped (PR #9, 2026-05-12) but never moved out of `## Todo`. Caught by sub-agent's first read, fixed in commit `5dc9594`. Worth doing a queue-vs-main audit at the start of each session.
+## 🚨 Awaiting user action on return
 
-**Previous session (2026-05-13 early) summary, preserved:** 63 PRs merged across ~38 feature tickets + ~13 research/marketing + ~12 doc-only PRs. All 4 then-prior source-side quirks closed. T-126 Calibri surfaced as alpha-blocker. Two Copilot dogfood PRs (#68 + #85) blocked on the GitHub Actions first-time-contributor approval policy — both have since shipped (#134 + #135), policy gate no longer blocking new Copilot work but no new Copilot work was dispatched today.
+**PR #161 — T-186 Ebo MH1 sprite integration.** CI green across all 10 smoke jobs; 20 unit tests on the pure-function state machine. **Left OPEN deliberately** — smoke CI cannot validate sprite scale, foot-position alignment, or direction flip. 30-second launch check needed:
 
-### Repo state: public + proprietary-licensed (unchanged)
+1. `./gradlew :lwjgl3:run` with `-Dcloudy.devLogs=true` if you want to see logs
+2. Pick Ebo (default), start Level 1
+3. Verify: sprite renders at sensible scale (~character-sized in world), feet on the ground (not floating or sinking), direction flips when moving left, idle animation cycles smoothly, jump → fall transition reads clean
+4. If looks good: `gh pr merge 161 --repo SohailShahM/Cloudy-Ninja --admin --squash --delete-branch` — then ping me to dispatch T-187 (Laya MH3) + T-188 (Zephyr MH2). Same pattern, will ship safely.
+5. If looks wrong: describe what's off — likely sprite world size (currently 0.80 m × 0.80 m, body-centre y-offset 0.32 m) or alignment. I'll dispatch a tuning fix.
 
-`SohailShahM/Cloudy-Ninja` is **public** (CI free + unlimited) but **proprietary** per `LICENSE`. Don't flip private without `docs/SELF_HOSTED_RUNNER.md` set up first — the Education Pack Actions quota was burned in the 2026-05-12 session.
+T-187/T-188/T-189-T-193 are held until Ebo is verified — same scale/offset bug would otherwise propagate.
 
-### Branch protection — admin-merge is the default (unchanged)
+## What landed this session
 
-`main` has `required_conversation_resolution: true` — never clears for AI-opened PRs. Default workflow after CI green:
+### User-feedback round (demo play-test 2026-05-13)
+- **T-173 (#150)** MainMenu title scrim — fixes "logo barely readable"
+- **T-174 (#152)** invisible-barrier fix — TileRenderer was discarding sub-32-px obstacle tiles. Found multiple thin platforms across Level0_0/1/2/3 affected by same one-line bug.
+- **T-175 (#151)** snappier movement (Celeste-like baseline) — `GROUND_COAST_DAMPING = 0.55`, ~80ms stop time. User play-test pending.
+- **T-176 (#154)** Laya Wind Dash slow-descent (0.45× gravity) + dynamic camera zoom (1.4× max). User play-test pending.
+- **T-177 (#153)** anime asset pack evaluation — 16 packs surveyed, user picked CC0 stack
+- **T-179 (#155)** acquired 4 CC0 packs (LuizMelo MH1 + ansimuz Sunny Land + ansimuz Sunny Land Forest of Illusion subset + Pixel Frog Pixel Adventure 1)
+- **T-181 (#156)** placed user's 3 manual downloads (LuizMelo MH2/MH3 + ansimuz Sunny Land Forest full); downsampled all LuizMelo from 200/200/126 px → **48 px per frame** via nearest-neighbor (System.Drawing PowerShell, since ImageMagick/Pillow unavailable)
 
-```
-gh pr merge <N> --repo SohailShahM/Cloudy-Ninja --admin --squash --delete-branch
-```
+### 8-hour autonomous run
+- **T-194 (#157)** gitignore cleanup — `assets/saves/save_slot_*.json` + `assets/audio/music/ambient_*.wav` patterns
+- **T-172 (#159)** **GlobalInputRouter Phase B — architectural smell #3 FULLY CLOSED.** 13 `Gdx.input.inputProcessor` assignments → 1; F12 + M-key polling fallbacks deleted; all overlays migrated transparently via GameScreen's `setActiveInputStage()` helper.
+- **T-180 (#158)** scaffold (`SpriteSheetFactory`, `SheetCharacterAtlas`, `AnimationStateMachine`) — parallel to existing rendering, no behavior change
+- **T-198 (#160)** dev log gating — 10 per-frame/per-event `Gdx.app.log` sites gated behind `cloudy.devLogs` system property. Default-silent now; `-Dcloudy.devLogs=true` restores. Error-level logs untouched.
 
-Direct `git push origin HEAD:main` works for docs-only / TASKS.md / LEARNINGS changes via admin bypass. Used 4× this session — keep it for housekeeping only, never code.
+### Specs filed for next session
+- **T-180** (Done) + **T-186..T-193** integration cascade (Ebo done; Laya/Zephyr/biomes/enemies queued)
+- **T-200..T-205** T-046 gap-fill (boss sprite, dash/cast/wall-slide anims, lightning VFX, Cloud Atlas UI flourishes) — all human-driven art-direction calls
+- **T-182..T-185** Claude Design batch (MainMenu+Settings polish, itch.io landing page, Cloud Atlas card, pitch deck) — user-driven Phase A
 
-### cc-agv-bridge (unchanged from prior HANDOFF)
+## Cumulative state across the two sessions
 
-Still wired but **still not dogfooded on a real Cloudy-Ninja ticket.** AGV was offline this session — re-tag-to-Sonnet via the `Agent` tool kept the pipeline moving. The bridge tools loaded fine in this CC session; capacity, not capability, was the limiter. First dogfood opportunity = next ticket that naturally splits between CC and AGV.
+**Demo readiness:** game runs cleanly, 60fps, no crashes per the user's 6-min play session. CI green across all checks. All alpha-blocking issues addressed:
+- T-126 Calibri legal issue → Inter shipped ✅
+- T-174 invisible barriers → root cause fixed ✅
+- T-175 movement sliding → tuned (user play-test pending)
+- T-176 Laya Wind Dash off-screen → camera + glide (user play-test pending)
+- T-173 logo contrast → scrim ✅
+- T-046 "trash visuals" → CC0 stack acquired + scaffold built + Ebo integration code-complete (visual verification pending)
 
-### Sub-agent dispatch patterns — affirmed by 14/14 success rate this session
+**Architectural smells all CLOSED:**
+- ✅ Dual screen-shake systems (T-169)
+- ✅ Silhouette overlay hack (T-170)
+- ✅ Per-screen input clobbering (T-172 — Phase B closes it)
 
-1. **One sub-agent per ticket**, `general-purpose`, `isolation: "worktree"`, `run_in_background: true`. Worktree auto-cleans.
-2. **Brief inline + verbatim spec + hard rules.** Each prompt 100-200 lines. Zero TASKS.md-claim race because parent edits TASKS.md.
-3. **File-conflict matrix before each dispatch.** Most-contested files this session: `Settings.kt`, `SettingsScreen.kt`, `Strings.kt`, `LevelRenderer.kt`, `Main.kt`, `InputManager.kt`. T-105 unblocked a Settings-family chain that had to serialize (T-118 → T-121 → T-145 → T-142 → T-143).
-4. **Parallel batches of 2-4** when file scopes are disjoint. Largest concurrent in flight this session: 4 (T-126/T-127/T-139/T-105 wave 1). Lower than the prior session's 20-agent push because the queue was smaller and contention tighter.
-5. **Explicit "do NOT touch X.kt — other agent's territory" hard rules in each prompt** prevent rebase storms. Used heavily once Settings-family work began.
-6. **Sub-agent surprises documented in PR body** — collected 6 useful source-side facts this session (see "Source-side quirks discovered" below).
+**Performance:** game plays at 60fps observed in user's play session. Dev logs now silent by default (T-198).
 
----
+## Repo state: public + proprietary-licensed (unchanged)
 
-## Live state of the project
+Admin-merge default, `required_conversation_resolution: true` policy. Direct `git push origin HEAD:main` works for TASKS.md / docs / LEARNINGS via admin bypass — used 8× this session (T-168/169/170/171/172, T-194/T-198 spec, T-200-205 spec, etc.).
 
-**Main HEAD at handoff:** `0043983` (T-171 Phase A). The session ran cleanly through to a dry queue.
+## Working-tree hygiene
 
-**New since prior HANDOFF (additions THIS session in **bold**):**
-- **Inter font (SIL OFL 1.1) replaces Calibri** — alpha legal blocker cleared
-- **Master volume + mute (Settings + checkbox + M-key) (T-105 + T-118)** — composes with T-117 audio ducking; mute preserves slider position
-- **Screenshot system**: victory screen auto-capture (T-139) + F12 anytime hotkey (T-147) — writes to `~/.cloudy-ninja/screenshots/`
-- **Sound test buttons in Settings Audio section (T-145)** — UI Click / SFX (jump) / Music (ambient_arid 3s with Timer-scheduled stop)
-- **Speedrun timer HUD overlay (T-142)** — `MM:SS.mmm` top-left, off by default, carry-glitch-safe via `floor(seconds*1000)`
-- **Reset-to-defaults button in Settings (T-143)** — confirmation modal mirroring T-119; `SettingsManager.reset()` bypasses `update()` so `keybindsCustomized` stays false
-- **Default swap keybind: Q (was S) (T-121)** — migration auto-upgrades legacy users who never opened Controls
-- **Unified screen-shake system (T-169)** — `LevelRunState.triggerShake` retired; ScreenShake singleton handles all shake; replace-stacking; +`Settings.screenShake` gate
-- **High-contrast silhouettes owned by entities (T-170)** — `Enemy.drawHighContrast(renderer, color)` + `Player`/`StormSentinel` overrides; LevelRenderer no longer hardcodes per-entity bounds; hit-flash now visible in high-contrast (silent T-132 regression fixed)
-- **GlobalInputRouter Phase A (T-171)** — `input/GlobalInputRouter.kt` singleton + Kotest spec; MainMenuScreen migrated to push/pop; T-147 F12 + T-118 M-key polling gated with `!GlobalInputRouter.isActive()` to prevent double-fire. Other ~14 screens still use legacy `Gdx.input.inputProcessor = stage`; **T-172 Phase B** is the bulk migration follow-up.
+After T-194's gitignore patterns landed, expect a clean working tree post-play. However: `assets/audio/sfx/achievement_unlock.wav` was observed as untracked — this is a procedurally-generated SFX similar to the ambient music tracks but NOT in T-194's ignore patterns. Either commit it as canonical or extend the gitignore pattern. Low-priority cleanup ticket candidate.
 
-**~700+ Kotest tests total** (this session added ~50: SettingsManagerTest grew significantly across T-118/T-121/T-142/T-143; new test files for SpeedrunTimerFormat, HighContrastSilhouette, GlobalInputRouter, ScreenshotWriter, MuteHotkey).
+## Sub-agent dispatch patterns reaffirmed by this session's 17/17 success rate
 
----
+1. Brief verbatim spec + hard rules + file-conflict gates. ~150-300 line prompts.
+2. **File-conflict gates are critical** — strict no-touch rules per ticket. Multiple times this run a sub-agent flagged "this file looks like X's territory" instead of broadening scope.
+3. **Visual-risk vs mechanical-risk distinction:** mechanical work (gitignore, log gating, router migration) ships green-CI → admin-merge confidently. Visual work (sprite integration) ships green-CI → still needs human eyeball verification before merge.
+4. **Sub-agent pivots count:** several agents made smart adaptations (T-181 used Windows System.Drawing when ImageMagick/Pillow unavailable; T-186 extracted pure `computeAnimState()` because Box2D natives don't work in JVM tests). Trust the agent's judgment within the spec's hard rules.
 
-## In-flight threads / pipeline state — end of 2026-05-13 (very late) session
+## Source-side quirks pinned this session
 
-### Queue is DRY for autonomous dispatch
-After this session every Tier-S/M ticket the previous HANDOFF queued has shipped. The only remaining Todo items are:
+1. ✅ **CLOSED** Per-screen `Gdx.input.inputProcessor` clobbering (T-172).
+2. **NEW (T-181):** ImageMagick not installed on this Windows machine; Pillow not in Python 3.13. **Use System.Drawing via PowerShell** for image processing tasks (nearest-neighbor pixel-art downsampling pattern is documented in T-181's PR description).
+3. **NEW (T-180):** Sub-agent renamed scaffold classes from spec — `SpriteSheetFactory` (not SpriteFactory), `SheetCharacterAtlas` (not CharacterAtlas), `AnimationStateMachine` (as specced). T-186 references the actual names.
+4. **NEW (T-186):** `PlayerController` has **no `currentCharacter` field** — it lives on `LevelRunState` and is passed into `renderPlayer(currentCharacter)`. Future entity-state work should remember this. Also: `hitFlashTimer` doesn't exist by that name; equivalent is `isFlashing` (derived from `deathFlashTimer`).
+5. **NEW (T-181 inventory):** LuizMelo MH3 uses `Going Up.png` / `Going Down.png` instead of `Jump.png` / `Fall.png`. Semantic equivalents per the inventory doc.
 
-- **T-168** — Visual font-regression smoke pass. **Human-only.** Pre-alpha gate. Manually launch the build, eyeball Inter across ~17 FontManager surfaces, file regression tickets if anything looks wrong. Result captured in LEARNINGS.md + screenshots in `research/font-screenshots/`.
-- **T-172** — `GlobalInputRouter` Phase B (bulk screen migration + delete polling fallbacks). Sonnet-dispatchable. Touches ~14 Screen files + Main + InputManager. **Recommended:** let Phase A bake for one session, then dispatch. Will surface overlay/focus quirks if any exist.
-- **Pre-existing not-autonomous tickets unchanged**: T-038 (ghost replay, determinism), T-061 (CI matrix), T-045 (NotebookLM), T-102 (gamepad hardware), T-076 (deps, held), T-081 (Android CI), T-046 (graphics overhaul, art direction).
+## Tooling gotchas (carry forward from prior sessions, still relevant)
 
-### 🚨 ALPHA-BLOCKING — none. T-126 Calibri closed this session.
-
-T-168 is a **pre-alpha gate**, not a blocker — needs a manual visual pass to confirm Inter renders cleanly across all surfaces. If you want to play it safe, do it before public alpha drops.
-
-### Source-side quirks pinned this session (and prior status updates)
-
-1. ✅ **Closed (prior session, this HANDOFF cleanup):** SoundManager log→error, FontManager seam, ScreenFade rename, Achievement predicates refactor.
-2. ✅ **CLOSED this session:** Two screen-shake systems coexisting (T-169 consolidated onto ScreenShake).
-3. ✅ **CLOSED this session:** LevelRenderer silhouette overlay hack (T-170 moved geometry into entities; hit-flash regression silently fixed).
-4. **PARTIALLY CLOSED:** Per-screen `Gdx.input.inputProcessor = stage` clobbering. T-171 Phase A introduces `GlobalInputRouter`; MainMenuScreen migrated as proof. Phase B (T-172) does the rest.
-5. **NEW:** `InputMultiplexer.size` is a **method** in libGDX 1.14, not a property — use `mux.processors.size` from Kotlin. (Surfaced in T-171 Phase A.)
-6. **NEW:** `GlobalInputRouter.install()` must run BEFORE `setScreen()` in `Main.create()` — otherwise the first screen's input-processor assignment in its `init` clobbers the router immediately. Documented in code.
-7. **NEW:** `SettingsManager` lives **inside** `Settings.kt` (one file), not a separate file. Surfaced repeatedly across T-121/T-143 sub-agent reports — pre-emptively note in future Settings-touching tickets to save the sub-agent a grep.
-8. **NEW:** `StormSentinel` is NOT an `Enemy` subclass — it's a standalone class. Future entity-base refactors must remember it doesn't inherit. (Surfaced in T-170.)
-9. **NEW:** Smoke autopilot path uses `InputManager.setDebugOverrideEnabled` + per-key force fields — completely orthogonal to `Gdx.input.inputProcessor`. The router doesn't interfere with smoke runs. Important for future router/input work.
-10. **Carried forward (unchanged):** Smoke CI runner stalls on `apt-get install xvfb`; mitigation `gh run rerun --failed`. GitHub Copilot auto-review rate-limited until May 18 — red X on every PR, not a required check, ignore.
-
-### Tooling gotchas — added one
-All prior gotchas remain in `LEARNINGS.md`. Added this session: **"Every Screen resets Gdx.input.inputProcessor — root multiplexers get clobbered (T-147)"** — see LEARNINGS.md 2026-05-13 section. Architectural-cleanup ticket candidate noted (now filed as T-171/T-172).
-
----
+See LEARNINGS.md. Notably: smoke CI runner xvfb stalls; admin-merge silent on success; GitHub Copilot auto-review rate-limited until 2026-05-18.
 
 ## Known issues / open questions
 
-- **QUESTIONS.md status:** T-125-Q1 (Calibri) now resolved (T-126 shipped). T-120-Q1 (i18n numeric formats) still deferred until a second locale lands.
-- **Crash artifact** at `C:\Users\Radmin\.cloudy-ninja\crashes\crash-20260513-085452.log` (from prior session's T-115 verification) and **screenshot artifacts** at `C:\Users\Radmin\.cloudy-ninja\screenshots\` (from T-139 + T-147 testing if any) — safe to delete.
-- **Next free ticket number is T-173.** (T-148 was used; T-149-T-167 mostly research/marketing already shipped per prior HANDOFF. T-168-T-172 spec'd this session.)
-- **Many `agent-*` worktrees** under `.claude/worktrees/` from this session's parallel dispatches — leave them; the harness manages cleanup. The successful ones (changes pushed) keep their branches for trail; the dead ones auto-clean.
-
----
+- **T-168 visual font verify** still pending (human-only; pre-alpha gate after Inter swap).
+- **T-187/T-188** held on T-186 visual verification.
+- **Sprite world size (0.80 m × 0.80 m)** is a per-character constant in T-186 — if Ebo looks wrong-sized after launch, tuning is single-edit. Same constant will be reused in T-187/T-188.
+- **assets/audio/sfx/achievement_unlock.wav** untracked; minor cleanup candidate (file or gitignore).
 
 ## At end of your session
 
 1. Bump "Last updated" + summary
-2. Update "Live state" with anything new
-3. Update "In-flight threads" — remove what's done, add what's new
+2. Update "Awaiting user action" — remove what user has resolved, add new gates
+3. Update "What landed" + "Specs filed for next session"
 4. Capture new gotchas in `LEARNINGS.md` and reference here
 5. Commit + push to main (direct push via admin bypass for docs-only)
