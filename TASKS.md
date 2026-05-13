@@ -463,6 +463,96 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 ═══════════════════════════════════════════════════════════════ -->
 
 <!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D wave 16 — visual testing system (2026-05-14)
+     User pushed back: "should this have been caught during testing?"
+     The autopilot tests gameplay invariants but is blind to visuals
+     (title scrim regression, "game looks dark" went unnoticed). T-A10
+     ships the closed-loop fix: smoke autopilot captures named PNGs at
+     known checkpoints; Claude reviews them as a session-start action
+     via the multimodal Read tool. Zero new infra cost — leverages
+     existing libGDX framebuffer capture + Claude's vision.
+═══════════════════════════════════════════════════════════════ -->
+
+### T-A10 — Visual checkpoint capture system (V0: local)  [P1]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_ *(uses existing libGDX `ScreenUtils.getFrameBufferPixmap` + `PixmapIO.writePNG`, both stdlib)*
+- **GDD ref:** demo-readiness feedback 2026-05-14 — "lots of small visual issues have not been caught"; user picked T-A10 over T-A11/T-A12 as the visual testing approach
+- **Files:**
+  - `core/src/main/kotlin/com/sohai/platformer/Constants.kt` — add `CAPTURE_CHECKPOINTS` system-property flag (mirror SMOKE_MODE / DEV_LOGS pattern)
+  - new `core/src/main/kotlin/com/sohai/platformer/visual/CheckpointCapture.kt` — utility object with `capture(name: String)` writing a PNG to `build/visual-checkpoints/{name}.png`
+  - Smoke autopilot owner file (grep `BasicAutopilot` / `SmokeAutopilot` / `cloudy.smoke` to find) — add `triggerCheckpoint(name)` calls at known states
+  - new `core/src/test/kotlin/com/sohai/platformer/visual/CheckpointCaptureTest.kt` — pure-function tests for filename/path math (no GL needed)
+  - `.gitignore` — ensure `build/visual-checkpoints/` is ignored (it should be already if `build/` is)
+- **Goal:** Add a closed-loop visual testing system that produces inspectable PNG artifacts.
+
+### V0 design
+
+1. **Constants flag.** `cloudy.captureCheckpoints=true` system property → `Constants.CAPTURE_CHECKPOINTS` boolean. Default false. When true:
+   - Game runs in smoke autopilot mode (existing `cloudy.smoke=true` behavior — combinable)
+   - At each named checkpoint, capture the framebuffer to disk
+
+2. **CheckpointCapture utility:**
+   ```kotlin
+   object CheckpointCapture {
+     fun capture(name: String) {
+       if (!Constants.CAPTURE_CHECKPOINTS) return  // cheap no-op when disabled
+       val pixmap = ScreenUtils.getFrameBufferPixmap(0, 0, Gdx.graphics.backBufferWidth, Gdx.graphics.backBufferHeight)
+       val dir = File("build/visual-checkpoints")
+       dir.mkdirs()
+       val file = FileHandle(File(dir, "${sanitize(name)}.png"))
+       PixmapIO.writePNG(file, pixmap)
+       pixmap.dispose()
+     }
+   }
+   ```
+
+3. **Named checkpoints to add (initial set — grow over time):**
+   - `mainmenu-loaded` — fires from MainMenuScreen.show() after layout
+   - `level1-start` — fires from LevelRunState.init for level1, after first render frame
+   - `level1-mid-jump` — fires when player vy > 5 m/s (first jump apex)
+   - `level1-after-death` — fires when player respawns
+   - `settings-screen-loaded` — fires from SettingsScreen.show()
+   - `pause-overlay-active` — fires when pause is triggered
+
+   Smoke autopilot already drives the game through these states. Just hook in `CheckpointCapture.capture(name)` at the right moment.
+
+4. **Workflow (V0, local):**
+   - User: `./gradlew :lwjgl3:run -Dcloudy.smoke=true -Dcloudy.captureCheckpoints=true`
+   - PNGs land in `build/visual-checkpoints/`
+   - User shares the directory path with Claude (or pastes individual paths)
+   - Claude reads each PNG via Read tool, identifies visual issues, files tickets
+   - Next session: Claude can request the user run this command again to get fresh captures
+
+5. **Future V1 (separate ticket):** CI integration — workflow uploads `build/visual-checkpoints/` as a GitHub Actions artifact; Claude downloads via `gh run download` at session start. **Don't build V1 in this ticket.**
+
+### Done when
+1. `Constants.CAPTURE_CHECKPOINTS` flag exists, defaults false.
+2. `CheckpointCapture.capture(name)` works — verified by running `./gradlew :lwjgl3:run -Dcloudy.smoke=true -Dcloudy.captureCheckpoints=true` locally and checking `build/visual-checkpoints/` has PNGs.
+3. At least 6 named checkpoints fire during a smoke run.
+4. `.gitignore` covers the output directory.
+5. Smoke CI passes (flag default-false; CI path byte-identical).
+
+### Constraints
+1. **CAPTURE_CHECKPOINTS must short-circuit cleanly** when disabled — zero GL calls, zero file I/O, zero allocations. Single boolean check per `capture()` call.
+2. **Don't add new dependencies.** `ScreenUtils.getFrameBufferPixmap` + `PixmapIO.writePNG` are libGDX stdlib (also used by T-139 `ScreenshotWriter`).
+3. **Don't break smoke autopilot.** The existing `cloudy.smoke` mode keeps working. Capture mode is purely additive.
+4. **PNG filenames must be deterministic** — `{checkpoint-name}.png`, overwriting on each run. No timestamps in filenames (that's T-139/T-147's pattern; this is different). Deterministic names so Claude can refer to "the mainmenu-loaded screenshot" reliably.
+5. **Don't capture too often.** 6-10 checkpoints per smoke run, not per frame. The output is meant for human + AI eyeballing, not exhaustive coverage.
+6. **Don't put screenshots under `~/.cloudy-ninja/`** — T-139/T-147 use that for user-initiated screenshots. T-A10 uses `build/` because these are build-time artifacts, not user-facing.
+
+### Future enhancements (NOT in this ticket — file as follow-ups if shipped)
+- T-A11: VLM-based assertion (Claude API call per checkpoint with structured prompts)
+- T-A12: UI invariants (no overlap, contrast ΔE, every Label uses FontManager) — deterministic, fast, complements visual review
+- T-A10-V1: CI artifact upload + auto-download at session start
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════
      SPRINT D wave 15 — T-046 gap-fill (2026-05-14)
      After T-186..T-193 finish the CC0-stack integration, these are
      the assets STILL not covered by any bundled pack. Per inventory:
