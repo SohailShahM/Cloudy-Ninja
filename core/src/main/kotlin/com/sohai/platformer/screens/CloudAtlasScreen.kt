@@ -21,6 +21,7 @@ import com.sohai.platformer.atlas.CloudAtlasEntry
 import com.sohai.platformer.atlas.CloudAtlasLibrary
 import com.sohai.platformer.i18n.StringKey
 import com.sohai.platformer.i18n.Strings
+import com.sohai.platformer.input.GlobalInputRouter
 import com.sohai.platformer.persist.SaveManager
 
 /**
@@ -52,7 +53,8 @@ class CloudAtlasScreen(private val game: Game) : Screen {
     private val collectedIds: Set<String> = SaveManager.loadGame().collectedAtlasIds.toSet()
 
     init {
-        Gdx.input.inputProcessor = stage
+        // T-172 (Phase B): input wiring moved to show()/hide() via the
+        // GlobalInputRouter so this screen no longer clobbers the router.
 
         val rootStyle      = Label.LabelStyle(titleFont, Color(0.3f, 1f, 0.85f, 1f))
         val countStyle     = Label.LabelStyle(bodyFont,  Color(0.7f, 0.9f, 1f, 1f))
@@ -181,12 +183,21 @@ class CloudAtlasScreen(private val game: Game) : Screen {
     }
 
     override fun resize(width: Int, height: Int) = viewport.update(width, height, true)
-    override fun show() {}
+    /** T-172 (Phase B): wire input via the router on show. */
+    override fun show() {
+        GlobalInputRouter.install()
+        GlobalInputRouter.pushScreen(stage)
+    }
     override fun pause() {}
     override fun resume() {}
-    override fun hide() {}
+    /** T-172 (Phase B): pop our stage off the router on screen exit. */
+    override fun hide() {
+        GlobalInputRouter.popScreen(stage)
+    }
 
     override fun dispose() {
+        // T-172 (Phase B): defensive pop covers dispose() reached without hide().
+        GlobalInputRouter.popScreen(stage)
         stage.dispose()
         // Fonts are shared (FontManager.getShared); do NOT dispose here.
     }

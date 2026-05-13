@@ -20,6 +20,7 @@ import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.i18n.StringKey
 import com.sohai.platformer.i18n.Strings
+import com.sohai.platformer.input.GlobalInputRouter
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.progression.Achievement
 import com.sohai.platformer.progression.AchievementRegistry
@@ -68,7 +69,8 @@ class AchievementsScreen(
     private val root = VisTable()
 
     init {
-        Gdx.input.inputProcessor = stage
+        // T-172 (Phase B): input wiring moved to show()/hide() via
+        // GlobalInputRouter so this screen no longer clobbers the router's mux.
         root.setFillParent(true)
         stage.addActor(root)
         rebuild()
@@ -291,12 +293,26 @@ class AchievementsScreen(
     }
 
     override fun resize(width: Int, height: Int) = viewport.update(width, height, true)
-    override fun show() {}
+    /**
+     * T-172 (Phase B): re-install the router (any unmigrated sibling we came
+     * from will have clobbered Gdx.input.inputProcessor) and push our stage so
+     * scene2d events route here while F12/M-key globals remain wired.
+     */
+    override fun show() {
+        GlobalInputRouter.install()
+        GlobalInputRouter.pushScreen(stage)
+    }
     override fun pause() {}
     override fun resume() {}
-    override fun hide() {}
+    /** T-172 (Phase B): pop our stage off the router on screen exit. */
+    override fun hide() {
+        GlobalInputRouter.popScreen(stage)
+    }
 
     override fun dispose() {
+        // T-172 (Phase B): defensive pop in case dispose() is reached without
+        // a preceding hide() (e.g. an exception path).
+        GlobalInputRouter.popScreen(stage)
         iconCache.values.forEach { it.dispose() }
         iconCache.clear()
         stage.dispose()
