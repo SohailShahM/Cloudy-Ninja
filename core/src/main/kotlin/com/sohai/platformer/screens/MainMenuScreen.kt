@@ -24,6 +24,7 @@ import com.sohai.platformer.atlas.CloudAtlasLibrary
 import com.sohai.platformer.audio.MusicManager
 import com.sohai.platformer.i18n.StringKey
 import com.sohai.platformer.i18n.Strings
+import com.sohai.platformer.input.GlobalInputRouter
 import com.sohai.platformer.levels.LevelManager
 import com.sohai.platformer.persist.GameState
 import com.sohai.platformer.persist.SaveManager
@@ -75,7 +76,13 @@ class MainMenuScreen(private val game: Game) : Screen {
     private var buildInfoLabel: Label? = null
 
     init {
-        Gdx.input.inputProcessor = stage
+        // T-171 (Phase A): MainMenuScreen is the one screen migrated to the
+        // GlobalInputRouter. The legacy `Gdx.input.inputProcessor = stage`
+        // assignment moves to show() / hide() via pushScreen / popScreen so
+        // the router stays the root processor across menu sessions. Every
+        // other screen still uses the legacy pattern in Phase A; Phase B
+        // (T-172) migrates the rest and deletes the polling fallbacks.
+        //
         // Stage-level ESC handler so the modal can be dismissed via keyboard
         // regardless of which actor has scene-graph focus (T-119).
         stage.addListener(escKeyListener)
@@ -491,6 +498,15 @@ class MainMenuScreen(private val game: Game) : Screen {
     // -------------------------------------------------------------------------
 
     override fun show() {
+        // T-171 (Phase A): re-install the router (an unmigrated screen we
+        // came back from will have clobbered Gdx.input.inputProcessor) and
+        // push our stage to the front. The router's F12 + M-key adapters
+        // (registered once in Main.create) handle global hotkeys; our stage
+        // sees everything first so the menu's scene-graph focus / ESC modal
+        // listener still works exactly as before.
+        GlobalInputRouter.install()
+        GlobalInputRouter.pushScreen(stage)
+
         // T-134: start the menu's soft harmonic ambient track on entry. The
         // call is a silent no-op until [MusicManager.releaseAudioGate] has been
         // fired by the splash screen on first user input (T-129) — i.e. by the
@@ -520,9 +536,25 @@ class MainMenuScreen(private val game: Game) : Screen {
 
     override fun pause() {}
     override fun resume() {}
-    override fun hide() {}
+
+    /**
+     * T-171 (Phase A): pop our stage off the router so the next screen's
+     * input wiring takes over cleanly. The router itself stays installed
+     * (it's a global singleton); the next screen either pushes its own
+     * stage (migrated) or clobbers `Gdx.input.inputProcessor` directly
+     * (unmigrated — the Phase A norm).
+     */
+    override fun hide() {
+        GlobalInputRouter.popScreen(stage)
+    }
 
     override fun dispose() {
+        // T-171 (Phase A): defensive pop in case dispose() is reached without
+        // a preceding hide() (e.g. an exception path). popScreen is a no-op
+        // if the stage isn't currently in the router. Without this, a
+        // disposed stage could linger in the multiplexer and crash on the
+        // next event dispatch.
+        GlobalInputRouter.popScreen(stage)
         stage.dispose()
     }
 
