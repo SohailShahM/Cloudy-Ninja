@@ -23,6 +23,9 @@ import com.sohai.platformer.world.RectObstacle
  * square (default 0.32 m = 32 px at PPM=100), scaling 18 source pixels → 32
  * destination pixels (≈1.78×).  This gives a chunky pixel-art feel at typical
  * viewport zoom.  Right and top remainders smaller than one full tile are dropped.
+ * Obstacles smaller than one full tile on an axis are rendered as a single
+ * tile scaled down to fit (see T-174); this prevents thin colliders like the
+ * Level0_2 low-ceiling slab from being invisible to the player.
  *
  * @param spriteBatch  Shared batch — caller is responsible for begin/end.
  *                     [renderObstacle] opens its own begin/end block.
@@ -51,6 +54,17 @@ class TileRenderer(
      *
      * Opens a [SpriteBatch] begin/end block internally.
      *
+     * **Thin-obstacle handling (T-174):** when an obstacle is smaller than
+     * [TILE_DEST_M] on either axis (e.g. a 24 px tall ceiling slab or a 20 px
+     * wide wall column), we still render at least one tile and scale it to fit
+     * the obstacle's exact width/height. Previously these obstacles returned
+     * `false` with `cols == 0 || rows == 0`, but the [LevelRenderer]
+     * ShapeRenderer fallback skips kinds that *have* a tile mapping regardless
+     * of whether tiles actually drew — so thin GROUND/WALL bodies rendered
+     * nothing at all. Players felt "invisible barriers" near spawn (e.g. the
+     * Level0_2 low-ceiling tutorial slab directly above the spawn point) where
+     * the collider existed but no sprite was drawn.
+     *
      * @return `true` if the obstacle was rendered via tiles; `false` if there
      *         is no tile mapping for this kind/theme (caller should use
      *         ShapeRenderer fallback) or if the atlas could not be loaded.
@@ -66,13 +80,23 @@ class TileRenderer(
         val w  = rect.halfWidthPx  / Constants.PPM
         val h  = rect.halfHeightPx / Constants.PPM
 
+        val fullW = w * 2f
+        val fullH = h * 2f
         val left   = cx - w
         val bottom = cy - h
 
-        val cols = (w * 2f / TILE_DEST_M).toInt()
-        val rows = (h * 2f / TILE_DEST_M).toInt()
+        // T-174: clamp to at least 1×1 so thin obstacles (height<32px or
+        // width<32px in virtual pixels) still get a sprite. We later scale the
+        // tile to (tileW, tileH) below so it covers the obstacle exactly
+        // rather than overflowing.
+        val cols = (fullW / TILE_DEST_M).toInt().coerceAtLeast(1)
+        val rows = (fullH / TILE_DEST_M).toInt().coerceAtLeast(1)
 
-        if (cols == 0 || rows == 0) return false
+        // Effective per-tile size: shrinks to fit when the obstacle is smaller
+        // than a full TILE_DEST_M on either axis; otherwise equal to TILE_DEST_M
+        // (preserving the original chunky-pixel look for normal-sized rects).
+        val tileW = if (fullW < TILE_DEST_M) fullW else TILE_DEST_M
+        val tileH = if (fullH < TILE_DEST_M) fullH else TILE_DEST_M
 
         val columns = pack.tileWidth.let { tw ->
             val textureWidth = texture?.width ?: return false
@@ -83,11 +107,11 @@ class TileRenderer(
         spriteBatch.begin()
 
         for (row in 0 until rows) {
-            val tileY = bottom + row * TILE_DEST_M
+            val tileY = bottom + row * tileH
             val isTopRow = (row == rows - 1)
 
             for (col in 0 until cols) {
-                val tileX = left + col * TILE_DEST_M
+                val tileX = left + col * tileW
 
                 val tileIndex = when {
                     rect.kind == ObstacleKind.GROUND && isTopRow -> mapping.topTileIndex
@@ -98,7 +122,7 @@ class TileRenderer(
                 val tileCol = tileIndex % columns
 
                 val region = regs[tileRow][tileCol]
-                spriteBatch.draw(region, tileX, tileY, TILE_DEST_M, TILE_DEST_M)
+                spriteBatch.draw(region, tileX, tileY, tileW, tileH)
             }
         }
 
