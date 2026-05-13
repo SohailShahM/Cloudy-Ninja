@@ -247,6 +247,53 @@ class SettingsManagerTest : BehaviorSpec({
         }
     }
 
+    // ----------------------------------------------------------------------
+    // T-142: Speedrun-timer toggle round-trip. New additive boolean — must
+    // default to false (so smoke CI / pre-T-142 saves are unchanged) and
+    // must persist exactly through save → load.
+    // ----------------------------------------------------------------------
+
+    given("T-142: speedrun-timer default + round-trip") {
+
+        `when`("load() reads a fresh install") {
+            resetWorld()
+            val s = SettingsManager.load()
+
+            then("speedrunTimer defaults to false") {
+                s.speedrunTimer shouldBe false
+            }
+        }
+
+        `when`("update { copy(speedrunTimer = true) } is used") {
+            resetWorld()
+            SettingsManager.load() // seed defaults
+            SettingsManager.update { it.copy(speedrunTimer = true) }
+            SettingsManager.resetCacheForTest()
+            val read = SettingsManager.load()
+
+            then("the flag persists across save/reload") {
+                read.speedrunTimer shouldBe true
+            }
+            then("keybindsCustomized stays false — non-keybind change") {
+                read.keybindsCustomized shouldBe false
+            }
+        }
+
+        `when`("a legacy settings.json without speedrunTimer is loaded") {
+            resetWorld()
+            // Lacks the speedrunTimer field — deserialisation must fall back
+            // to the default `false` rather than throw.
+            val legacy = """{"volMaster":0.8}"""
+            File(tmpRoot, "settings.json").writeText(legacy)
+            SettingsManager.resetCacheForTest()
+            val read = SettingsManager.load()
+
+            then("speedrunTimer falls back to the default false") {
+                read.speedrunTimer shouldBe false
+            }
+        }
+    }
+
     given("a legacy settings.json predating T-105 (no volMaster, no muted)") {
 
         `when`("load() deserialises the legacy file") {

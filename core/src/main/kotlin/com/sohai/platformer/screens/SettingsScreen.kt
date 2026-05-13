@@ -158,7 +158,20 @@ class SettingsScreen(
                 settings = SettingsManager.update { it.copy(cameraLookAhead = chkCameraLookAhead.isChecked) }
             }
         })
-        inner.add(chkCameraLookAhead).left().padBottom(20f).row()
+        inner.add(chkCameraLookAhead).left().padBottom(4f).row()
+
+        // T-142: Speedrun timer toggle. When on, the gameplay HUD renders a
+        // high-precision MM:SS.mmm timer in the top-left corner driven by the
+        // existing levelTimer (no new clock). Coexists with the top-right
+        // best-time/score block — both visible simultaneously when on.
+        val chkSpeedrunTimer = CheckBox(Strings.get(StringKey.SETTINGS_SPEEDRUN_TIMER), skin)
+        chkSpeedrunTimer.isChecked = settings.speedrunTimer
+        chkSpeedrunTimer.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(speedrunTimer = chkSpeedrunTimer.isChecked) }
+            }
+        })
+        inner.add(chkSpeedrunTimer).left().padBottom(20f).row()
 
         // ══════════════════════════════════════════════════════════════════
         // SECTION 2 — AUDIO

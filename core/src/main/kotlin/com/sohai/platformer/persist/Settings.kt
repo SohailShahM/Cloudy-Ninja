@@ -117,7 +117,15 @@ data class Settings(
     // prefer a static camera can toggle this off; in that case the camera
     // re-centres on the player without bias. Coexists with screen shake — the
     // two offsets sum on each frame. Default true keeps the feel-good preset.
-    val cameraLookAhead: Boolean = true
+    val cameraLookAhead: Boolean = true,
+
+    // T-142: Speedrun timer overlay. When true, the gameplay HUD renders a
+    // high-precision MM:SS.mmm timer in the top-left corner driven by the
+    // existing [LevelRunState.levelTimer] (no new clock). Default false keeps
+    // existing saves byte-identical and renders byte-identically to pre-T-142.
+    // Coexists with the existing best-time / score-block timer — both are
+    // visible simultaneously when this is on.
+    val speedrunTimer: Boolean = false
 )
 
 /**
