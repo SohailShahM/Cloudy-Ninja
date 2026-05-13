@@ -28,14 +28,15 @@ object SoundManager : Disposable {
      * shipped as WAV files in assets/audio/sfx/).
      */
     private val sfxFiles = mapOf(
-        "jump"              to "audio/sfx/jump.wav",
-        "land"              to "audio/sfx/land.wav",
-        "collect_token"     to "audio/sfx/collect_token.wav",
-        "collect_snapshot"  to "audio/sfx/collect_snapshot.wav",
-        "death"             to "audio/sfx/death.wav",
-        "checkpoint"        to "audio/sfx/checkpoint.wav",
-        "level_complete"    to "audio/sfx/level_complete.wav",
-        "hazard_cleansed"   to "audio/sfx/hazard_cleansed.wav"
+        "jump"               to "audio/sfx/jump.wav",
+        "land"               to "audio/sfx/land.wav",
+        "collect_token"      to "audio/sfx/collect_token.wav",
+        "collect_snapshot"   to "audio/sfx/collect_snapshot.wav",
+        "death"              to "audio/sfx/death.wav",
+        "checkpoint"         to "audio/sfx/checkpoint.wav",
+        "level_complete"     to "audio/sfx/level_complete.wav",
+        "hazard_cleansed"    to "audio/sfx/hazard_cleansed.wav",
+        "achievement_unlock" to "audio/sfx/achievement_unlock.wav"  // T-138
     )
 
     /**

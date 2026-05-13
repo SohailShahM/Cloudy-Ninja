@@ -31,6 +31,7 @@ object ProceduralSoundGenerator {
         writeIfMissing("audio/sfx/checkpoint.wav",       makeWav(checkpoint()))
         writeIfMissing("audio/sfx/level_complete.wav",   makeWav(levelComplete()))
         writeIfMissing("audio/sfx/hazard_cleansed.wav",  makeWav(hazardCleansed()))
+        writeIfMissing("audio/sfx/achievement_unlock.wav", makeWav(achievementUnlock()))
 
         // ── Legacy location: sounds/ ───────────────────────────────────────
         val legacyDir = Gdx.files.local("sounds")
@@ -220,6 +221,28 @@ object ProceduralSoundGenerator {
             val tone = sine(hz, t) * 0.35f + sine(hz * 1.5f, t) * 0.15f
             val bubbles = 1f + 0.40f * sine(18f + p * 10f, t)
             (prev * 0.35f + tone) * bubbles * env(t, dur, 0.010f, 0.10f) * 0.65f
+        }
+    }
+
+    /**
+     * 9. achievement_unlock.wav — T-138 chime ~0.3s: C5 E5 G5 C6 staircase,
+     * ~75ms per note. Each note has a small attack + exponential tail so the
+     * arpeggio reads as a clear "achievement unlocked!" chime without bleeding
+     * across notes. Sine fundamental + light octave harmonic.
+     */
+    private fun achievementUnlock(): FloatArray {
+        val dur = 0.30f; val n = (RATE * dur).toInt()
+        val notes = floatArrayOf(523f, 659f, 784f, 1047f)   // C5 E5 G5 C6
+        val noteDur = dur / notes.size                       // 0.075s per note
+        return FloatArray(n) { i ->
+            val t  = i.toFloat() / RATE
+            val noteIdx = (t / noteDur).toInt().coerceAtMost(notes.size - 1)
+            val hz = notes[noteIdx]
+            val noteStart = noteIdx * noteDur
+            val nt = t - noteStart
+            val noteEnv = minOf(1f, nt / 0.005f) * exp(-nt * 8.0).toFloat()
+            val sig = sine(hz, t) * 0.65f + sine(hz * 2f, t) * 0.20f
+            sig * noteEnv * 0.55f
         }
     }
 
