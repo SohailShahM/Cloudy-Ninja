@@ -463,6 +463,45 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 ═══════════════════════════════════════════════════════════════ -->
 
 <!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D wave 13 — small autonomous cleanups (2026-05-14)
+     T-194 / T-198 spec'd during the 8-hour autonomous run for cheap
+     ship-in-flight value.
+═══════════════════════════════════════════════════════════════ -->
+
+### T-194 — gitignore: save slots + procedurally-generated audio  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** observed 2026-05-14 — runtime artifacts (`assets/saves/save_slot_*.json`, `assets/audio/music/ambient_menu.wav` from `ProceduralMusicGenerator`) appear as untracked / modified after every play session
+- **Files:** `.gitignore` (root)
+- **Goal:** Add `.gitignore` entries for:
+  - `assets/saves/save_slot_*.json` — these are user save state, per-machine, should never be checked in
+  - Any procedurally-generated audio that `ProceduralMusicGenerator.kt` writes (grep the generator for output paths — likely under `assets/audio/music/ambient_*.wav`). **Investigate first**: if the procedurally-generated tracks are SHIPPED in the repo as canonical assets (i.e. someone committed them after first generation, and the generator now skips regeneration if files exist), DO NOT ignore — leave them tracked. If they regenerate every run as observed, ignore them. The git history will show whether they were ever committed.
+  - Crash logs and screenshot output dirs IF they ever land under the repo path (unlikely, since they go to user-home; but check)
+- **Done when:** New `.gitignore` entries land; `git status` post-play-session shows clean working tree (no save_slot or audio churn); smoke CI passes (CI doesn't care about save files).
+- **Constraints:** **Don't delete any existing committed save files** — `assets/saves/save_slot_*.json` may be in the repo as starter saves. If `git ls-files` shows them tracked, the new gitignore only prevents FUTURE additions; the existing ones stay. **Don't ignore directories wholesale** — `assets/saves/` may contain non-slot files (achievements log, etc.). Glob the specific filenames only.
+
+### T-198 — Gate per-frame dev logs behind a system property  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** observed 2026-05-14 — game log floods with `[Perf] fps=60 …`, `[EboAbility] Seed Slam at …`, `[LayaAbility] Wind Dash at …`, `[LevelEntityFactory] Spawned 3 enemies …` lines every frame or every event. Useful for dev; clutters player-facing console + log files
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/Main.kt` (likely owner of `[Perf]` log), grep for `Gdx.app.log` callers across `core/src/main/kotlin/` and identify which are dev-only vs error-or-info-worth-shipping. Likely affected: `Main.kt`, `entities/EboAbility.kt`, `entities/LayaAbility.kt`, `entities/ZephyrAbility.kt`, `levels/LevelEntityFactory.kt` (or similar), maybe `screens/LevelRunState.kt`
+- **Goal:** Introduce a `Constants.DEV_LOGS = System.getProperty("cloudy.devLogs", "false").toBoolean()` (or similar). Gate the verbose per-frame logs behind it. Player-facing release builds (no `-Dcloudy.devLogs=true`) stay silent. Smoke CI keeps DEV_LOGS off too (its existing autopilot doesn't need them).
+- **Done when:** A normal `./gradlew :lwjgl3:run` produces no per-frame log noise; running with `-Dcloudy.devLogs=true` produces the existing verbose stream; `Gdx.app.error` calls (real errors) stay unconditional; smoke CI passes.
+- **Constraints:** **Do NOT silence error-level logs** — `Gdx.app.error` calls (T-111 SoundManager unknown-id, T-115 crash reporter, etc.) stay loud regardless. **Do NOT gate Perf logging that's load-bearing for smoke autopilot's invariant assertions** — read the smoke test code first; if any test asserts on `[Perf]` log content, keep that path loud OR move the assertion into a non-log-based channel. **Don't add new dependencies.** **Don't change the log format** of remaining logs.
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════
      SPRINT D wave 12 — Claude Design ticket batch (2026-05-14)
      User has access to Claude Design (claude.ai/design, included with
      Claude Pro). Right tool for UI/marketing design work; WRONG tool
