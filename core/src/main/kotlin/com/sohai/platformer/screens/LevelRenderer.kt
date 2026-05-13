@@ -690,7 +690,13 @@ class LevelRenderer(
         val sw = SpriteFactory.SPRITE_W / Constants.PPM
         val sh = SpriteFactory.SPRITE_H / Constants.PPM
         val sx = playerPos.x - sw / 2f
-        val sy = playerPos.y - 32f / Constants.PPM
+        val footOffset = when (currentCharacter) {
+            "Ebo"    -> SpriteFactory.SPRITE_FOOT_OFFSET_EBO
+            "Laya"   -> SpriteFactory.SPRITE_FOOT_OFFSET_LAYA
+            "Zephyr" -> SpriteFactory.SPRITE_FOOT_OFFSET_ZEPHYR
+            else     -> 0f
+        }
+        val sy = playerPos.y - 32f / Constants.PPM - footOffset
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)

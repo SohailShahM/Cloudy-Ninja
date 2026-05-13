@@ -27,6 +27,21 @@ object SpriteFactory {
     const val SPRITE_W = 32
     const val SPRITE_H = 80
 
+    /**
+     * Per-character extra downward offset applied to the sprite's bottom-Y in
+     * world meters. Positive values push the sprite DOWN (its visible feet move
+     * closer to / into the ground). Used to compensate for transparent pixel
+     * rows at the bottom of sprite frames that make the visible character
+     * appear to float above the physics body's bottom edge.
+     *
+     * Defaults are 0f (no change). Tune by play-testing — these are intentionally
+     * adjustable as standalone constants so a user/orchestrator can iterate via
+     * single-line edits without redeploying logic.
+     */
+    const val SPRITE_FOOT_OFFSET_EBO    = 0f
+    const val SPRITE_FOOT_OFFSET_LAYA   = 0f
+    const val SPRITE_FOOT_OFFSET_ZEPHYR = 0f
+
     // ── Pose enums ────────────────────────────────────────────────────────────
 
     private enum class LegPose { NEUTRAL, NEUTRAL_BOB, STRIDE_L, STRIDE_R, JUMP, FALL, WALL }
