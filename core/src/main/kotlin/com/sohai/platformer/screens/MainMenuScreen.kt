@@ -541,6 +541,11 @@ class MainMenuScreen(private val game: Game) : Screen {
     // Screen lifecycle
     // -------------------------------------------------------------------------
 
+    // T-A10: visual checkpoint capture — one-shot per screen lifetime. Set in
+    // show(), consumed at the END of the first render() after stage.draw() so
+    // the captured PNG reflects the actual painted frame, not an empty buffer.
+    private var pendingCheckpointCapture: String? = null
+
     override fun show() {
         // T-171 (Phase A): re-install the router (an unmigrated screen we
         // came back from will have clobbered Gdx.input.inputProcessor) and
@@ -550,6 +555,11 @@ class MainMenuScreen(private val game: Game) : Screen {
         // listener still works exactly as before.
         GlobalInputRouter.install()
         GlobalInputRouter.pushScreen(stage)
+
+        // T-A10: schedule a visual checkpoint capture on the next render frame.
+        // CheckpointCapture.capture() itself short-circuits when the
+        // CAPTURE_CHECKPOINTS flag is off, so this is unconditional.
+        pendingCheckpointCapture = "mainmenu-loaded"
 
         // T-134: start the menu's soft harmonic ambient track on entry. The
         // call is a silent no-op until [MusicManager.releaseAudioGate] has been
@@ -569,6 +579,15 @@ class MainMenuScreen(private val game: Game) : Screen {
         MusicManager.update(delta)
         stage.act(delta)
         stage.draw()
+
+        // T-A10: consume the pending capture after the menu's stage has been
+        // drawn so the framebuffer reflects the actual painted frame. One-shot
+        // pattern: clear the field so re-entering the menu later doesn't spam
+        // duplicate writes within the same JVM run.
+        pendingCheckpointCapture?.let { name ->
+            pendingCheckpointCapture = null
+            com.sohai.platformer.visual.CheckpointCapture.capture(name)
+        }
     }
 
     override fun resize(width: Int, height: Int) {

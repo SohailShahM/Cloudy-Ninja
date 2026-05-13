@@ -703,6 +703,10 @@ class SettingsScreen(
         toastTimer = TOAST_DURATION
     }
 
+    // T-A10: visual checkpoint capture — one-shot per screen lifetime. Set in
+    // show(), consumed at the END of the first render() after stage.draw().
+    private var pendingCheckpointCapture: String? = null
+
     override fun render(delta: Float) {
         Gdx.gl.glClearColor(0.07f, 0.10f, 0.14f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
@@ -719,6 +723,13 @@ class SettingsScreen(
 
         stage.act(delta)
         stage.draw()
+
+        // T-A10: consume the pending capture after stage.draw() so the
+        // framebuffer reflects the painted Settings UI.
+        pendingCheckpointCapture?.let { name ->
+            pendingCheckpointCapture = null
+            com.sohai.platformer.visual.CheckpointCapture.capture(name)
+        }
     }
 
     override fun resize(width: Int, height: Int) { viewport.update(width, height, true) }
@@ -730,6 +741,8 @@ class SettingsScreen(
     override fun show() {
         GlobalInputRouter.install()
         GlobalInputRouter.pushScreen(stage)
+        // T-A10: queue a checkpoint capture for the first rendered frame.
+        pendingCheckpointCapture = "settings-screen-loaded"
     }
     override fun pause() {}
     override fun resume() {}
