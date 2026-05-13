@@ -1,3 +1,9 @@
+[![CI](https://github.com/SohailShahM/Cloudy-Ninja/actions/workflows/ci.yml/badge.svg)](https://github.com/SohailShahM/Cloudy-Ninja/actions/workflows/ci.yml)
+[![AI smoke test](https://github.com/SohailShahM/Cloudy-Ninja/actions/workflows/ai-smoke.yml/badge.svg)](https://github.com/SohailShahM/Cloudy-Ninja/actions/workflows/ai-smoke.yml)
+[![License: Proprietary](https://img.shields.io/badge/license-Proprietary-red)](LICENSE)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![libGDX](https://img.shields.io/badge/libGDX-1.14.0-E74C3C)](https://libgdx.com/)
+
 # Cloudy Ninja
 
 A 2D pixel-art platformer about restoring corrupted ecosystems. Three switchable characters with water-cycle-themed abilities (Ebo / Laya / Zephyr), 8 levels including a Storm Sentinel boss, ambient music, save slots, 4K/HiDPI scaling, accessibility-first design (color-blind palette, reduced motion, key rebinding, assist mode), and a Cloud Atlas of climate-science snapshots collected during play.
