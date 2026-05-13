@@ -68,10 +68,10 @@ import com.sohai.platformer.i18n.Strings
  *
  *  - **fonts** — prime the shared font cache (1 step).
  *  - **music** — procedural WAV generation + warm the [MusicManager]
- *    pre-decoder (3 steps, one per track).
+ *    pre-decoder (4 steps, one per track — T-134 added `ambient_menu`).
  *  - **sfx** — procedural SFX generation + [SoundManager.init] (1 step).
  *
- * Total of 5 logical steps. This number is intentionally not exposed as a
+ * Total of 6 logical steps. This number is intentionally not exposed as a
  * constant — the bar tracks `completedSteps / totalSteps`, computed from the
  * length of the runtime step list, so adding/removing steps doesn't break the
  * UI.
@@ -114,6 +114,9 @@ class SplashScreen(
         },
         PreloadStep("Generating music: ambient_eco")   {
             ProceduralMusicGenerator.generateOne("ambient_eco")
+        },
+        PreloadStep("Generating music: ambient_menu")  {
+            ProceduralMusicGenerator.generateOne("ambient_menu")
         },
         PreloadStep("Generating sound effects")        {
             ProceduralSoundGenerator.generateAll()

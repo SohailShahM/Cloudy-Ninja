@@ -21,6 +21,7 @@ import com.kotcrab.vis.ui.widget.VisTextButton
 import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.atlas.CloudAtlasLibrary
+import com.sohai.platformer.audio.MusicManager
 import com.sohai.platformer.i18n.StringKey
 import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.levels.LevelManager
@@ -489,11 +490,23 @@ class MainMenuScreen(private val game: Game) : Screen {
     // Screen lifecycle
     // -------------------------------------------------------------------------
 
-    override fun show() {}
+    override fun show() {
+        // T-134: start the menu's soft harmonic ambient track on entry. The
+        // call is a silent no-op until [MusicManager.releaseAudioGate] has been
+        // fired by the splash screen on first user input (T-129) — i.e. by the
+        // time the player has clicked through to the menu, audio is unlocked
+        // and this play() takes effect. If the same track is already current
+        // (e.g. returning to the menu from a sub-screen like Settings) play()
+        // short-circuits via its same-track guard.
+        MusicManager.play("ambient_menu", fadeIn = true)
+    }
 
     override fun render(delta: Float) {
         Gdx.gl.glClearColor(0.1f, 0.15f, 0.2f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+        // Drive crossfade/fade-in tween (T-134 needs this; GameScreen does the
+        // same in its own render loop).
+        MusicManager.update(delta)
         stage.act(delta)
         stage.draw()
     }

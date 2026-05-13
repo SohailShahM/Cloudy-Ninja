@@ -30,10 +30,15 @@ object MusicManager {
 
     /**
      * Track ids that the splash preload (T-104) and any future preload
-     * pass should check / prime. Kept in sync with the three tracks
-     * [ProceduralMusicGenerator] emits.
+     * pass should check / prime. Kept in sync with the four tracks
+     * [ProceduralMusicGenerator] emits (`ambient_menu` added by T-134).
      */
-    val PRELOAD_TRACKS: List<String> = listOf("ambient_arid", "ambient_wind", "ambient_eco")
+    val PRELOAD_TRACKS: List<String> = listOf(
+        "ambient_arid",
+        "ambient_wind",
+        "ambient_eco",
+        "ambient_menu",
+    )
 
     // ── Audio gate (T-129) ───────────────────────────────────────────────────
     //
