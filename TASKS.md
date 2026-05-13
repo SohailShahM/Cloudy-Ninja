@@ -455,6 +455,29 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Constraints:** Don't read user's filesystem outside the documented dir. Don't rebind F12 — it's hardcoded (not in Settings → Controls). Reuse T-139's `ScreenshotWriter.write(pixmap, path)` API.
 
 
+<!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D wave 9 — alpha-pre-flight visual verification
+     T-168 spec'd 2026-05-13 by claude-code-opus as follow-up to T-126
+     (Calibri→Inter swap landed CI-green PR #137 but smoke CI does not
+     validate font rendering legibility). Pre-alpha gate.
+═══════════════════════════════════════════════════════════════ -->
+
+### T-168 — Visual font-regression smoke pass (T-126 follow-up)  [P2]
+- **Status:** Todo
+- **Tool:** `human`  *(visual judgement — smoke CI cannot validate font legibility)*
+- **Tier:** S
+- **Autonomous-eligible:** **no**
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-126  *(Done — PR #137 merged)*
+- **GDD ref:** T-126 outcome; `research/asset-attribution-audit.md` §HIGH-1
+- **Files:** `research/font-screenshots/` (new dir + README index), `LEARNINGS.md` (verification entry)
+- **Goal:** Manually launch the desktop build (`./gradlew :lwjgl3:run`) and navigate through every font-rendering surface. Eyeball each at the FreeType sizes Inter is rasterised at (11/14/16/17/20/22/30/32). For each, judge: legible? clipping? kerning issues? visible regression vs Calibri? Take screenshots (F12 from T-147 if shipped, else PrtScn) and save into `research/font-screenshots/` with a one-line caption per screen.
+- **Surfaces to verify (from PR #137 caller list):** MainMenu, Settings, Achievements, Credits, Stats, Victory, GameScreen HUD, CloudAtlas, CloudAtlasOverlay, PauseOverlay, AchievementToast, SplashScreen, LevelSelect, LevelComplete, HubTutorialOverlay, DeathRecapOverlay, GameOverOverlay (~17 surfaces).
+- **Done when:** Either (A) all surfaces verified clean → append a "Inter visual-verified across N surfaces 2026-XX-XX" entry to LEARNINGS.md and close the ticket; OR (B) a regression is found → open a specific follow-up ticket (sizing tweak, alternate hinting, fallback font, etc.) and document the surface + size combo that failed.
+- **Constraints:** **Pre-alpha gate** — must land before the public alpha drop. Not autonomous-eligible: a human eye is the only valid signal here. If T-147 (F12 anytime hotkey) hasn't shipped when this is done, OS-level screenshots are fine.
+
+
 
 ---
 
