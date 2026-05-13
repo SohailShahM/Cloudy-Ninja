@@ -355,17 +355,31 @@ All randomness flows through [`GameRandom`](../core/src/main/kotlin/com/sohai/pl
 a `RandomXS128` singleton seeded per-run (T-A3). This is the seed
 ghost-replay (T-038) will eventually anchor to.
 
-### Two screen-shake systems (post-T-116)
+### Screen shake (post-T-169 consolidation)
 
-There are currently two camera-shake implementations that coexist and
-sum on overlapping frames:
+A single camera-shake implementation lives in
+[`rendering/ScreenShake`](../core/src/main/kotlin/com/sohai/platformer/rendering/ScreenShake.kt)
+(T-116). It computes a `(x, y)` offset using sin/cos at fixed
+frequencies (`X_FREQ=60, Y_FREQ=73`) with linear amplitude decay over
+the trigger's duration. `LevelRenderer.renderWorld` ticks
+`ScreenShake.update`, sums its offset with the T-144 look-ahead bias
+into `totalOffsetX/Y`, applies that to `camera.position` before the
+projection matrix is built, and reverts it after rendering so the
+camera position never drifts across frames.
 
-- `LevelRunState.triggerShake()` — pre-existing; lightning hits and
-  boss-defeat; sin/cos offset.
-- [`rendering/ScreenShake`](../core/src/main/kotlin/com/sohai/platformer/rendering/ScreenShake.kt)
-  — T-116; stomps and boss-hits; linear decay.
+`ScreenShake.trigger` is a no-op when either `Settings.reducedMotion`
+is true or `Settings.screenShake` is false. Repeat triggers **replace**
+the active animation (not stack additively), matching player intuition
+for a fresh impact.
 
-Future camera work should be aware that the two offsets add together.
+Call sites:
+
+- Stomp-defeat + boss-hit + lightning hit — via
+  [`WorldContactListener`](../core/src/main/kotlin/com/sohai/platformer/physics/WorldContactListener.kt).
+- Land-bounce + death — via
+  [`LevelRunState`](../core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt)
+  (T-169 migrated these off the now-deleted `LevelRunState.triggerShake`
+  helper onto `ScreenShake.trigger` with identical magnitudes).
 
 ---
 

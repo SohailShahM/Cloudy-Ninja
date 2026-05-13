@@ -33,11 +33,17 @@ import com.sohai.platformer.persist.SettingsManager
  * Exponential decay would either ring on indefinitely or require an arbitrary
  * cut-off threshold.
  *
- * ## Reduced-motion gate
+ * ## Accessibility / settings gates
  *
- * [trigger] is a **no-op** when `SettingsManager.load().reducedMotion == true`.
- * This is checked at trigger time rather than at render time so a setting flip
- * mid-shake still completes the existing animation cleanly.
+ * [trigger] is a **no-op** when EITHER of these settings is set:
+ *   * `SettingsManager.load().reducedMotion == true`  (accessibility opt-out)
+ *   * `SettingsManager.load().screenShake   == false` (user-facing toggle)
+ *
+ * Both gates are checked at trigger time rather than at render time so a
+ * setting flip mid-shake still completes the existing animation cleanly.
+ * The screen-shake gate was added in T-169 when this object absorbed the
+ * former `LevelRunState.triggerShake` (land-bounce / death / lightning-hit)
+ * call sites, which had previously honoured the same flag.
  *
  * ## Stacking
  *
@@ -87,13 +93,17 @@ object ScreenShake {
      * @param duration  total shake duration in seconds. Must be `> 0` to take
      *                  effect; `0` or negative values are silently ignored.
      *
-     * **Honours [com.sohai.platformer.persist.Settings.reducedMotion] — when on,
-     * this call is a no-op.** The accessibility gate lives here (rather than at
-     * each call site) so callers don't have to thread the setting through.
+     * **Honours both [com.sohai.platformer.persist.Settings.reducedMotion]
+     * (when true) and [com.sohai.platformer.persist.Settings.screenShake]
+     * (when false) — either condition makes this call a no-op.** Both gates
+     * live here (rather than at each call site) so callers don't have to
+     * thread the settings through.
      */
     fun trigger(amplitude: Float, duration: Float) {
         if (duration <= 0f) return
-        if (SettingsManager.load().reducedMotion) return
+        val settings = SettingsManager.load()
+        if (settings.reducedMotion) return
+        if (!settings.screenShake) return
         this.baseAmplitude = amplitude
         this.duration      = duration
         this.elapsed       = 0f

@@ -116,7 +116,7 @@ When AGV is quiet on a critical-path ticket, **re-tag it to `claude-code-sub-age
 - Settings reorganized + **Credits screen reachable from Settings (T-101)**
 - Death animation (T-097)
 - **Enemy hit-flash on takeDamage (T-098)** — 200ms white tint, respects reducedMotion
-- **Screen shake on stomp + boss hit (T-116)** — coexists with the older `LevelRunState.triggerShake()` for lightning/boss-defeat (their offsets sum)
+- **Screen shake on stomp + boss hit (T-116)** — `rendering/ScreenShake`; since T-169 this is the single shake system (the former `LevelRunState.triggerShake()` for land-bounce/death/lightning was retired and its call sites migrated onto `ScreenShake.trigger(...)` 1:1)
 - **MainMenu achievement progress counter (T-099)** — `Achievements: N/13` (gold at full)
 - **MainMenu build label (T-100)** — `v0.1.0 · 2026-05-12` bottom-right (`Constants.BUILD_VERSION` + `BUILD_DATE`)
 - **Cold-start splash + asset preload progress bar (T-104)** — smoke-mode short-circuits
@@ -180,7 +180,7 @@ When AGV is quiet on a critical-path ticket, **re-tag it to `claude-code-sub-age
 2. ✅ **Closed:** FontManager testability seam (T-109, PR #69 merged)
 3. ✅ **Closed:** ScreenFade rename (T-110, PR #86 merged)
 4. ✅ **Closed:** Achievement unlock predicates extracted to pure functions (T-128 re-dispatch, PR #100 merged)
-5. **NEW:** Two screen-shake systems coexist post-T-116. The pre-existing `LevelRunState.triggerShake()` (lightning + boss-defeat, sin/cos, lines ~740-746) is unchanged; the new `rendering/ScreenShake.kt` (T-116, stomp + boss-hit, linear decay) runs alongside. Their offsets sum on overlapping frames. Future work that touches camera shake should be aware of both.
+5. ✅ **Closed:** Dual screen-shake systems consolidated onto `rendering/ScreenShake` (T-169, PR pending). `LevelRunState.triggerShake()` and its local `shakeIntensity/shakeDuration` fields were deleted; the three former call sites (land-bounce, death, lightning-hit) now call `ScreenShake.trigger(...)` with identical magnitudes. Semantic flip: max-stacking → replace-stacking (matches the existing T-116 behaviour). Both gates — `Settings.reducedMotion` and `Settings.screenShake` — now live inside `ScreenShake.trigger`.
 6. **NEW:** `SaveManager` API name is `deleteSave(filename)`, NOT `deleteSlot()` as some tickets spec'd (T-119 caught this). Older tickets referencing `deleteSlot()` need fixing if dispatched verbatim.
 7. **NEW:** The desktop module is `:lwjgl3`, NOT `:desktop`. `:lwjgl3:dist` is an alias for `:lwjgl3:jar` (line 197 of `lwjgl3/build.gradle`). T-114's itch.io deploy workflow targets `:lwjgl3:dist`.
 8. **NEW:** Dead deps `ashley` and `gdx-ai` declared in `core/build.gradle` but never imported (T-123 finding). T-127 ticketed; Copilot-frozen until #68/#85 unblock.

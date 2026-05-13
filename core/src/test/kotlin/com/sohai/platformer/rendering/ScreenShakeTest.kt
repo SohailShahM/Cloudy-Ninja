@@ -23,9 +23,11 @@ import kotlin.math.sqrt
  *      hits zero at the duration mark, and stays at zero past it.
  *   3. Duration cap — repeated `update()` past the duration is idempotent.
  *   4. `reducedMotion` gate — `trigger()` is a no-op while the setting is on.
- *   5. Replacement semantics — a second trigger resets elapsed and uses the
+ *   5. `screenShake = false` gate (T-169) — `trigger()` is a no-op while the
+ *      user-facing setting toggle is off. Mirrors (4).
+ *   6. Replacement semantics — a second trigger resets elapsed and uses the
  *      new amplitude / duration (no additive stacking).
- *   6. Non-positive duration — silently ignored.
+ *   7. Non-positive duration — silently ignored.
  *
  * Implementation note: in Kotest BehaviorSpec, only `then {}` blocks are the
  * actual test cases. Outer-scope code in `given {}` / `when {}` blocks runs
@@ -139,6 +141,32 @@ class ScreenShakeTest : BehaviorSpec({
         }
     }
 
+    // T-169: the user-facing [Settings.screenShake] toggle is now a second
+    // gate inside ScreenShake.trigger (it used to live in the now-deleted
+    // LevelRunState.triggerShake). Either gate short-circuits — mirrors the
+    // reducedMotion behaviour exactly so accessibility and explicit-opt-out
+    // paths are both honoured at the same point in the call chain.
+    given("Settings.screenShake = false") {
+        `when`("trigger() is called") {
+            then("the shake never activates — trigger is a no-op") {
+                seedSettings(reducedMotion = false, screenShake = false)
+                ScreenShake.trigger(amplitude = 4f, duration = 0.15f)
+                ScreenShake.isActive().shouldBeFalse()
+                val o = ScreenShake.offset()
+                o.x shouldBe 0f
+                o.y shouldBe 0f
+            }
+            then("subsequent update() calls don't surface any offset either") {
+                seedSettings(reducedMotion = false, screenShake = false)
+                ScreenShake.trigger(amplitude = 4f, duration = 0.15f)
+                ScreenShake.update(0.05f)
+                val o = ScreenShake.offset()
+                o.x shouldBe 0f
+                o.y shouldBe 0f
+            }
+        }
+    }
+
     given("trigger() with non-positive duration") {
         `when`("duration is zero") {
             then("the shake doesn't activate") {
@@ -209,8 +237,8 @@ class ScreenShakeTest : BehaviorSpec({
  * `SettingsManager.load()` never touches `Gdx.files`. Mirrors the approach
  * used by `ParallaxBackgroundTest`.
  */
-private fun seedSettings(reducedMotion: Boolean) {
+private fun seedSettings(reducedMotion: Boolean, screenShake: Boolean = true) {
     val field = SettingsManager::class.java.getDeclaredField("cached")
     field.isAccessible = true
-    field.set(SettingsManager, Settings(reducedMotion = reducedMotion))
+    field.set(SettingsManager, Settings(reducedMotion = reducedMotion, screenShake = screenShake))
 }
