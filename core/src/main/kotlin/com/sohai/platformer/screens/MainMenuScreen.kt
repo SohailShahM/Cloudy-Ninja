@@ -14,6 +14,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.kotcrab.vis.ui.widget.VisLabel
 import com.kotcrab.vis.ui.widget.VisTable
 import com.kotcrab.vis.ui.widget.VisTextButton
+import com.sohai.platformer.Constants
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.atlas.CloudAtlasLibrary
 import com.sohai.platformer.i18n.StringKey
@@ -45,6 +46,13 @@ class MainMenuScreen(private val game: Game) : Screen {
 
     /** Mutable references to the per-slot delete buttons so we can update their labels. */
     private val deleteButtons = arrayOfNulls<VisTextButton>(3)
+
+    /**
+     * Bottom-right build-info label (T-100). Kept as a stage-level actor (not
+     * inside the centered root table) so it pins to the corner regardless of
+     * the table layout, and gets repositioned in [resize].
+     */
+    private var buildInfoLabel: Label? = null
 
     init {
         Gdx.input.inputProcessor = stage
@@ -83,6 +91,42 @@ class MainMenuScreen(private val game: Game) : Screen {
         root.add(buildNavButtons()).padTop(36f).row()
 
         stage.addActor(root)
+
+        // --- Build/version label, pinned to bottom-right corner (T-100) ---
+        val label = buildBuildInfoLabel()
+        buildInfoLabel = label
+        stage.addActor(label)
+        repositionBuildInfoLabel()
+    }
+
+    /**
+     * Builds the tiny build-info label shown in the bottom-right of the menu
+     * (T-100). Reads version + date from [Constants] (manually maintained
+     * during the alpha pre-launch window) and renders via the
+     * `MENU_BUILD_INFO` i18n template `v{0} · {1}` in dim grey at font-size 11.
+     */
+    private fun buildBuildInfoLabel(): Label {
+        val text  = Strings.format(StringKey.MENU_BUILD_INFO, Constants.BUILD_VERSION, Constants.BUILD_DATE)
+        val font  = FontManager.getShared(11)
+        val color = Color(0.5f, 0.5f, 0.5f, 0.6f)
+        val label = Label(text, Label.LabelStyle(font, color))
+        label.pack()
+        return label
+    }
+
+    /**
+     * Pins [buildInfoLabel] to 8px from the bottom-right of the stage. Called
+     * from [buildUi] and [resize] so the corner-anchor survives window
+     * resizes.
+     */
+    private fun repositionBuildInfoLabel() {
+        val label = buildInfoLabel ?: return
+        // Keep label width as packed so right-alignment math stays correct.
+        label.width = label.prefWidth
+        val sw = stage.viewport.worldWidth.takeIf { it > 0f }
+            ?: (label.prefWidth + BUILD_INFO_PADDING)
+        val (x, y) = buildInfoLabelPosition(sw, label.prefWidth)
+        label.setPosition(x, y)
     }
 
     /**
@@ -318,6 +362,9 @@ class MainMenuScreen(private val game: Game) : Screen {
 
     override fun resize(width: Int, height: Int) {
         stage.viewport.update(width, height, true)
+        // Re-anchor the bottom-right build label after the new viewport size
+        // is applied (T-100).
+        repositionBuildInfoLabel()
     }
 
     override fun pause() {}
@@ -360,6 +407,12 @@ class MainMenuScreen(private val game: Game) : Screen {
 
     companion object {
         /**
+         * Padding (in stage units / px) from the right + bottom edges of the
+         * stage to the build-info label (T-100). 8px per ticket spec.
+         */
+        const val BUILD_INFO_PADDING = 8f
+
+        /**
          * Pure helper for T-099: given a per-slot unlocked-count list (typically
          * size 3), returns the max. Empty input returns 0. Exposed so headless
          * tests can verify the max-across-slots aggregation without booting GL.
@@ -381,5 +434,28 @@ class MainMenuScreen(private val game: Game) : Screen {
                 Strings.format(StringKey.MENU_ACHIEVEMENT_PROGRESS, count, total) to
                     Color(0.75f, 0.75f, 0.75f, 1f)
             }
+
+        /**
+         * Pure helper for T-100: returns the rendered text of the build-info
+         * label using the `MENU_BUILD_INFO` template. Exposed so headless tests
+         * can verify the format without booting GL.
+         */
+        fun buildInfoText(version: String, date: String): String =
+            Strings.format(StringKey.MENU_BUILD_INFO, version, date)
+
+        /**
+         * Pure helper for T-100: the display color of the build-info label —
+         * dim grey `(0.5, 0.5, 0.5, 0.6)` per ticket spec.
+         */
+        fun buildInfoColor(): Color = Color(0.5f, 0.5f, 0.5f, 0.6f)
+
+        /**
+         * Pure helper for T-100: returns the (x, y) bottom-left position of
+         * the build-info label given the stage width and the label's measured
+         * width. y is just [BUILD_INFO_PADDING]; x anchors the label's right
+         * edge 8px from the stage's right edge.
+         */
+        fun buildInfoLabelPosition(stageWidth: Float, labelWidth: Float): Pair<Float, Float> =
+            (stageWidth - labelWidth - BUILD_INFO_PADDING) to BUILD_INFO_PADDING
     }
 }

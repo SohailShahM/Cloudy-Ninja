@@ -34,6 +34,8 @@ enum class StringKey {
     // T-099: Achievement progress counter on MainMenu
     MENU_ACHIEVEMENT_PROGRESS,
     MENU_ACHIEVEMENT_PROGRESS_COMPLETE,
+    // T-100: Build / version label on MainMenu (bottom-right corner)
+    MENU_BUILD_INFO,
 
     // ── Settings: headers ────────────────────────────────────────────────────
     SETTINGS_TITLE,
@@ -285,6 +287,8 @@ object Strings {
         // T-099: Achievement progress counter on MainMenu
         StringKey.MENU_ACHIEVEMENT_PROGRESS          to "Achievements: {0}/{1} unlocked",
         StringKey.MENU_ACHIEVEMENT_PROGRESS_COMPLETE to "Achievements: All {0} unlocked!",
+        // T-100: Build / version label on MainMenu (bottom-right corner)
+        StringKey.MENU_BUILD_INFO                    to "v{0} · {1}",
 
         // Settings: headers
         StringKey.SETTINGS_TITLE         to "SETTINGS",
