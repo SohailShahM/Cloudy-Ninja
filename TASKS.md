@@ -430,20 +430,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 
 
 
-### T-138 — SFX on achievement unlock (audio feedback)  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-037, T-128  *(achievement unlock pipeline + post-refactor toast trigger site)*
-- **GDD ref:** GAME_PLAN.md (player engagement — currently achievement toasts are silent)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/AchievementToast.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/SoundManager.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/ProceduralSoundGenerator.kt` (or equivalent)
-- **Goal:** Generate a procedural "achievement unlock" SFX (short 0.3s C-major arpeggio chime via existing procedural-audio pattern). Play once when `AchievementToast.show(id)` fires. Volume scales with `volSfx` (or new `volUi` if that bus exists). Respect `enabled` flag in SoundManager.
-- **Done when:** Achievement unlock plays the chime; volume responds to sfx slider; tests cover playback gating; smoke CI passes.
-- **Constraints:** Procedural only — no new audio asset files. Don't double-fire on multi-achievement unlocks in same frame (debounce 200ms).
-
 ### T-139 — Screenshot-on-victory (PNG to user dir)  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -513,6 +499,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-138 — SFX on achievement unlock (audio feedback)  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-138-achievement-sfx
+- **Started:** 2026-05-13
+- **Depends on:** T-037, T-128  *(achievement unlock pipeline + post-refactor toast trigger site)*
+- **GDD ref:** GAME_PLAN.md (player engagement — currently achievement toasts are silent)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/AchievementToast.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/SoundManager.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/ProceduralSoundGenerator.kt` (or equivalent)
+- **Goal:** Generate a procedural "achievement unlock" SFX (short 0.3s C-major arpeggio chime via existing procedural-audio pattern). Play once when `AchievementToast.show(id)` fires. Volume scales with `volSfx` (or new `volUi` if that bus exists). Respect `enabled` flag in SoundManager.
+- **Done when:** Achievement unlock plays the chime; volume responds to sfx slider; tests cover playback gating; smoke CI passes.
+- **Constraints:** Procedural only — no new audio asset files. Don't double-fire on multi-achievement unlocks in same frame (debounce 200ms).
 
 ### T-134 — MainMenu background music  [P3]
 - **Status:** In Progress
