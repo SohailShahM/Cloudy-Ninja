@@ -488,22 +488,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Pause overlay shows the 3-character ability summary; current character highlighted; keys reflect current bindings; smoke CI passes.
 - **Constraints:** Pause-overlay only. Don't add a new screen. New StringKey entries via `Strings.kt`.
 
-### T-141 — Cloud Atlas search/filter  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (atlas accessibility — with 6→12 entries planned the list needs a filter)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/CloudAtlasScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** Add a small `VisTextField` at the top of the CloudAtlas screen. Filtering is substring-match against entry title (case-insensitive) + entry summary text. Clear button (✕) resets filter. If 0 results: show `No entries match` message. Filter is transient (doesn't persist).
-- **Done when:** Typing in the field narrows the visible entries; clear button works; smoke CI passes (autopilot doesn't enter the atlas — verify).
-- **Constraints:** Atlas screen only. Don't change the registry. Don't add fuzzy matching.
-
-
-
 ---
 
 ## Backlog — AI testing v2 (planned, after MVP T-A1/T-A2 lands)
@@ -545,6 +529,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-141 — Cloud Atlas search/filter  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-141-atlas-search-filter
+- **Started:** 2026-05-13
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (atlas accessibility — with 6→12 entries planned the list needs a filter)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/CloudAtlasScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Add a small `VisTextField` at the top of the CloudAtlas screen. Filtering is substring-match against entry title (case-insensitive) + entry summary text. Clear button (✕) resets filter. If 0 results: show `No entries match` message. Filter is transient (doesn't persist).
+- **Done when:** Typing in the field narrows the visible entries; clear button works; smoke CI passes (autopilot doesn't enter the atlas — verify).
+- **Constraints:** Atlas screen only. Don't change the registry. Don't add fuzzy matching.
 
 ### T-136 — Atomic save writes (write-to-temp-then-rename)  [P2]
 - **Status:** In Progress
