@@ -648,6 +648,144 @@ class MusicManagerTest : BehaviorSpec({
         }
     }
 
+    // ── T-105: master volume + mute toggle ───────────────────────────────────
+
+    given("setMasterVolume() on an active track (T-105)") {
+
+        `when`("master = 0.5 with the music bus at the default 0.7") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+            // Sanity: prior to master being applied, track is at volMusic * 1.0 = 0.7.
+            m.volume shouldBe 0.7f
+
+            MusicManager.setMasterVolume(0.5f)
+
+            then("the effective volume is master * bus = 0.5 * 0.7 = 0.35") {
+                abs(m.volume - 0.35f) shouldBeLessThan EPS
+            }
+        }
+
+        `when`("master = 0 silences the track even with bus > 0") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+
+            MusicManager.setMasterVolume(0f)
+
+            then("the active track is silenced (0 * 0.7 = 0)") {
+                m.volume shouldBe 0f
+            }
+            then("the bus value is preserved — restoring master returns full volume") {
+                MusicManager.setMasterVolume(1f)
+                m.volume shouldBe 0.7f
+            }
+        }
+
+        `when`("master is set above 1.0 (out-of-range)") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+
+            MusicManager.setMasterVolume(5f)
+
+            then("the value clamps to 1.0 → effective = 0.7") {
+                m.volume shouldBe 0.7f
+            }
+        }
+
+        `when`("master is set below 0 (negative)") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+
+            MusicManager.setMasterVolume(-0.5f)
+
+            then("the value clamps to 0 → effective = 0") {
+                m.volume shouldBe 0f
+            }
+        }
+    }
+
+    given("setMuted() on an active track (T-105)") {
+
+        `when`("setMuted(true) gates the output to 0 without changing the slider") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+            m.volume shouldBe 0.7f
+
+            MusicManager.setMuted(true)
+
+            then("the track is silenced") {
+                m.volume shouldBe 0f
+            }
+            then("unmuting restores the original master * bus level — slider was preserved") {
+                MusicManager.setMuted(false)
+                m.volume shouldBe 0.7f
+            }
+        }
+
+        `when`("muted=true composes with setMasterVolume — master change while muted stays silent") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+            MusicManager.setMuted(true)
+            m.volume shouldBe 0f
+
+            MusicManager.setMasterVolume(0.5f)
+
+            then("the track stays silent — mute gates the output regardless of master") {
+                m.volume shouldBe 0f
+            }
+            then("unmuting restores at the NEW master = 0.5 * 0.7 = 0.35 (slider preserved)") {
+                MusicManager.setMuted(false)
+                abs(m.volume - 0.35f) shouldBeLessThan EPS
+            }
+        }
+    }
+
+    given("master volume composed with T-117 ducking (regression guard)") {
+
+        `when`("setMasterVolume(0.5) is applied while ducked") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+
+            MusicManager.duck(amount = 0.3f, fadeMs = 0)
+            MusicManager.update(0f)                            // apply the snap duck
+            // Sanity: effective = master(1) * bus(0.7) * duck(0.3) = 0.21
+            abs(m.volume - 0.21f) shouldBeLessThan EPS
+
+            MusicManager.setMasterVolume(0.5f)
+
+            then("effective = master * bus * duck = 0.5 * 0.7 * 0.3 = 0.105 — duck still applies") {
+                abs(m.volume - 0.105f) shouldBeLessThan EPS
+            }
+        }
+
+        `when`("mute is engaged while ducked — output is 0, unduck preserves both states") {
+            resetWorld()
+            MusicManager.play("ambient_arid")
+            val m = musicByTrack["ambient_arid"]!!
+
+            MusicManager.duck(amount = 0.3f, fadeMs = 0)
+            MusicManager.update(0f)
+            MusicManager.setMuted(true)
+
+            then("muted while ducked is still silent") {
+                m.volume shouldBe 0f
+            }
+            then("unmuting then unducking returns to the full master * bus level") {
+                MusicManager.setMuted(false)
+                abs(m.volume - 0.21f) shouldBeLessThan EPS    // still ducked
+                MusicManager.unduck(fadeMs = 0)
+                MusicManager.update(0f)
+                abs(m.volume - 0.7f) shouldBeLessThan EPS     // back to master(1) * bus(0.7)
+            }
+        }
+    }
+
     given("setMusicVolume() with no track active") {
 
         `when`("the manager has never been started and volume is changed") {

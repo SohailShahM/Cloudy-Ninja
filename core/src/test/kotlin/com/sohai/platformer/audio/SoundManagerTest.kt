@@ -113,8 +113,10 @@ class SoundManagerTest : BehaviorSpec({
         SoundManager.dispose()
         soundMocks.clear()
         SoundManager.setEnabled(true)
-        SoundManager.setVolume(0.8f)   // production default
-        SoundManager.setUiVolume(1f)   // production default
+        SoundManager.setVolume(0.8f)        // production default
+        SoundManager.setUiVolume(1f)        // production default
+        SoundManager.setMasterVolume(1f)    // T-105 production default
+        SoundManager.setMuted(false)        // T-105 production default
         SoundManager.init()
     }
 
@@ -331,6 +333,105 @@ class SoundManagerTest : BehaviorSpec({
                 verify(exactly = 1) {
                     mockFor("jump").play(0.8f, 1.5f, 0f)
                 }
+            }
+        }
+    }
+
+    // ── T-105: master volume + mute toggle ───────────────────────────────────
+
+    given("setMasterVolume() multiplies on top of the per-bus volume (T-105)") {
+        resetManager()
+
+        `when`("master = 0.5 and play(\"jump\") at bus volume 0.8") {
+            SoundManager.setMasterVolume(0.5f)
+            SoundManager.play("jump")
+
+            then("Sound.play receives master * bus = 0.5 * 0.8 = 0.4") {
+                verify(exactly = 1) { mockFor("jump").play(0.4f, 1f, 0f) }
+            }
+        }
+    }
+
+    given("setMasterVolume() applies to the UI bus too (T-105)") {
+        resetManager()
+
+        `when`("master = 0.25 and playUi(\"checkpoint\") at uiVolume 1.0") {
+            SoundManager.setMasterVolume(0.25f)
+            SoundManager.playUi("checkpoint")
+
+            then("Sound.play receives master * ui = 0.25 * 1 = 0.25") {
+                verify(exactly = 1) { mockFor("checkpoint").play(0.25f, 1f, 0f) }
+            }
+        }
+    }
+
+    given("setMasterVolume() clamps out-of-range values (T-105)") {
+        resetManager()
+
+        `when`("setMasterVolume(2f) then play") {
+            SoundManager.setMasterVolume(2f)
+            SoundManager.play("jump")
+
+            then("the value clamps to 1.0 → effective = 0.8") {
+                verify(exactly = 1) { mockFor("jump").play(0.8f, 1f, 0f) }
+            }
+        }
+
+        `when`("setMasterVolume(-0.5f) then play") {
+            SoundManager.setMasterVolume(-0.5f)
+            SoundManager.play("land")
+
+            then("the value clamps to 0 → effective = 0") {
+                verify(exactly = 1) { mockFor("land").play(0f, 1f, 0f) }
+            }
+        }
+    }
+
+    given("setMuted(true) gates the output regardless of master/bus (T-105)") {
+        resetManager()
+
+        `when`("setMuted(true) then play(\"jump\")") {
+            // Confirm the slider values are preserved (not zeroed) by mute.
+            SoundManager.setMasterVolume(0.7f)
+            SoundManager.setVolume(0.5f)
+            SoundManager.setMuted(true)
+            SoundManager.play("jump")
+
+            then("Sound.play receives 0 (gated by mute)") {
+                verify(exactly = 1) { mockFor("jump").play(0f, 1f, 0f) }
+            }
+        }
+
+        `when`("setMuted(false) restores the prior master * bus value") {
+            // resetManager wipes registry; we re-mute, play, unmute, play again.
+            resetManager()
+            SoundManager.setMasterVolume(0.7f)
+            SoundManager.setVolume(0.5f)
+            SoundManager.setMuted(true)
+            SoundManager.play("jump")
+            // Now unmute and replay — slider values were preserved, so the next
+            // play() should use the prior master * bus.
+            SoundManager.setMuted(false)
+            SoundManager.play("jump")
+
+            then("the unmuted play uses master * bus = 0.7 * 0.5 = 0.35") {
+                verify(exactly = 1) { mockFor("jump").play(0.35f, 1f, 0f) }
+                // And the muted play recorded a 0 — both calls were captured.
+                verify(exactly = 1) { mockFor("jump").play(0f, 1f, 0f) }
+            }
+        }
+    }
+
+    given("setMuted(true) gates the UI bus too (T-105)") {
+        resetManager()
+
+        `when`("setMuted(true) then playUi(\"checkpoint\")") {
+            SoundManager.setUiVolume(0.9f)
+            SoundManager.setMuted(true)
+            SoundManager.playUi("checkpoint")
+
+            then("Sound.play receives 0 for the UI bus too") {
+                verify(exactly = 1) { mockFor("checkpoint").play(0f, 1f, 0f) }
             }
         }
     }

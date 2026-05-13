@@ -65,6 +65,9 @@ enum class StringKey {
     SETTINGS_CAMERA_LOOK_AHEAD,
 
     // ── Settings: Audio ──────────────────────────────────────────────────────
+    // T-105: master volume + mute toggle sit above the per-bus sliders.
+    SETTINGS_MASTER,
+    SETTINGS_MUTE,
     SETTINGS_MUSIC,
     SETTINGS_SFX,
     SETTINGS_UI_VOLUME,
@@ -371,6 +374,9 @@ object Strings {
         StringKey.SETTINGS_RES_2160      to "3840 × 2160  (4K / UHD)",
 
         // Settings: Audio
+        // T-105: master volume + mute toggle sit above the per-bus sliders.
+        StringKey.SETTINGS_MASTER    to "Master",
+        StringKey.SETTINGS_MUTE      to " Mute all",
         StringKey.SETTINGS_MUSIC     to "Music",
         StringKey.SETTINGS_SFX       to "SFX",
         StringKey.SETTINGS_UI_VOLUME to "UI",

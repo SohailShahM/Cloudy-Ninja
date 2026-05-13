@@ -177,7 +177,13 @@ class GameScreen(
         playerLight.attachToBody(player.body)
 
         val settings = SettingsManager.load()
+        // T-105: apply master + muted alongside per-bus volumes so a fresh
+        // GameScreen reflects all four audio settings from the saved Settings.
+        MusicManager.setMasterVolume(settings.volMaster)
+        MusicManager.setMuted(settings.muted)
         MusicManager.setMusicVolume(settings.volMusic)
+        SoundManager.setMasterVolume(settings.volMaster)
+        SoundManager.setMuted(settings.muted)
         SoundManager.setVolume(settings.volSfx)
         SoundManager.setUiVolume(settings.volUi)
 
