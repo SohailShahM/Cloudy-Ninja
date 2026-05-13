@@ -71,6 +71,12 @@ enum class StringKey {
     SETTINGS_MUSIC,
     SETTINGS_SFX,
     SETTINGS_UI_VOLUME,
+    // T-145: Sound-test subsection below the per-bus sliders. Lets players
+    // verify their volume settings without entering gameplay.
+    SETTINGS_SOUND_TEST_HEADING,
+    SETTINGS_TEST_UI_CLICK,
+    SETTINGS_TEST_SFX_JUMP,
+    SETTINGS_TEST_MUSIC_AMBIENT,
 
     // ── Settings: Controls ───────────────────────────────────────────────────
     SETTINGS_MOVE_LEFT,
@@ -384,6 +390,13 @@ object Strings {
         StringKey.SETTINGS_MUSIC     to "Music",
         StringKey.SETTINGS_SFX       to "SFX",
         StringKey.SETTINGS_UI_VOLUME to "UI",
+        // T-145: Sound-test subsection — three buttons that play a single sample
+        // each so the player can verify their volume sliders without entering
+        // gameplay. Music button auto-stops after 3s.
+        StringKey.SETTINGS_SOUND_TEST_HEADING to "Sound Test",
+        StringKey.SETTINGS_TEST_UI_CLICK      to "Play UI Click",
+        StringKey.SETTINGS_TEST_SFX_JUMP      to "Play SFX (jump)",
+        StringKey.SETTINGS_TEST_MUSIC_AMBIENT to "Play Music (ambient_arid 3s)",
 
         // Settings: Controls
         StringKey.SETTINGS_MOVE_LEFT       to "Move Left",

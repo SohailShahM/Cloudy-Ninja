@@ -16,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.SelectBox
 import com.badlogic.gdx.scenes.scene2d.ui.Slider
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
 import com.badlogic.gdx.utils.Array as GdxArray
+import com.badlogic.gdx.utils.Timer
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.kotcrab.vis.ui.VisUI
 import com.kotcrab.vis.ui.widget.Separator
@@ -52,6 +53,13 @@ class SettingsScreen(
     /** Toast feedback label shown after save/load/delete actions */
     private val toastLabel = Label("", Label.LabelStyle(bodyFont, Color(0.3f, 1f, 0.55f, 1f)))
     private var toastTimer = 0f
+
+    // T-145: Sound-test music auto-stop. A 3s [Timer.Task] is scheduled when the
+    // player presses "Play Music (ambient_arid 3s)" so the music preview doesn't
+    // keep looping after they move on. We hold a reference so [hide]/[dispose]
+    // can cancel a still-pending stop if the player leaves Settings early — see
+    // the cancel calls below.
+    private var musicTestStopTask: Timer.Task? = null
 
     companion object {
         private const val SAVE_SLOT = "save_slot_0.json"
@@ -218,7 +226,63 @@ class SettingsScreen(
                 SoundManager.setUiVolume(sliderUi.value)
             }
         })
-        inner.add(sliderUi).width(260f).padBottom(20f).row()
+        inner.add(sliderUi).width(260f).padBottom(12f).row()
+
+        // ── Sound Test (T-145) ────────────────────────────────────────────
+        // Three one-shot buttons under the per-bus sliders. Each plays a
+        // single sample through the relevant manager at the *current* slider
+        // values so the player can verify their volume choices without
+        // entering gameplay. If [Settings.muted] is true (mute checkbox above
+        // or M-key from T-118) all three correctly play silently — that's
+        // expected; the mute checkbox is the visible feedback.
+        //
+        // - UI Click: routes through [SoundManager.playUi] using the UI bus.
+        //   The "ui_click" id has no registered sample (T-035 plumbed the bus
+        //   but no UI click asset was added); [SoundManager.playUi] handles
+        //   unknown ids gracefully with a log line, so the button is still a
+        //   valid bus check.
+        // - SFX jump: plays the canonical "jump" sample on the SFX bus.
+        // - Music ambient_arid: starts the loop (fading in) and schedules a
+        //   3-second stop. The task is tracked on [musicTestStopTask] so
+        //   leaving Settings cancels it (see [hide]/[dispose]) — otherwise a
+        //   [Timer.Task] would survive the screen transition and stop music
+        //   the player started afterwards.
+        inner.add(Label(Strings.get(StringKey.SETTINGS_SOUND_TEST_HEADING), bodyStyle))
+            .left().padBottom(6f).row()
+
+        val soundTestRow = VisTable()
+        val btnTestUi = VisTextButton(Strings.get(StringKey.SETTINGS_TEST_UI_CLICK))
+        btnTestUi.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                SoundManager.playUi("ui_click")
+            }
+        })
+        val btnTestSfx = VisTextButton(Strings.get(StringKey.SETTINGS_TEST_SFX_JUMP))
+        btnTestSfx.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                SoundManager.play("jump")
+            }
+        })
+        val btnTestMusic = VisTextButton(Strings.get(StringKey.SETTINGS_TEST_MUSIC_AMBIENT))
+        btnTestMusic.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                // Cancel any prior pending stop before starting a new preview
+                // so two quick presses don't race and cut the second sample
+                // short at the first task's 3s mark.
+                musicTestStopTask?.cancel()
+                MusicManager.play("ambient_arid", fadeIn = true)
+                musicTestStopTask = Timer.schedule(
+                    object : Timer.Task() {
+                        override fun run() { MusicManager.stop() }
+                    },
+                    3f
+                )
+            }
+        })
+        soundTestRow.add(btnTestUi).padRight(8f)
+        soundTestRow.add(btnTestSfx).padRight(8f)
+        soundTestRow.add(btnTestMusic)
+        inner.add(soundTestRow).left().padBottom(20f).row()
 
         // ══════════════════════════════════════════════════════════════════
         // SECTION 3 — CONTROLS
@@ -494,9 +558,22 @@ class SettingsScreen(
     override fun show() {}
     override fun pause() {}
     override fun resume() {}
-    override fun hide() {}
+
+    /**
+     * T-145: cancel any still-pending sound-test music stop when the player
+     * leaves Settings. Without this a [Timer.Task] scheduled by the Music
+     * test button would survive the screen transition and stop music the
+     * player started afterwards (e.g. via Level Select → game start in
+     * that 3-second window).
+     */
+    override fun hide() {
+        musicTestStopTask?.cancel()
+        musicTestStopTask = null
+    }
 
     override fun dispose() {
+        musicTestStopTask?.cancel()
+        musicTestStopTask = null
         stage.dispose()
     }
 }
