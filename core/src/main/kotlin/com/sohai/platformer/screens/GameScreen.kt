@@ -537,17 +537,8 @@ class GameScreen(
     override fun show() {
         val initial = activeInputStage ?: hud.stage
         setActiveInputStage(initial)
-        // T-A10: queue an initial start-of-level capture for any campaign
-        // level. The actual capture fires at end-of-render for the first
-        // frame so the painted scene is on the back buffer. Filename is
-        // `<levelId>-start.png` (e.g. `level1-start.png`) — the autopilot
-        // typically launches level1 in CI, but capturing whichever level
-        // we actually entered keeps the artifact diagnostic for any smoke
-        // matrix entry. One-shot per GameScreen lifetime.
-        if (!checkpointStartFired) {
-            checkpointStartFired = true
-            pendingCheckpointCapture = "${level.id}-start"
-        }
+        // T-A10: level-start capture is queued LATE — see render() so we wait
+        // past the screen-fade-from-black (else the captured PNG is all-black).
     }
 
     override fun render(delta: Float) {
@@ -721,6 +712,13 @@ class GameScreen(
         // capture flag is on. Hooking up here (not inside renderer or
         // PlayerController) keeps PR #161's territory untouched.
         run {
+            // Level-start (T-A10): fire AFTER the screen-fade-from-black has
+            // completed. The fade is ~1s, so 1.5s in-level is a safe gate;
+            // before then the captured PNG would be all-black overlay.
+            if (!checkpointStartFired && runState.levelTimer >= 1.5f) {
+                checkpointStartFired = true
+                pendingCheckpointCapture = "${level.id}-start"
+            }
             // Mid-jump: rising player above a clear threshold. vy>5 m/s
             // (well above the half-gravity float window) catches a fresh
             // PLAYER_JUMP_IMPULSE=13 launch but not normal walking. One-shot.
