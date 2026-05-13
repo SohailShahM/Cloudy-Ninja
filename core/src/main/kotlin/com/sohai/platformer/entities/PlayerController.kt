@@ -14,9 +14,20 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
     private var groundContactCount = 0
     private var wallRightContactCount = 0
     private var wallLeftContactCount = 0
+    /**
+     * T-175: count of active foot-sensor contacts with MovingPlatform fixtures.
+     * Tracked as a plain Int (no Java references to platform bodies — see the
+     * class-header note about T-017's stale-body crash). Maintained by
+     * [com.sohai.platformer.physics.WorldContactListener]. When > 0, the
+     * grounded-idle coast-damping branch is skipped so Box2D's tangential
+     * friction can carry the player along with the platform.
+     */
+    private var movingPlatformContactCount = 0
     val isGrounded get() = groundContactCount > 0
     val isTouchingWallRight get() = wallRightContactCount > 0
     val isTouchingWallLeft get() = wallLeftContactCount > 0
+    /** T-175: true when the foot sensor is touching at least one moving platform. */
+    val isOnMovingPlatform get() = movingPlatformContactCount > 0
     var isDead = false
     /**
      * T-130: cause-of-death tag set by whatever code path flips [isDead]. Read
@@ -184,6 +195,21 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
         // Intentionally empty — see note above.
     }
 
+    /**
+     * T-175: maintain a counter of active foot-sensor contacts with moving
+     * platforms so the grounded-idle coast-damping branch can skip the
+     * velocity multiplier and let Box2D friction carry the player. We only
+     * store an Int — no Body references — to avoid the stale-reference hazard
+     * that triggered the T-017 JNI crash.
+     */
+    fun onMovingPlatformFootContact(begin: Boolean) {
+        movingPlatformContactCount = if (begin) {
+            movingPlatformContactCount + 1
+        } else {
+            (movingPlatformContactCount - 1).coerceAtLeast(0)
+        }
+    }
+
     /** Always returns Vector2.Zero now; physics friction handles the carry. */
     fun getRidingPlatformVelocity(): Vector2 = Vector2.Zero
 
@@ -249,6 +275,7 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
         groundContactCount = 0
         wallRightContactCount = 0
         wallLeftContactCount = 0
+        movingPlatformContactCount = 0
         // (No platformContacts to clear — friction-based carry has no Java state.)
     }
     fun update(deltaTime: Float) {
@@ -300,11 +327,16 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
 
         // Movement.
         //
-        // For moving-platform riding we let Box2D friction handle the carry
-        // (see PlayerController class header). To avoid stomping that friction
-        // when the player is idle and grounded, we leave the velocity alone in
-        // that case — Box2D-applied friction gradually pulls the player toward
-        // the platform's velocity instead.
+        // T-175: when no horizontal input is held, apply an explicit per-frame
+        // velocity dampener (Option B in the ticket) so the player snaps to
+        // rest within ~5 frames at 60Hz instead of coasting on low fixture
+        // friction. Tuning constants live in Constants.kt — GROUND_COAST_DAMPING
+        // and AIR_COAST_DAMPING — so they can be iterated cheaply.
+        //
+        // Moving-platform exception: when the foot sensor is touching a moving
+        // platform, skip the grounded dampener and let Box2D's tangential
+        // friction carry the player (this preserves the friction-based platform
+        // carry introduced after T-017's stale-body crash). See class header.
         if (wallJumpLockCounter <= 0f) {
             if (InputManager.isMovingLeft()) {
                 body.linearVelocity = Vector2(-Constants.PLAYER_SPEED, vel.y)
@@ -313,10 +345,14 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
                 body.linearVelocity = Vector2(Constants.PLAYER_SPEED, vel.y)
                 isFacingRight = true
             } else if (!isGrounded) {
-                // Air: standard horizontal friction
-                body.linearVelocity = Vector2(vel.x * 0.5f, vel.y)
+                // Air: explicit horizontal coast dampener.
+                body.linearVelocity = Vector2(vel.x * Constants.AIR_COAST_DAMPING, vel.y)
+            } else if (!isOnMovingPlatform) {
+                // Grounded + idle + NOT on a moving platform → snap toward zero.
+                body.linearVelocity = Vector2(vel.x * Constants.GROUND_COAST_DAMPING, vel.y)
             }
-            // else: grounded + idle → let Box2D friction pull us along
+            // else: grounded + idle + on moving platform → let Box2D friction
+            // carry the player along with the platform.
         }
 
         // Jumping
