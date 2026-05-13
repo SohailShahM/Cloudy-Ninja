@@ -303,6 +303,10 @@ enum class StringKey {
     // Victory
     VICTORY_FINAL_SCORE,
     VICTORY_TRIAL_TIME,
+    // T-122: Victory-screen best-time delta + hub portal lock label (i18n wire-up)
+    VICTORY_DELTA_UNDER,
+    VICTORY_DELTA_OVER,
+    HUB_PORTAL_LOCKED,
 }
 
 /**
@@ -592,6 +596,10 @@ object Strings {
         StringKey.DEATH_RECAP_TOKENS         to "Eco-tokens: {0}",
         StringKey.VICTORY_FINAL_SCORE        to "Final Score: {0}",
         StringKey.VICTORY_TRIAL_TIME         to "Trial Time: {0}",
+        // T-122: i18n wire-up for VictoryScreen delta + hub portal lock label
+        StringKey.VICTORY_DELTA_UNDER        to "−%.2fs under best",
+        StringKey.VICTORY_DELTA_OVER         to "+%.2fs slower",
+        StringKey.HUB_PORTAL_LOCKED          to "[Locked]",
     )
 
     fun get(key: StringKey): String =
