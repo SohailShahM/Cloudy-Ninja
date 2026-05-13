@@ -227,6 +227,9 @@ enum class StringKey {
     CREDITS_THANKS_PLAYERS,
     CREDITS_THANKS_OPEN_SOURCE,
 
+    // ── Splash screen (T-129) ────────────────────────────────────────────────
+    SPLASH_PRESS_ANY_KEY,
+
     // ── Compositional templates (T-091) ──────────────────────────────────────
     // Used with Strings.format(key, *args). Placeholders {0}, {1}, … map to
     // varargs by position. English word-order is encoded in the template, so
@@ -488,6 +491,9 @@ object Strings {
         // Closing thanks
         StringKey.CREDITS_THANKS_PLAYERS         to "Thank you for playing.",
         StringKey.CREDITS_THANKS_OPEN_SOURCE     to "Built on the shoulders of open-source giants.",
+
+        // Splash screen (T-129)
+        StringKey.SPLASH_PRESS_ANY_KEY to "Press any key to continue",
 
         // Compositional templates (T-091). Args are substituted by {N} index.
         StringKey.SLOT_LABEL                 to "Slot {0}",

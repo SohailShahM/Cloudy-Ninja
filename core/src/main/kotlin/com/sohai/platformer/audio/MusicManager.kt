@@ -35,6 +35,56 @@ object MusicManager {
      */
     val PRELOAD_TRACKS: List<String> = listOf("ambient_arid", "ambient_wind", "ambient_eco")
 
+    // ── Audio gate (T-129) ───────────────────────────────────────────────────
+    //
+    // Many browsers (and future HTML5/WebGL builds of this game per T-123
+    // Option 2) refuse to start an [com.badlogic.gdx.audio.AudioContext] until
+    // the page has received a user gesture — clicking or pressing a key. To
+    // make the desktop and web ports share a single audio path, we gate
+    // [play] behind a one-shot boolean: until [releaseAudioGate] is called,
+    // every [play] returns silently without allocating a [Music] instance.
+    //
+    // The splash screen calls [releaseAudioGate] when the player presses any
+    // key or clicks (after the 1-second minimum + preload gate fires). Smoke
+    // mode releases the gate in [com.sohai.platformer.Main.create] so the
+    // smoke autopilot path is unchanged.
+    //
+    // The gate is on the side of `play()` (and therefore on outbound audio
+    // events) rather than on `Gdx.audio` itself, so non-audio preload work
+    // (sound generation, file IO) is unaffected.
+    /**
+     * True iff a user gesture (or smoke-mode bypass) has unlocked audio playback.
+     * When false, [play] is a silent no-op. See class-level docs for rationale.
+     */
+    private var audioGateOpen: Boolean = false
+
+    /** True iff the audio gate has been released (test introspection). */
+    val isAudioGateOpen: Boolean
+        get() = audioGateOpen
+
+    /**
+     * Open the audio gate. Subsequent [play] calls actually allocate a [Music]
+     * instance and begin playback.
+     *
+     * Called by [com.sohai.platformer.screens.SplashScreen] on first user
+     * input, and by [com.sohai.platformer.Main.create] in smoke mode (so the
+     * smoke autopilot path is unchanged).
+     *
+     * Idempotent — multiple calls are harmless.
+     */
+    fun releaseAudioGate() {
+        audioGateOpen = true
+    }
+
+    /**
+     * Close the audio gate. Used by tests to reset state between cases.
+     * Production code should not need this — once the splash gate fires the
+     * audio context stays unlocked for the rest of the session.
+     */
+    fun resetAudioGate() {
+        audioGateOpen = false
+    }
+
     private var current: Music? = null
     private var next: Music? = null
     private var currentTrackName: String? = null
@@ -84,6 +134,12 @@ object MusicManager {
      * @param fadeIn     If true and nothing is playing, fade in from silence over [FADE_DURATION].
      */
     fun play(trackName: String, fadeIn: Boolean = false) {
+        // T-129: silent no-op until the audio gate has been released. The
+        // splash screen opens the gate on first user gesture; smoke mode
+        // opens it in Main.create(). Without this guard a future HTML5 build
+        // would fail noisily on autoplay-blocked browsers.
+        if (!audioGateOpen) return
+
         // Pull volume from settings each time we start a track
         volMusic = SettingsManager.load().volMusic
 

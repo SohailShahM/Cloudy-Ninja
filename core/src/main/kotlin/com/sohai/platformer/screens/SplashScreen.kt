@@ -2,6 +2,8 @@ package com.sohai.platformer.screens
 
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.InputAdapter
+import com.badlogic.gdx.InputMultiplexer
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
@@ -19,7 +21,7 @@ import com.sohai.platformer.i18n.StringKey
 import com.sohai.platformer.i18n.Strings
 
 /**
- * Cold-start splash screen (T-104).
+ * Cold-start splash screen (T-104, T-129).
  *
  * Shows a horizontal progress bar that tracks real asset-preload work. The
  * preload is executed incrementally across [PreloadStep] entries — one step
@@ -28,20 +30,36 @@ import com.sohai.platformer.i18n.Strings
  *
  * ## Transition gate
  *
- * The splash transitions to [MainMenuScreen] only when **both** of the
+ * The splash transitions to [MainMenuScreen] only when **all** of the
  * following are true:
  *   1. [progress] has reached `1f` (every preload step has run).
  *   2. The elapsed wall-clock time since splash creation is ≥ [MIN_DURATION_S].
+ *   3. (T-129) The player has pressed any key or clicked — **OR** [smokeBypass]
+ *      is true.
  *
  * The minimum duration prevents flash-frames on fast machines where preload
- * completes in <16 ms.
+ * completes in <16 ms. The user-gesture gate (T-129) pre-bakes the contract
+ * a future HTML5/WebGL build (T-123 Option 2) will hard-require: browsers
+ * refuse to start an `AudioContext` until the page has received a user
+ * gesture. Routing every desktop and web cold-start through the same gate
+ * means the web port doesn't need a runtime fork. When the gate fires we
+ * call [MusicManager.releaseAudioGate] so the menu / first level can begin
+ * playing music.
+ *
+ * ## Hint label
+ *
+ * After gates (1) and (2) are met, a small "Press any key to continue" hint
+ * appears under the progress bar. The hint is intentionally hidden during
+ * preload — showing it while the bar is still moving would prompt the
+ * player to bash keys before audio assets are actually generated.
  *
  * ## Smoke mode bypass
  *
  * In smoke-mode runs (`-Dcloudy.smokeMode=true`) the splash is never
  * instantiated — [com.sohai.platformer.Main.create] short-circuits straight
- * to the requested smoke-level [GameScreen]. The 1-second minimum is also
- * skipped when [smokeBypass] is true (used by tests).
+ * to the requested smoke-level [GameScreen] and releases the audio gate
+ * itself. The 1-second minimum and the user-input gate are also skipped
+ * when [smokeBypass] is true (used by tests).
  *
  * ## Preload steps
  *
@@ -119,6 +137,13 @@ class SplashScreen(
     internal var currentLabel: String = "Initialising…"
 
     /**
+     * T-129: True once the player has pressed any key or clicked. Flips the
+     * third leg of the transition gate. In [smokeBypass] mode this stays
+     * false but [shouldTransition] short-circuits past it.
+     */
+    internal var inputReceived: Boolean = false
+
+    /**
      * Factory for the screen we transition to once preload + timer gate both
      * pass. Default constructs a [MainMenuScreen]; tests override this so
      * they can verify the transition without instantiating GL-bound screens.
@@ -131,6 +156,9 @@ class SplashScreen(
     private var stage: Stage? = null
     private var shapes: ShapeRenderer? = null
     private var label: Label? = null
+
+    /** T-129: hint shown under the bar once preload + timer gates are met. */
+    private var hintLabel: Label? = null
 
     init {
         // Build GL resources only if a real Gdx graphics context exists. Tests
@@ -152,7 +180,34 @@ class SplashScreen(
             stage?.addActor(l)
             label = l
 
-            Gdx.input.inputProcessor = stage
+            // T-129: hint label sits under the progress bar. We add it now
+            // but keep it invisible (color.a = 0f) until preload + the timer
+            // gate are met — see render() below.
+            val hintFont = FontManager.getShared(24)
+            val hintStyle = Label.LabelStyle(hintFont, Color(0.85f, 0.95f, 1f, 0f))
+            val hint = Label(Strings.get(StringKey.SPLASH_PRESS_ANY_KEY), hintStyle)
+            hint.setPosition(
+                Constants.VIRTUAL_WIDTH / 2f - 140f,
+                Constants.VIRTUAL_HEIGHT / 2f - 80f,
+            )
+            stage?.addActor(hint)
+            hintLabel = hint
+
+            // T-129: install an InputAdapter alongside the Stage. The Stage
+            // owns scene2d focus but no actor consumes events on this screen,
+            // so a plain multiplexer routes all key/touch input to our gate
+            // handler in addition to the Stage.
+            val gate = object : InputAdapter() {
+                override fun keyDown(keycode: Int): Boolean {
+                    onUserInput()
+                    return false
+                }
+                override fun touchDown(x: Int, y: Int, pointer: Int, button: Int): Boolean {
+                    onUserInput()
+                    return false
+                }
+            }
+            Gdx.input.inputProcessor = InputMultiplexer(gate, stage)
         }
     }
 
@@ -170,11 +225,48 @@ class SplashScreen(
         get() = nextStep >= steps.size
 
     /**
-     * True iff [transition] should be called this frame: preload is done AND
+     * True iff both pre-input gates have cleared: preload is done AND
      * (smoke-bypass OR elapsed ≥ [MIN_DURATION_S]).
+     *
+     * The hint label is shown only while [readyForInput] is true and
+     * [inputReceived] is still false. Splitting this from [shouldTransition]
+     * lets the render loop draw the hint at exactly the right moment.
+     */
+    val readyForInput: Boolean
+        get() = preloadDone && (smokeBypass || elapsed >= MIN_DURATION_S)
+
+    /**
+     * True iff [transition] should be called this frame: preload is done,
+     * the timer gate has cleared, AND (T-129) a user gesture has been
+     * received OR [smokeBypass] is on.
      */
     val shouldTransition: Boolean
-        get() = preloadDone && (smokeBypass || elapsed >= MIN_DURATION_S)
+        get() = readyForInput && (smokeBypass || inputReceived)
+
+    /**
+     * True iff the "Press any key to continue" hint should be visible this
+     * frame: both pre-input gates met and no input received yet. False in
+     * smoke-bypass (the splash is exited before the hint would draw).
+     */
+    val showsHint: Boolean
+        get() = readyForInput && !inputReceived && !smokeBypass
+
+    /**
+     * Handle a user-input event from the InputAdapter installed in [init].
+     * Sets [inputReceived] and opens the [MusicManager] audio gate so the
+     * MainMenu / first level may begin playing music.
+     *
+     * Idempotent — repeat events are no-ops.
+     */
+    internal fun onUserInput() {
+        if (inputReceived) return
+        // Only count input as "gate cleared" once preload + timer have
+        // already passed. Otherwise an over-eager keystroke during the 1s
+        // minimum or during preload would skip ahead.
+        if (!readyForInput) return
+        inputReceived = true
+        MusicManager.releaseAudioGate()
+    }
 
     /**
      * Drive the splash forward by [delta] seconds.
@@ -209,6 +301,14 @@ class SplashScreen(
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
         tick(delta)
+
+        // T-129: toggle the hint's visibility every frame so it appears
+        // precisely at the moment both gates clear. Alpha 0 / 1 lets the
+        // label sit in the Stage without reflowing layout.
+        hintLabel?.let { hl ->
+            val a = if (showsHint) 1f else 0f
+            if (hl.color.a != a) hl.color.a = a
+        }
 
         // Title text via Stage.
         val s = stage
@@ -248,10 +348,18 @@ class SplashScreen(
         }
     }
 
-    /** Move the [Game] over to the [nextScreenFactory] target exactly once. */
+    /**
+     * Move the [Game] over to the [nextScreenFactory] target exactly once.
+     *
+     * T-129: also ensures [MusicManager.releaseAudioGate] has been called so
+     * the next screen can begin playing music. In the smoke-bypass path
+     * [onUserInput] never fires; this guarantees the gate is open before
+     * MainMenu / GameScreen runs.
+     */
     internal fun transition() {
         if (transitioned) return
         transitioned = true
+        MusicManager.releaseAudioGate()
         game.setScreen(nextScreenFactory())
     }
 

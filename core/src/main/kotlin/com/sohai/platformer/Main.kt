@@ -31,6 +31,12 @@ class Main : Game() {
             ProceduralSoundGenerator.generateAll()
             ProceduralMusicGenerator.generateAll()
             SoundManager.init()
+            // T-129: open the audio gate immediately for smoke runs. The
+            // splash screen would normally do this on first user gesture, but
+            // smoke bypasses the splash entirely, so we release here so the
+            // smoke autopilot's GameScreen can call MusicManager.play() as it
+            // did before T-129.
+            MusicManager.releaseAudioGate()
 
             val level = com.sohai.platformer.levels.LevelManager.getLevel(smokeLevel)
             if (level != null) {

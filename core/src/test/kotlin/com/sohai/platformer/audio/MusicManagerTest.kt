@@ -100,10 +100,15 @@ class MusicManagerTest : BehaviorSpec({
     /**
      * Resets the [MusicManager] singleton plus the audio/files mocks to a
      * known state. Call at the start of every `when` block.
+     *
+     * T-129: opens the audio gate by default so existing playback tests
+     * exercise the real play() path. Tests that need to assert the closed-
+     * gate no-op call [MusicManager.resetAudioGate] directly.
      */
     fun resetWorld() {
         MusicManager.stop()
         SettingsManager.resetCacheForTest()
+        MusicManager.releaseAudioGate()      // T-129: default to gate-open for existing tests
         musicByTrack.clear()
         clearMocks(audioMock, filesMock, answers = false, recordedCalls = true, childMocks = false)
 
@@ -661,6 +666,56 @@ class MusicManagerTest : BehaviorSpec({
                 MusicManager.play("ambient_arid")
                 val m = musicByTrack["ambient_arid"]!!
                 m.volume shouldBe 0.7f
+            }
+        }
+    }
+
+    // ── T-129: audio gate — play() is a no-op until releaseAudioGate() ───────
+
+    given("a MusicManager with the audio gate closed") {
+
+        `when`("play() is called before releaseAudioGate()") {
+            resetWorld()
+            MusicManager.resetAudioGate()        // explicitly close the gate
+            MusicManager.play("ambient_arid")
+
+            then("no Music instance is allocated — Gdx.audio.newMusic is never called") {
+                verify(exactly = 0) { audioMock.newMusic(any()) }
+            }
+            then("musicByTrack is empty — track was never started") {
+                musicByTrack.containsKey("ambient_arid") shouldBe false
+            }
+            then("isAudioGateOpen is false") {
+                MusicManager.isAudioGateOpen shouldBe false
+            }
+        }
+
+        `when`("releaseAudioGate() is called and play() is invoked") {
+            resetWorld()
+            MusicManager.resetAudioGate()
+            MusicManager.releaseAudioGate()
+            MusicManager.play("ambient_arid")
+
+            then("a Music instance is now allocated — gate is open") {
+                verify(exactly = 1) { audioMock.newMusic(any()) }
+            }
+            then("the track is in the per-test map") {
+                musicByTrack.containsKey("ambient_arid") shouldBe true
+            }
+            then("isAudioGateOpen is true") {
+                MusicManager.isAudioGateOpen shouldBe true
+            }
+        }
+
+        `when`("releaseAudioGate() is called multiple times") {
+            resetWorld()
+            MusicManager.resetAudioGate()
+            MusicManager.releaseAudioGate()
+            MusicManager.releaseAudioGate()
+            MusicManager.releaseAudioGate()
+
+            then("the gate stays open — idempotent") {
+                MusicManager.isAudioGateOpen shouldBe true
             }
         }
     }

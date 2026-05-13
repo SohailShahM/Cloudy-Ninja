@@ -131,6 +131,10 @@ class SplashScreenTest : BehaviorSpec({
     }
 
     // ── 2. preloadDone alone is NOT enough — timer gate must also be met ─────
+    //
+    // T-129 added a third gate (first user input). [readyForInput] is the
+    // pre-input form of the old [shouldTransition], so the original
+    // semantics are now expressed against that property.
 
     given("a SplashScreen NOT in smoke-bypass with 2 steps") {
         val s = allocBare()
@@ -144,6 +148,9 @@ class SplashScreenTest : BehaviorSpec({
             then("preloadDone is true") {
                 s.preloadDone.shouldBeTrue()
             }
+            then("readyForInput is FALSE — timer gate not met") {
+                s.readyForInput.shouldBeFalse()
+            }
             then("shouldTransition is FALSE — timer gate not met") {
                 s.shouldTransition.shouldBeFalse()
             }
@@ -154,8 +161,11 @@ class SplashScreenTest : BehaviorSpec({
             // except advance elapsed.
             repeat(20) { s.tick(0.1f) }   // +2.0s
 
-            then("shouldTransition becomes TRUE once timer ≥ MIN_DURATION_S") {
-                s.shouldTransition.shouldBeTrue()
+            then("readyForInput becomes TRUE once timer ≥ MIN_DURATION_S") {
+                s.readyForInput.shouldBeTrue()
+            }
+            then("shouldTransition is STILL FALSE — input gate not yet met (T-129)") {
+                s.shouldTransition.shouldBeFalse()
             }
             then("no extra step invocations happened (still 2)") {
                 counter[0] shouldBe 2
@@ -217,6 +227,10 @@ class SplashScreenTest : BehaviorSpec({
     }
 
     // ── 5. tick() past completion still advances elapsed (clears timer gate) ──
+    //
+    // T-129: post-T-129 the relevant timer-gate property is [readyForInput],
+    // since [shouldTransition] also requires user input. Keep this test
+    // anchored on the timer-only gate.
 
     given("a SplashScreen whose preload has already finished") {
         val s = allocBare()
@@ -233,7 +247,10 @@ class SplashScreenTest : BehaviorSpec({
                 counter[0] shouldBe before
             }
             then("elapsed advanced — eventually clears the timer gate") {
-                s.shouldTransition.shouldBeTrue()
+                s.readyForInput.shouldBeTrue()
+            }
+            then("shouldTransition stays FALSE without user input (T-129)") {
+                s.shouldTransition.shouldBeFalse()
             }
         }
     }
@@ -254,6 +271,145 @@ class SplashScreenTest : BehaviorSpec({
             }
             then("shouldTransition is TRUE — smoke-bypass, preload-done") {
                 s.shouldTransition.shouldBeTrue()
+            }
+        }
+    }
+
+    // ── 7. (T-129) input gate — hint visibility + key + click advance ────────
+
+    given("a SplashScreen NOT in smoke-bypass with 1 step, after gates clear") {
+        val s = allocBare()
+        val counter = IntArray(1)
+        primeWith(s, 1, smokeBypass = false, counter = counter)
+        // Run the one preload step + accumulate elapsed past the 1s timer.
+        s.tick(0.1f)                       // runs step 0
+        repeat(15) { s.tick(0.1f) }        // +1.5s → past MIN_DURATION_S
+
+        `when`("readyForInput is read with no input received yet") {
+            then("readyForInput is TRUE — preload + timer gates met") {
+                s.readyForInput.shouldBeTrue()
+            }
+            then("showsHint is TRUE — hint should be drawn this frame") {
+                s.showsHint.shouldBeTrue()
+            }
+            then("shouldTransition is FALSE — input gate not met") {
+                s.shouldTransition.shouldBeFalse()
+            }
+        }
+
+        `when`("the user presses a key (onUserInput is invoked)") {
+            s.onUserInput()
+
+            then("inputReceived flips to TRUE") {
+                val f = SplashScreen::class.java.getDeclaredField("inputReceived")
+                f.isAccessible = true
+                f.getBoolean(s).shouldBeTrue()
+            }
+            then("shouldTransition is now TRUE — all three gates met") {
+                s.shouldTransition.shouldBeTrue()
+            }
+            then("showsHint flips back to FALSE — input received, hint goes away") {
+                s.showsHint.shouldBeFalse()
+            }
+        }
+    }
+
+    given("a SplashScreen NOT in smoke-bypass — click instead of key") {
+        val s = allocBare()
+        val counter = IntArray(1)
+        primeWith(s, 1, smokeBypass = false, counter = counter)
+        s.tick(0.1f)
+        repeat(15) { s.tick(0.1f) }   // gates cleared
+
+        `when`("the user clicks (onUserInput is invoked — same path as keyDown)") {
+            // Both InputAdapter.keyDown and InputAdapter.touchDown route to
+            // onUserInput, so a single test covers both surfaces.
+            s.shouldTransition.shouldBeFalse()
+            s.onUserInput()
+
+            then("shouldTransition becomes TRUE") {
+                s.shouldTransition.shouldBeTrue()
+            }
+        }
+    }
+
+    // ── 8. (T-129) hint hidden during preload + during the timer gate ────────
+
+    given("a SplashScreen NOT in smoke-bypass mid-preload") {
+        val s = allocBare()
+        val counter = IntArray(1)
+        primeWith(s, 5, smokeBypass = false, counter = counter)
+
+        `when`("only some preload steps have run") {
+            s.tick(0.1f)
+            s.tick(0.1f)   // 2 of 5 done
+
+            then("preloadDone is FALSE") {
+                s.preloadDone.shouldBeFalse()
+            }
+            then("showsHint is FALSE — must not prompt the player during preload") {
+                s.showsHint.shouldBeFalse()
+            }
+        }
+
+        `when`("all preload steps done but elapsed < MIN_DURATION_S") {
+            // Run remaining 3 steps in quick succession (still under 1s total)
+            s.tick(0.05f); s.tick(0.05f); s.tick(0.05f)
+
+            then("preloadDone is TRUE") {
+                s.preloadDone.shouldBeTrue()
+            }
+            then("showsHint is FALSE — timer gate not met yet") {
+                s.showsHint.shouldBeFalse()
+            }
+        }
+    }
+
+    // ── 9. (T-129) onUserInput before gates clear is a no-op ─────────────────
+
+    given("a SplashScreen NOT in smoke-bypass with preload still running") {
+        val s = allocBare()
+        val counter = IntArray(1)
+        primeWith(s, 3, smokeBypass = false, counter = counter)
+
+        `when`("user mashes a key during preload") {
+            s.tick(0.05f)         // 1 of 3 done
+            s.onUserInput()       // should be ignored — preload not done
+            s.onUserInput()
+            s.onUserInput()
+
+            then("inputReceived stays FALSE") {
+                val f = SplashScreen::class.java.getDeclaredField("inputReceived")
+                f.isAccessible = true
+                f.getBoolean(s).shouldBeFalse()
+            }
+            then("shouldTransition is still FALSE") {
+                s.shouldTransition.shouldBeFalse()
+            }
+        }
+    }
+
+    // ── 10. (T-129) smoke-bypass skips the input gate entirely ───────────────
+
+    given("a SplashScreen in smoke-bypass mode with 2 steps") {
+        val s = allocBare()
+        val counter = IntArray(1)
+        primeWith(s, 2, smokeBypass = true, counter = counter)
+
+        `when`("steps run but no input is ever received") {
+            s.tick(0.01f)
+            s.tick(0.01f)
+
+            then("inputReceived stays FALSE — no input arrived") {
+                val f = SplashScreen::class.java.getDeclaredField("inputReceived")
+                f.isAccessible = true
+                f.getBoolean(s).shouldBeFalse()
+            }
+            then("shouldTransition is TRUE — smoke-bypass overrides the input gate") {
+                s.shouldTransition.shouldBeTrue()
+            }
+            then("showsHint is FALSE — smoke runs never draw the hint") {
+                s.showsHint.shouldBeFalse()
             }
         }
     }
