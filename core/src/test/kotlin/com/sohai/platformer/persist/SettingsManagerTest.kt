@@ -405,6 +405,66 @@ class SettingsManagerTest : BehaviorSpec({
         }
     }
 
+    // ----------------------------------------------------------------------
+    // T-208: ambient-light brightness multiplier. New additive Float — must
+    // default to 1.0 (so smoke CI / pre-T-208 saves render byte-identically),
+    // persist exactly through save → load, and not flip the keybindsCustomized
+    // detector (it's a non-keybind change).
+    // ----------------------------------------------------------------------
+
+    given("T-208: brightness default + round-trip") {
+
+        `when`("load() reads a fresh install") {
+            resetWorld()
+            val s = SettingsManager.load()
+
+            then("brightness defaults to 1.0 (= calibrated T-207 ambient)") {
+                s.brightness shouldBe 1.0f
+            }
+        }
+
+        `when`("update { copy(brightness = 0.5f) } is used") {
+            resetWorld()
+            SettingsManager.load() // seed defaults
+            SettingsManager.update { it.copy(brightness = 0.5f) }
+            SettingsManager.resetCacheForTest()
+            val read = SettingsManager.load()
+
+            then("the multiplier persists across save/reload") {
+                read.brightness shouldBe 0.5f
+            }
+            then("keybindsCustomized stays false — non-keybind change (T-121 detector intact)") {
+                read.keybindsCustomized shouldBe false
+            }
+        }
+
+        `when`("the slider is dragged to the 2.0 maximum") {
+            resetWorld()
+            SettingsManager.load()
+            SettingsManager.update { it.copy(brightness = 2.0f) }
+            SettingsManager.resetCacheForTest()
+            val read = SettingsManager.load()
+
+            then("the maximum value persists exactly (no clamping in persistence)") {
+                read.brightness shouldBe 2.0f
+            }
+        }
+
+        `when`("a legacy settings.json without brightness is loaded") {
+            resetWorld()
+            // Lacks the brightness field — deserialisation must fall back to
+            // the default 1.0f (= T-207 calibrated look) rather than throw.
+            val legacy = """{"volMaster":0.8}"""
+            File(tmpRoot, "settings.json").writeText(legacy)
+            SettingsManager.resetCacheForTest()
+            val read = SettingsManager.load()
+
+            then("brightness falls back to the default 1.0") {
+                read.brightness shouldBe 1.0f
+            }
+        }
+    }
+
     given("a legacy settings.json predating T-105 (no volMaster, no muted)") {
 
         `when`("load() deserialises the legacy file") {
