@@ -24,6 +24,63 @@ allowed purpose, or if a copy of an asset ends up in a shipped build).
 - **Bundled subset:** the `Tiles/`, `Tilemap/`, `Tiled/` subdirectories and associated
   sample/license files distributed with the pack.
 
+### LuizMelo — Martial Hero (1) sprite pack
+- **Location in this repo:** `assets/sprites/luizmelo/martial-hero-1/`
+- **Original source:** https://luizmelo.itch.io/martial-hero
+- **Mirror used for download:** https://github.com/gengen1988/unity-martial-hero (CC0-redistributing mirror — itch.io storefront is JavaScript-gated). The mirror's `License.txt` is reproduced verbatim at `assets/sprites/luizmelo/martial-hero-1/LICENSE.txt`.
+- **License:** [Creative Commons Zero v1.0 Universal (Public Domain Dedication)](https://creativecommons.org/publicdomain/zero/1.0/)
+- **Attribution required:** No (CC0 waives attribution requirements)
+- **Attribution provided anyway:** *"Martial Hero" sprite pack by LuizMelo
+  (https://luizmelo.itch.io/martial-hero) under CC0. Credits not required but provided
+  as a courtesy.* Acquired via T-179 for the T-046 graphics overhaul.
+- **Bundled subset:** the 9 PNG animation sheets (`Idle.png`, `Run.png`, `Jump.png`,
+  `Fall.png`, `Attack1.png`, `Attack2.png`, `Take Hit.png`, `Take Hit - white silhouette.png`,
+  `Death.png`) and the upstream `LICENSE.txt`.
+
+### Pixel Frog — Pixel Adventure 1 sprite pack
+- **Location in this repo:** `assets/sprites/pixelfrog/`
+- **Original source:** https://pixelfrog-assets.itch.io/pixel-adventure-1
+- **Mirror used for download:** https://github.com/marpor/PixelAdventure (Godot 3 starter; mirror README states verbatim: *"All assets courtesy of Pixel Frog, who kindly released these assets under CC0 Public Domain."* Mirror README preserved at `assets/sprites/pixelfrog/MIRROR-README.md`. Only the raw PNGs were copied — the Godot engine `.tres`/`.tscn`/`.import` metadata files were NOT bundled.)
+- **License:** [Creative Commons Zero v1.0 Universal (Public Domain Dedication)](https://creativecommons.org/publicdomain/zero/1.0/)
+- **Attribution required:** No (CC0 waives attribution requirements)
+- **Attribution provided anyway:** *"Pixel Adventure 1" asset pack by Pixel Frog
+  (https://pixelfrog-assets.itch.io/pixel-adventure-1) under CC0. Credits not required
+  but provided as a courtesy.* Acquired via T-179 for the T-046 graphics overhaul.
+- **Bundled subset:** 270 PNGs across `Background/`, `Main Characters/` (Mask Dude,
+  Ninja Frog, Pink Man, Virtual Guy), `Enemies/` (20 archetypes), `Items/`, `Terrain/`,
+  `Traps/`, `Menu/`, `Other/`.
+
+### ansimuz — Sunny Land Pixel Game Art Collection
+- **Location in this repo:** `assets/tilesets/sunny-land/`
+- **Original source:** https://ansimuz.itch.io/sunny-land-pixel-game-art
+- **Mirror used for download:** https://opengameart.org/content/sunny-land-2d-pixel-art-pack — direct ZIP at https://opengameart.org/sites/default/files/sunny-land-files.zip (the OGA mirror exposes the same CC0 files without itch.io's JS gate). Upstream `public-license.txt` reproduced verbatim at `assets/tilesets/sunny-land/LICENSE.txt`.
+- **License:** [Creative Commons Zero v1.0 Universal (Public Domain Dedication)](https://creativecommons.org/publicdomain/zero/1.0/)
+- **Attribution required:** No (CC0 waives attribution requirements)
+- **Attribution provided anyway:** *"Sunny Land Pixel Game Art Collection" by
+  Luis Zuno / @ansimuz (https://ansimuz.itch.io/sunny-land-pixel-game-art) under CC0.
+  Credits not required but provided as a courtesy.* Acquired via T-179 for the T-046
+  graphics overhaul.
+- **Bundled subset:** the `PNG/` tree from the upstream pack — environment layers
+  (back, middle, props, tileset), 23 individual prop sprites, animation frames + horizontal
+  spritesheets for player (idle/run/jump/crouch/climb/hurt), eagle, opossum, frog, cherry,
+  gem, enemy-death VFX, and item-feedback VFX. **96 PNGs total.**
+- **Explicitly NOT bundled:** the pack's OGG music file (`platformer_level03_loop.ogg`)
+  is under a separate credit-required license (music by Pascal Belisle, not CC0) — not
+  copied into this repo.
+
+### ansimuz — SunnyLand Forest of Illusion (background subset)
+- **Location in this repo:** `assets/tilesets/sunnyland-forest-of-illusion/`
+- **Original source:** https://ansimuz.itch.io/sunnyland-forest-of-illusion (itch.io storefront, JS-gated)
+- **Mirror used for download:** https://opengameart.org/content/sunnyland-forest-of-illusion — direct ZIP at https://opengameart.org/sites/default/files/forest_of_illusion_files.zip. Upstream `public-license.txt` reproduced verbatim at `assets/tilesets/sunnyland-forest-of-illusion/LICENSE.txt`.
+- **License:** [Creative Commons Zero v1.0 Universal (Public Domain Dedication)](https://creativecommons.org/publicdomain/zero/1.0/) (per the OGA page-level CC0 tag; upstream `public-license.txt` grants the equivalent rights: personal+commercial use, modification, redistribution, no credit required)
+- **Attribution required:** No (CC0 waives attribution requirements)
+- **Attribution provided anyway:** *"SunnyLand Forest of Illusion" by Luis Zuno /
+  @ansimuz (https://ansimuz.itch.io/sunnyland-forest-of-illusion) under CC0. Credits
+  not required but provided as a courtesy.* Acquired via T-179 for the T-046 graphics
+  overhaul.
+- **Bundled subset:** `Layers/back.png`, `Layers/middle.png`, `Layers/tiles.png` (the
+  parallax background + tileset), plus the two preview reference shots in `Previews/`.
+
 ---
 
 ## Bundled font assets
