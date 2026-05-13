@@ -463,6 +463,117 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 ═══════════════════════════════════════════════════════════════ -->
 
 <!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D wave 17 — visual auto-calibration cluster (2026-05-14)
+     User reported (a) character floats midway above moving platforms
+     while sitting slightly below regular tiles (foot-sensor-vs-main-body
+     Box2D mismatch), and (b) T-176's Laya slow-descent doesn't trigger
+     in actual play. Plus mandate: "automate the testing and adjusting
+     of the game." T-209/210 are the investigation pair; T-A13/A14/A16
+     build the closed-loop auto-tuning system on top of T-A10.
+═══════════════════════════════════════════════════════════════ -->
+
+### T-209 — Investigate why T-176 Laya slow-descent + camera zoom don't trigger  [P1]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S-M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_  *(T-176 PR #154 is on main)*
+- **GDD ref:** user feedback 2026-05-14 — "the gentle floating down of the second character is not implemented yet either"
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/entities/LayaAbility.kt`, `core/src/main/kotlin/com/sohai/platformer/entities/PlayerController.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt` (DynamicZoom helper from T-176)
+- **Goal:** T-176 (PR #154) shipped a `WIND_DASH_GLIDE_GRAVITY_MULTIPLIER = 0.45f` + reset conditions + dynamic camera zoom. User play-tested and the effect didn't trigger. Investigate why. Likely candidates:
+  1. `windDashGliding` flag set in LayaAbility but never read by PlayerController's gravity-apply path
+  2. Gravity reset condition fires before the player notices (e.g. `isGrounded` is true mid-dash because foot sensor stays in contact briefly)
+  3. `gravityScale` field on Box2D body isn't being applied correctly (Box2D requires `body.gravityScale = X` not `world.gravity *= X` for per-body control)
+  4. The camera-zoom branch's "player Y exceeds top viewport edge" never fires because the camera follow keeps the player centered
+- **Done when:** Root cause identified + fixed; user-visible behavior demonstrably matches the T-176 spec (descent gravity reduced post-apex, camera zooms out when player exceeds top edge). PR body includes the diagnostic trail.
+- **Constraints:** **Do NOT remove T-176's logic.** Fix the bug, don't revert. **Surface to QUESTIONS.md** if root cause is ambiguous after 30min of investigation.
+
+### T-210 — Investigate Box2D body bounds: float-on-platforms vs sink-on-tiles  [P1]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes-with-review  *(may surface architectural fix needing user judgment)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** user feedback 2026-05-14 — "character floats midway between the moving platforms and a little bit below the ground on regular tiles. looks like the bounds are not set up properly"
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/entities/PlayerController.kt` (footShape, leftSensor, rightSensor setup), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt` (sprite position math), `core/src/main/kotlin/com/sohai/platformer/entities/MovingPlatform.kt` (or wherever moving platforms live — grep), `core/src/main/kotlin/com/sohai/platformer/physics/WorldContactListener.kt`
+- **Goal:** Different resting heights on moving platforms vs static tiles → Box2D fixture-vs-sensor geometry mismatch. Identify the actual rest-position math per surface type and propose a fix.
+  - Likely cause: player's main body bottom rests on static tile surfaces (body.y = ground + halfHeight = ground + 0.32m), but on moving platforms, the foot sensor (positioned at body.y - 0.42m to -0.22m per `footShape.setAsBox(width * 0.8f, 0.1f, Vector2(0f, -height), 0f)` at line 142) is what sets up the carry. Velocity-matching on moving platforms doesn't constrain body.y the same way.
+  - Sprite is drawn at `playerPos.y - 32f/PPM - SPRITE_FOOT_OFFSET = body.y - 0.32m - 0.3m`. With body.y differing between surface types, sprite y differs too.
+- **Done when:** Either (A) a code fix makes player rest at the same visual height on both surface types (no manual constant tuning required) AND foot-offset constant can be set back near 0; OR (B) a diagnostic doc in `research/box2d-bounds-investigation.md` explains the bounds geometry, the mismatch, the recommended fix path, and the orchestrator can decide whether to ship the fix or work around with offset tuning.
+- **Constraints:** **Do NOT change `halfHeight` / `width` constants** in PlayerController without surfacing first — those affect Box2D collision shape and gameplay feel. **Do NOT modify the moving-platform velocity-carry physics** — that's gameplay-feel-tuned. **Surface to QUESTIONS.md** if the fix requires touching either of those load-bearing systems.
+
+### T-A13 — Session-start visual auto-review  [P1]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet` (the implementation) THEN `claude-code-opus` (the per-session review action)
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-A10  *(needs visual checkpoint capture)*
+- **GDD ref:** user mandate 2026-05-14 — "automate the testing and adjusting of the game"
+- **Files:** `docs/SESSION_START_VISUAL_REVIEW.md` (new), update to `START_HERE.md` linking the new doc
+- **Goal:** Document the per-session workflow:
+  1. On session start, before doing other work, run `./gradlew :lwjgl3:run -Dcloudy.smoke=true -Dcloudy.captureCheckpoints=true` in background
+  2. Wait for it to terminate (auto-quit at end of smoke run)
+  3. List files in `build/visual-checkpoints/`
+  4. Read each PNG via the Read tool
+  5. Diagnose any visible regressions, file tickets via TASKS.md spec
+  6. Continue normal session work
+- **Done when:** `docs/SESSION_START_VISUAL_REVIEW.md` exists with a clear step-by-step; `START_HERE.md` links it; future Claude sessions follow the workflow. No code change; documentation only.
+- **Constraints:** **Don't write the runtime mechanic in this ticket** — just the doc. Implementation hooks land in T-A10. **Don't enforce the workflow via a hook** — keep it discoverable in documentation; over-automation has its own brittleness.
+
+### T-A14 — Foot-offset autotuner (V0 — pixel-edge analysis)  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** L
+- **Autonomous-eligible:** yes-with-review  *(novel mechanism; may need iteration on the pixel-analysis heuristic)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-A10  *(needs checkpoint capture)*; T-206 *(needs the foot-offset constants to tune)*
+- **GDD ref:** user mandate — "automate the testing and adjusting of the game"
+- **Files:** new `core/src/main/kotlin/com/sohai/platformer/tools/FootOffsetAutotuner.kt` (or external Python/Kotlin script under `scripts/`), Gradle task wiring
+- **Goal:** Build a closed-loop auto-tuner for `SPRITE_FOOT_OFFSET_{EBO,LAYA,ZEPHYR}` that:
+  1. Runs the smoke autopilot with `cloudy.captureCheckpoints=true` and the current constant values
+  2. Reads the captured `level1-start.png` (or a dedicated `foot-alignment-checkpoint` PNG positioned with the player standing on a known tile)
+  3. **Pixel-analyzes the image:**
+     - Locate the character sprite (known approximate location in screen coords)
+     - Find the bottom-most opaque pixel of the sprite (character's actual visible feet)
+     - Find the top-most pixel of the ground tile below
+     - Compute the gap in pixels → convert to world meters via known PPM/zoom
+  4. If gap > tolerance (~2px), edit the foot-offset constant by the computed delta, commit, push
+  5. Loop until convergence (gap < 2px) or max 5 iterations
+- **Done when:** Running the autotuner produces a converged foot-offset value for at least one character (Ebo). PR body shows the iteration trail (before → step1 → step2 → converged). Smoke CI passes throughout.
+- **Constraints:** **Pixel analysis is fragile** — different sprites, different tile sets, different camera zooms all break heuristics. V0 hard-codes assumptions: character at screen-center-bottom area, ground tile is a known color (Sunny Land arid's earth-brown), max 5 iterations to avoid infinite loops. **Don't ship convergence to multiple characters at once** — converge Ebo first, prove the loop works. **Don't try to autotune brightness in this ticket** (T-208's slider handles brightness; autotuning brightness adds little value).
+
+### T-A16 — Visual regression diff (PR-vs-main checkpoint comparison)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-A10
+- **GDD ref:** complement to T-A13 — catches regressions automatically
+- **Files:** new `.github/workflows/visual-regression.yml`, new `core/src/main/kotlin/com/sohai/platformer/tools/ImageDiff.kt` (or external Python script under `scripts/`)
+- **Goal:** Add a CI job that, on each PR:
+  1. Checks out main, runs smoke + capture, archives PNGs as `main-baseline/`
+  2. Checks out the PR head, runs smoke + capture, archives PNGs as `pr-head/`
+  3. Per-PNG: pixel-diff between baseline and head; if differences exceed threshold (e.g. >5% pixels changed), flag the file
+  4. Comments the PR with a list of changed checkpoints + diff metrics
+- **Done when:** A test PR shows the workflow correctly catches a deliberate visual regression (e.g. shifting a sprite by 10px). The PR-comment integration works (uses `gh pr comment` or similar). CI cost stays under ~3min added per PR.
+- **Constraints:** **Don't fail the CI gate on visual diff** — only comment. Visual regressions need human/Claude review, not hard-failure. **Don't store baseline PNGs in the repo** — too much churn. Use the artifact-and-recompute approach. **Don't add new dependencies beyond standard Python/Kotlin image-diff libs** — Pillow is acceptable if added in a CI-only requirements file (not Gradle).
+
+### T-A15 — (RESERVED — brightness autotuner) — NOT BUILT
+- **Status:** Closed-WontFix
+- **Reasoning:** T-208 (in flight at spec time) provides a live in-game brightness slider. Auto-tuning brightness toward "some objective right value" adds little over user preference. If T-208 ships and lighting still proves hard to nail, reopen.
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════
      SPRINT D wave 16 — visual testing system (2026-05-14)
      User pushed back: "should this have been caught during testing?"
      The autopilot tests gameplay invariants but is blind to visuals

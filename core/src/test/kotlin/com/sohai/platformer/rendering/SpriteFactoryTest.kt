@@ -20,13 +20,13 @@ class SpriteFactoryTest : BehaviorSpec({
 
     given("per-character spriteFootOffset constants") {
         then("SPRITE_FOOT_OFFSET_EBO is set to the current tuning value") {
-            SpriteFactory.SPRITE_FOOT_OFFSET_EBO shouldBe 0.4f
+            SpriteFactory.SPRITE_FOOT_OFFSET_EBO shouldBe 0.3f
         }
         then("SPRITE_FOOT_OFFSET_LAYA is set to the current tuning value") {
-            SpriteFactory.SPRITE_FOOT_OFFSET_LAYA shouldBe 0.4f
+            SpriteFactory.SPRITE_FOOT_OFFSET_LAYA shouldBe 0.3f
         }
         then("SPRITE_FOOT_OFFSET_ZEPHYR is set to the current tuning value") {
-            SpriteFactory.SPRITE_FOOT_OFFSET_ZEPHYR shouldBe 0.4f
+            SpriteFactory.SPRITE_FOOT_OFFSET_ZEPHYR shouldBe 0.3f
         }
     }
 })

@@ -38,9 +38,9 @@ object SpriteFactory {
      * adjustable as standalone constants so a user/orchestrator can iterate via
      * single-line edits without redeploying logic.
      */
-    const val SPRITE_FOOT_OFFSET_EBO    = 0.4f
-    const val SPRITE_FOOT_OFFSET_LAYA   = 0.4f
-    const val SPRITE_FOOT_OFFSET_ZEPHYR = 0.4f
+    const val SPRITE_FOOT_OFFSET_EBO    = 0.3f
+    const val SPRITE_FOOT_OFFSET_LAYA   = 0.3f
+    const val SPRITE_FOOT_OFFSET_ZEPHYR = 0.3f
 
     // ── Pose enums ────────────────────────────────────────────────────────────
 
