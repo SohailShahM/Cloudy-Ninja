@@ -3,7 +3,7 @@ package com.sohai.platformer.screens
 import com.badlogic.gdx.Game
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.InputAdapter
-import com.badlogic.gdx.InputMultiplexer
+import com.badlogic.gdx.InputProcessor
 import com.badlogic.gdx.Screen
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.GL20
@@ -19,6 +19,7 @@ import com.sohai.platformer.audio.ProceduralSoundGenerator
 import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.i18n.StringKey
 import com.sohai.platformer.i18n.Strings
+import com.sohai.platformer.input.GlobalInputRouter
 
 /**
  * Cold-start splash screen (T-104, T-129).
@@ -163,6 +164,13 @@ class SplashScreen(
     /** T-129: hint shown under the bar once preload + timer gates are met. */
     private var hintLabel: Label? = null
 
+    /**
+     * T-172 (Phase B): the any-key/any-touch gate InputAdapter built once in
+     * [init] and pushed/popped through [GlobalInputRouter] in [show] / [hide].
+     * Kept as a field so [hide] can pop the exact instance that [show] pushed.
+     */
+    private var inputGate: InputProcessor? = null
+
     init {
         // Build GL resources only if a real Gdx graphics context exists. Tests
         // allocate this screen via sun.misc.Unsafe.allocateInstance and never
@@ -196,10 +204,11 @@ class SplashScreen(
             stage?.addActor(hint)
             hintLabel = hint
 
-            // T-129: install an InputAdapter alongside the Stage. The Stage
-            // owns scene2d focus but no actor consumes events on this screen,
-            // so a plain multiplexer routes all key/touch input to our gate
-            // handler in addition to the Stage.
+            // T-129: build an InputAdapter alongside the Stage that fires on any
+            // key/touch so the press-any-key gate flips. T-172 (Phase B): the
+            // adapter is now pushed onto the [GlobalInputRouter] in [show] (and
+            // popped in [hide]) so it cooperates with the F12 / M-key globals
+            // instead of clobbering them with a private InputMultiplexer.
             val gate = object : InputAdapter() {
                 override fun keyDown(keycode: Int): Boolean {
                     onUserInput()
@@ -210,7 +219,7 @@ class SplashScreen(
                     return false
                 }
             }
-            Gdx.input.inputProcessor = InputMultiplexer(gate, stage)
+            inputGate = gate
         }
     }
 
@@ -297,7 +306,23 @@ class SplashScreen(
 
     // ── libGDX Screen lifecycle ──────────────────────────────────────────────
 
-    override fun show() = Unit
+    /**
+     * T-172 (Phase B): install the router and push both the stage and the
+     * any-key/any-touch gate so the press-any-key flow + scene2d focus both
+     * coexist with the F12/M-key globals registered in [com.sohai.platformer.Main.create].
+     *
+     * Order matters: pushScreen prepends, so to preserve the pre-T-172 dispatch
+     * order of the legacy `InputMultiplexer(gate, stage)` (gate fires first),
+     * we push the stage first and then the gate — that lands the gate at
+     * index 0 and the stage at index 1.
+     */
+    override fun show() {
+        GlobalInputRouter.install()
+        val s = stage
+        if (s != null) GlobalInputRouter.pushScreen(s)
+        val g = inputGate
+        if (g != null) GlobalInputRouter.pushScreen(g)
+    }
 
     override fun render(delta: Float) {
         Gdx.gl.glClearColor(0.06f, 0.07f, 0.09f, 1f)
@@ -372,9 +397,23 @@ class SplashScreen(
 
     override fun pause() = Unit
     override fun resume() = Unit
-    override fun hide() = Unit
+    /**
+     * T-172 (Phase B): pop both pushed processors so the next screen owns the
+     * router. Pop the gate first (it was pushed last), then the stage.
+     */
+    override fun hide() {
+        val g = inputGate
+        if (g != null) GlobalInputRouter.popScreen(g)
+        val s = stage
+        if (s != null) GlobalInputRouter.popScreen(s)
+    }
 
     override fun dispose() {
+        // T-172 (Phase B): defensive pop covers dispose() reached without hide().
+        val g = inputGate
+        if (g != null) GlobalInputRouter.popScreen(g)
+        val s = stage
+        if (s != null) GlobalInputRouter.popScreen(s)
         stage?.dispose()
         shapes?.dispose()
     }
