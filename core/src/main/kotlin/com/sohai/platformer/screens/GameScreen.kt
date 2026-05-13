@@ -488,8 +488,30 @@ class GameScreen(
         achievementToast.resize(width, height)
     }
 
-    override fun pause()  {}
-    override fun resume() {}
+    /**
+     * T-112: libGDX fires [pause] when the desktop window loses focus (alt-tab,
+     * minimise, another window stealing focus). Raise the existing T-063 pause
+     * overlay so the game freezes until the player explicitly resumes. No-op if
+     * we're already paused (an explicit ESC press, etc.) — avoids replaying the
+     * fade animation when focus loss arrives while paused.
+     *
+     * The smoke-mode guard lives in [Main.pause]; this method is intentionally
+     * unconditional so other auto-pause callers (if any are added later) get
+     * the same behaviour.
+     */
+    override fun pause() {
+        if (!isPaused) setPaused(true)
+    }
+
+    /**
+     * T-112: libGDX fires [resume] when the window regains focus. We do
+     * **not** auto-clear the pause overlay — the player must explicitly click
+     * Resume or press ESC. [Main.resume] skips the super.resume() forward, but
+     * this is also defensive in case a future caller invokes it directly.
+     */
+    override fun resume() {
+        // Intentionally a no-op — overlay persists until explicit input.
+    }
     override fun hide()   {}
 
     override fun dispose() {
