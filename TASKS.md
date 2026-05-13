@@ -328,19 +328,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Implement libGDX's `ApplicationListener.pause()` in `Main` (or the active `Game` subclass) to forward to the active screen if it's a `GameScreen`. `GameScreen.pause()` activates the existing pause overlay (T-063). On `resume()`, the overlay stays up — player must explicitly resume. Respect `SMOKE_MODE` — skip auto-pause in smoke.
 - **Done when:** Alt-tab while in-game triggers the pause overlay; resume keeps overlay up until input; smoke CI passes (no auto-pause in smoke mode).
 
-### T-117 — Audio ducking on pause overlay  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-104  *(MusicManager contention)*
-- **GDD ref:** GAME_PLAN.md (alpha audio polish)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
-- **Goal:** Add `MusicManager.duck(amount: Float = 0.3f, fadeMs: Int = 250)` and `MusicManager.unduck(fadeMs: Int = 250)`. While ducked, effective volume is `volMusic * amount`. `GameScreen` calls `duck()` on pause-overlay open, `unduck()` on close. Stacks idempotently — multiple `duck()` calls collapse, one `unduck()` restores.
-- **Done when:** Pause open ↔ music dips audibly; close ↔ music restores; rapid open/close doesn't desync the fade; existing `MusicManagerTest` passes; new test covers duck/unduck math; smoke CI passes.
-
 ### T-118 — Master mute keyboard shortcut (M key)  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -477,6 +464,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-117 — Audio ducking on pause overlay  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-117-audio-duck-pause
+- **Started:** 2026-05-13
+- **Depends on:** T-104  *(MusicManager contention)*
+- **GDD ref:** GAME_PLAN.md (alpha audio polish)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
+- **Goal:** Add `MusicManager.duck(amount: Float = 0.3f, fadeMs: Int = 250)` and `MusicManager.unduck(fadeMs: Int = 250)`. While ducked, effective volume is `volMusic * amount`. `GameScreen` calls `duck()` on pause-overlay open, `unduck()` on close. Stacks idempotently — multiple `duck()` calls collapse, one `unduck()` restores.
+- **Done when:** Pause open ↔ music dips audibly; close ↔ music restores; rapid open/close doesn't desync the fade; existing `MusicManagerTest` passes; new test covers duck/unduck math; smoke CI passes.
 
 ### T-119 — Save slot delete confirmation modal  [P3]
 - **Status:** In Progress
