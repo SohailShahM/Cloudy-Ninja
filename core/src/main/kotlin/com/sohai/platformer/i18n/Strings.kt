@@ -105,6 +105,8 @@ enum class StringKey {
     SETTINGS_ASSIST_INFINITE_SPIRITS,
     SETTINGS_ASSIST_INVINCIBLE,
     SETTINGS_ASSIST_SLOW_SPEED,
+    // T-208: ambient-light brightness multiplier slider (0.0 – 2.0, default 1.0).
+    SETTINGS_BRIGHTNESS,
 
     // ── Settings: Reset-to-defaults (T-143) ──────────────────────────────────
     // Footer button + confirmation modal that restores every Settings field
@@ -437,6 +439,8 @@ object Strings {
         StringKey.SETTINGS_ASSIST_INFINITE_SPIRITS to " Infinite Spirits (no game over)",
         StringKey.SETTINGS_ASSIST_INVINCIBLE      to " Invincible (no damage)",
         StringKey.SETTINGS_ASSIST_SLOW_SPEED      to "Slow Speed",
+        // T-208: ambient-light brightness multiplier slider in Accessibility.
+        StringKey.SETTINGS_BRIGHTNESS             to "Brightness",
 
         // Settings: Reset-to-defaults (T-143). Footer button + confirmation
         // modal. Cancel is default-focused; ESC cancels. Save data is NOT

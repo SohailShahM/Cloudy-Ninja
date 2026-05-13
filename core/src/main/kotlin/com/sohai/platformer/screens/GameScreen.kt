@@ -98,6 +98,17 @@ class GameScreen(
     private val playerLight: PointLight
     private val footstepColor = Color(0.6f, 0.55f, 0.45f, 0.8f)
 
+    /**
+     * T-208: last applied ambient-brightness multiplier. Compared against
+     * [SettingsManager.load().brightness] each frame; when it changes (user
+     * dragged the slider in Settings → Accessibility) we re-push the ambient
+     * to [rayHandler]. Initialised to 1f and overwritten in init{} after the
+     * first apply, so the very first render() tick is always a no-op match.
+     * Cost is a float compare + a cached Settings.load per frame — well under
+     * the smoke-CI budget.
+     */
+    private var lastBrightness: Float = 1f
+
     // ── Physics world ─────────────────────────────────────────────────────────
     private val world: World
 
@@ -210,9 +221,22 @@ class GameScreen(
 
         RayHandler.setGammaCorrection(true)
         RayHandler.useDiffuseLight(true)
+        // T-208: read brightness once at init and apply via multiplication so
+        // a player's saved preference takes effect immediately on level entry
+        // (rather than waiting for the first render() tick + dirty check).
+        // The constants stay unmodified — multiplier = 1.0 reproduces the
+        // T-207 calibrated values exactly. The per-frame check below catches
+        // live edits while gameplay is running.
+        val initialBrightness = SettingsManager.load().brightness
         rayHandler = RayHandler(world).apply {
-            setAmbientLight(AMBIENT_LIGHT_R, AMBIENT_LIGHT_G, AMBIENT_LIGHT_B, AMBIENT_LIGHT_A)
+            setAmbientLight(
+                AMBIENT_LIGHT_R * initialBrightness,
+                AMBIENT_LIGHT_G * initialBrightness,
+                AMBIENT_LIGHT_B * initialBrightness,
+                AMBIENT_LIGHT_A,
+            )
         }
+        lastBrightness = initialBrightness
 
         level.setup(world, obstacleManager, movingPlatforms)
 
@@ -586,6 +610,24 @@ class GameScreen(
         }
 
         // Layer 3: dynamic lighting
+        // T-208: live brightness apply. SettingsManager.load() returns a
+        // cached singleton (no disk I/O), and the dirty check skips the
+        // setAmbientLight call on every frame where the slider hasn't moved.
+        // When the player drags the slider in Settings → Accessibility,
+        // SettingsScreen writes through update() and this branch picks the
+        // new value up on the next gameplay frame. No event subscription
+        // needed — the cached load + float compare is cheaper than any
+        // observer plumbing.
+        val currentBrightness = SettingsManager.load().brightness
+        if (currentBrightness != lastBrightness) {
+            rayHandler.setAmbientLight(
+                AMBIENT_LIGHT_R * currentBrightness,
+                AMBIENT_LIGHT_G * currentBrightness,
+                AMBIENT_LIGHT_B * currentBrightness,
+                AMBIENT_LIGHT_A,
+            )
+            lastBrightness = currentBrightness
+        }
         rayHandler.setCombinedMatrix(
             camera.combined,
             camera.position.x, camera.position.y,

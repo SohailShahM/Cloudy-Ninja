@@ -125,7 +125,15 @@ data class Settings(
     // existing saves byte-identical and renders byte-identically to pre-T-142.
     // Coexists with the existing best-time / score-block timer — both are
     // visible simultaneously when this is on.
-    val speedrunTimer: Boolean = false
+    val speedrunTimer: Boolean = false,
+
+    // T-208: Ambient-light brightness multiplier. Multiplies the calibrated
+    // AMBIENT_LIGHT_R/G/B constants in [GameScreen] at init and live each
+    // frame (cheap dirty check). 1.0 = T-207-calibrated default; 0.0 =
+    // pitch-black; 2.0 = doubled. The alpha channel is intentionally not
+    // multiplied — it controls blending, not luminance. Default 1.0 keeps
+    // pre-T-208 saves byte-identical and renders byte-identically.
+    val brightness: Float = 1.0f
 )
 
 /**

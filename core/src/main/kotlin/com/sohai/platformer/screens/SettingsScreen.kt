@@ -446,6 +446,26 @@ class SettingsScreen(
         })
         inner.add(chkHighContrast).left().padBottom(8f).row()
 
+        // T-208: ambient-light brightness multiplier. Sits in Accessibility
+        // because over-dark scenes are an accessibility concern (low-vision
+        // players, glossy displays, sunny rooms). Multiplies the calibrated
+        // AMBIENT_LIGHT_R/G/B constants in GameScreen at init AND live each
+        // frame via a cheap dirty check — see [GameScreen.lastBrightness].
+        // Range 0.0–2.0 with 0.05 step; default 1.0 = T-207 calibrated look.
+        inner.add(Label(Strings.get(StringKey.SETTINGS_BRIGHTNESS), bodyStyle))
+            .left().padRight(16f)
+        val sliderBrightness = Slider(0.0f, 2.0f, 0.05f, false, skin)
+        sliderBrightness.value = settings.brightness
+        sliderBrightness.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(brightness = sliderBrightness.value) }
+                // No imperative push to GameScreen: the per-frame dirty check
+                // in GameScreen.render picks the new value up on the next frame.
+                // This keeps SettingsScreen agnostic of the renderer.
+            }
+        })
+        inner.add(sliderBrightness).width(260f).padBottom(8f).row()
+
         val chkShake = CheckBox(Strings.get(StringKey.SETTINGS_SCREEN_SHAKE), skin)
         chkShake.isChecked = settings.screenShake
         chkShake.addListener(object : ChangeListener() {
