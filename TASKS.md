@@ -301,19 +301,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** In the unknown-sound-id branch of `SoundManager.play()` (search for `Gdx.app.log` referring to unknown ids), switch to `Gdx.app.error(...)`. Update the existing test to assert error-level logging instead of info.
 - **Done when:** Unknown sound id triggers an error-level log; existing tests pass; smoke CI passes.
 
-### T-112 — Auto-pause on window focus loss  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-104  *(both touch `Main.kt` — sequential)*
-- **GDD ref:** GAME_PLAN.md (alpha polish — players will alt-tab during testing)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
-- **Goal:** Implement libGDX's `ApplicationListener.pause()` in `Main` (or the active `Game` subclass) to forward to the active screen if it's a `GameScreen`. `GameScreen.pause()` activates the existing pause overlay (T-063). On `resume()`, the overlay stays up — player must explicitly resume. Respect `SMOKE_MODE` — skip auto-pause in smoke.
-- **Done when:** Alt-tab while in-game triggers the pause overlay; resume keeps overlay up until input; smoke CI passes (no auto-pause in smoke mode).
-
 ### T-118 — Master mute keyboard shortcut (M key)  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -450,6 +437,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-112 — Auto-pause on window focus loss  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-112-auto-pause-focus
+- **Started:** 2026-05-13
+- **Depends on:** T-104  *(both touch `Main.kt` — sequential)*
+- **GDD ref:** GAME_PLAN.md (alpha polish — players will alt-tab during testing)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
+- **Goal:** Implement libGDX's `ApplicationListener.pause()` in `Main` (or the active `Game` subclass) to forward to the active screen if it's a `GameScreen`. `GameScreen.pause()` activates the existing pause overlay (T-063). On `resume()`, the overlay stays up — player must explicitly resume. Respect `SMOKE_MODE` — skip auto-pause in smoke.
+- **Done when:** Alt-tab while in-game triggers the pause overlay; resume keeps overlay up until input; smoke CI passes (no auto-pause in smoke mode).
 
 ### T-107 — Hidden eco-token in each campaign level + "Collector" achievement  [P3]
 - **Status:** In Progress
