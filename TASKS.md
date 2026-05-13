@@ -420,25 +420,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Fresh installs default to Q for swap; players who already touched Controls keep their bindings; players who never touched Controls auto-upgrade on next launch; test covers all three cases.
 - **Constraints:** Save-data-adjacent. Existing saves without `keybindsCustomized` field treated as `false` (i.e., legacy user gets the upgrade — they wouldn't be filing bug reports about S working). Cite T-073 research in the PR description.
 
-### T-122 — Wire 3 high-confidence i18n strings to StringKey (T-120 follow-up)  [P3]
-- **Status:** Todo
-- **Tool:** `copilot-agent`  *(Copilot dogfood — single-purpose, file-isolated)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-098, T-101  *(LevelRenderer + Strings contention)*
-- **GDD ref:** `research/i18n-coverage.md` (T-120 deliverable) — 3 high-confidence hardcoded English-phrase hits
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/VictoryScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`
-- **Goal:** Add 3 new `StringKey` entries and replace the literals at:
-  - `VictoryScreen.kt:61` — `"−%.2fs under best"` → `StringKey.VICTORY_DELTA_UNDER` (format arg: seconds)
-  - `VictoryScreen.kt:62` — `"+%.2fs slower"` → `StringKey.VICTORY_DELTA_OVER`
-  - `LevelRenderer.kt:500` — `"[Locked]"` → `StringKey.HUB_PORTAL_LOCKED`
-  Use `Strings.format(key, ...)` consistently with the existing 130+ keys pattern.
-- **Done when:** The 3 literals are gone from source; smoke CI passes; existing tests pass.
-- **Constraints:** Only these 3 strings. Do NOT broaden scope to the 7 numeric format templates from the audit — those are deferred until a second locale lands.
-
-
 <!-- ═══════════════════════════════════════════════════════════════
      ALPHA BLOCKERS — surfaced mid-autonomous-run by completed audits.
      T-126 is HUMAN-REQUIRED (Calibri license violation). T-127 is
@@ -516,6 +497,25 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-122 — Wire 3 high-confidence i18n strings to StringKey (T-120 follow-up)  [P3]
+- **Status:** In Progress
+- **Tool:** `copilot-agent`  *(Copilot dogfood — single-purpose, file-isolated)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** copilot-agent
+- **Branch:** copilot/T-122-i18n-wireup
+- **Started:** 2026-05-13
+- **Depends on:** T-098, T-101  *(LevelRenderer + Strings contention)*
+- **GDD ref:** `research/i18n-coverage.md` (T-120 deliverable) — 3 high-confidence hardcoded English-phrase hits
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/VictoryScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`
+- **Goal:** Add 3 new `StringKey` entries and replace the literals at:
+  - `VictoryScreen.kt:61` — `"−%.2fs under best"` → `StringKey.VICTORY_DELTA_UNDER` (format arg: seconds)
+  - `VictoryScreen.kt:62` — `"+%.2fs slower"` → `StringKey.VICTORY_DELTA_OVER`
+  - `LevelRenderer.kt:500` — `"[Locked]"` → `StringKey.HUB_PORTAL_LOCKED`
+  Use `Strings.format(key, ...)` consistently with the existing 130+ keys pattern.
+- **Done when:** The 3 literals are gone from source; smoke CI passes; existing tests pass.
+- **Constraints:** Only these 3 strings. Do NOT broaden scope to the 7 numeric format templates from the audit — those are deferred until a second locale lands.
 
 ### T-110 — ScreenFade semantics: rename or doc  [P3]
 - **Status:** In Progress
