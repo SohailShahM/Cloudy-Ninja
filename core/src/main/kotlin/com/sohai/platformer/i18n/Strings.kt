@@ -31,6 +31,9 @@ enum class StringKey {
     ACHIEVEMENT_LOCKED_LABEL,
     MENU_ACHIEVEMENTS,
     STATS_ACHIEVEMENT_COUNT,
+    // T-099: Achievement progress counter on MainMenu
+    MENU_ACHIEVEMENT_PROGRESS,
+    MENU_ACHIEVEMENT_PROGRESS_COMPLETE,
 
     // ── Settings: headers ────────────────────────────────────────────────────
     SETTINGS_TITLE,
@@ -279,6 +282,9 @@ object Strings {
         StringKey.ACHIEVEMENT_LOCKED_LABEL      to "🔒 Locked",
         StringKey.MENU_ACHIEVEMENTS             to "Achievements",
         StringKey.STATS_ACHIEVEMENT_COUNT       to "Achievements: {0}/{1} unlocked",
+        // T-099: Achievement progress counter on MainMenu
+        StringKey.MENU_ACHIEVEMENT_PROGRESS          to "Achievements: {0}/{1} unlocked",
+        StringKey.MENU_ACHIEVEMENT_PROGRESS_COMPLETE to "Achievements: All {0} unlocked!",
 
         // Settings: headers
         StringKey.SETTINGS_TITLE         to "SETTINGS",
