@@ -463,6 +463,61 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 ═══════════════════════════════════════════════════════════════ -->
 
 <!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D wave 15 — T-046 gap-fill (2026-05-14)
+     After T-186..T-193 finish the CC0-stack integration, these are
+     the assets STILL not covered by any bundled pack. Per inventory:
+     boss sprite, dash + ability-cast + wall-slide animations, lightning
+     VFX, Cloud Atlas UI flourishes. Each must be commissioned, AI-gen'd
+     (user has nano-banana 2 via Google AI Pro), or hand-authored.
+═══════════════════════════════════════════════════════════════ -->
+
+### T-200 — Storm Sentinel boss sprite  [P2]
+- **Status:** Todo · **Tool:** `human-then-claude-code-sonnet` · **Tier:** L · **Autonomous-eligible:** **no** *(art-direction call)*
+- **Depends on:** T-186 *(scaffold proven on Ebo first)*
+- **GDD ref:** `research/asset-pack-inventory.md` "Storm Sentinel boss → No pack covers"
+- **Files:** new `assets/sprites/boss/storm-sentinel/` (sprite sheets), `entities/StormSentinel.kt` (replace ShapeRenderer paths), `LevelRenderer.kt` (boss render path)
+- **Goal:** Acquire a boss-scale sprite for Storm Sentinel. Required states: idle/telegraph-lightning/telegraph-sweep/lightning-fire/sweep-fire/take-hit/death. Boss is currently a ~0.9m-tall ShapeRenderer rectangle at `BODY_RADIUS=0.45m`. Sprite should be ~96-128px frame (larger than 48px player to read as "boss").
+- **Art source decision (user picks one):**
+  1. **Paid LuizMelo boss pack** (e.g. Evil Wizard, Hero Knight — $5-10 on itch.io). Same artist as MH1/MH2/MH3 → consistent style. Manual download path (itch JS gate).
+  2. **AI-gen via nano-banana 2** — generate sprite sheets with anime-pixel-art prompts. Risk: animation-frame consistency.
+  3. **Commission** — hire pixel artist; ~$100-300 for 7 boss states matching MH style. Timeline: 1-3 weeks.
+- **Done when:** Sprite sheets placed under `assets/sprites/boss/storm-sentinel/`; `StormSentinel.kt` routes through `SheetCharacterAtlas` analog (or extension); high-contrast silhouette path (T-170) preserved; smoke CI passes.
+- **Constraints:** Must match the visual scale of the rest of the cast (48px chars, this is ~3-4× character size). License must be commercial-use OK + redistribution OK (CC0 / paid royalty-free with redistribution rights).
+
+### T-201 — Dash animation frames (Ebo/Laya/Zephyr × 1)  [P3]
+- **Status:** Todo · **Tool:** `human-then-claude-code-sonnet` · **Tier:** M · **Autonomous-eligible:** **no** *(visual)*
+- **Depends on:** T-188 *(all 3 character integrations done; the dash sheets fill specific gaps)*
+- **Files:** new `assets/sprites/luizmelo/martial-hero-{1,2,3}/Dash.png`, `SheetCharacterAtlas.kt` (add `dash: Array<TextureRegion>` field; load when present), `LevelRenderer.kt` (consume the new state)
+- **Goal:** Hand-author or AI-gen 4-6 frame dash animation per character. Match the 48×48 frame size + MH1/MH2/MH3 art line-work. The dash is currently a sub-state (Laya's Wind Dash already exists as a physics path) but visually inherits run/idle frames.
+- **Source options:** AI gen (nano-banana 2 with prompts seeded from existing MH sheets); commission ($30-60 per character).
+
+### T-202 — Ability-cast animation (Ebo Seed Slam / Laya Wind Dash / Zephyr Cloud Float)  [P3]
+- **Status:** Todo · **Tool:** `human-then-claude-code-sonnet` · **Tier:** M · **Autonomous-eligible:** **no**
+- **Depends on:** T-188
+- **Files:** new `assets/sprites/luizmelo/martial-hero-{1,2,3}/Cast.png` (or per-ability filename), `SheetCharacterAtlas.kt`, ability files
+- **Goal:** Per-character ability-cast frames. Ebo's Seed Slam currently maps to MH1's Attack1.png (placeholder). Replace with dedicated 4-8 frame cast animation that visually distinguishes the ability from a generic attack.
+
+### T-203 — Wall-slide animation (per character)  [P3]
+- **Status:** Todo · **Tool:** `human-then-claude-code-sonnet` · **Tier:** S · **Autonomous-eligible:** **no**
+- **Depends on:** T-188
+- **Files:** new `assets/sprites/luizmelo/martial-hero-{1,2,3}/WallSlide.png`, `SheetCharacterAtlas.kt`, `LevelRenderer.kt`
+- **Goal:** 2-3 frame wall-slide animation per character. T-186 used `idle` as placeholder for wall-slide (marked with `// T-046 wall-slide gap` in the code); replace with dedicated frames. Alternative path: borrow PixelFrog's wall-jump animation (already in repo at `assets/sprites/pixelfrog/Main Characters/.../Wall Jump (32x32).png`) and visually overlay onto the LuizMelo body — composite approach.
+
+### T-204 — Lightning VFX (boss attack + level hazards)  [P3]
+- **Status:** Todo · **Tool:** `human-then-claude-code-sonnet` · **Tier:** S · **Autonomous-eligible:** **no**
+- **Depends on:** _none_ (independent VFX layer)
+- **Files:** new `assets/sprites/vfx/lightning/`, `rendering/LightningRenderer.kt` (or extend existing particle system)
+- **Goal:** Replace the procedural lightning ShapeRenderer effect with a sprite-based animation. 4-6 frames of a lightning-bolt strike; play when the boss telegraphs + fires. AI-gen friendly: lightning bolts have low frame-coherence requirements (each strike is fresh).
+
+### T-205 — Cloud Atlas UI flourishes  [P3]
+- **Status:** Todo · **Tool:** `human-then-claude-code-sonnet` · **Tier:** S · **Autonomous-eligible:** **no**
+- **Depends on:** T-184 *(Claude Design card layout; pairs naturally)*
+- **Files:** new `assets/sprites/ui/cloud-atlas/`, `CloudAtlasScreen.kt`, `CloudAtlasOverlay.kt`
+- **Goal:** Decorative flourishes for the Cloud Atlas card UI — corner ornaments, divider lines, page-flip transition art. Static UI art is the AI-gen sweet spot (no animation coherence problem). Hand-author or nano-banana 2.
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════
      SPRINT D wave 14 — T-046 integration cascade (2026-05-14)
      T-181 placed 6 CC0 packs and the inventory at research/asset-pack-inventory.md.
      T-180 introduces the rendering scaffold; T-186..T-193 swap one
