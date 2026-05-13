@@ -26,6 +26,39 @@ allowed purpose, or if a copy of an asset ends up in a shipped build).
 
 ---
 
+## Bundled font assets
+
+### Inter (Rasmus Andersson)
+- **Location in this repo:** `assets/fonts/main.ttf` (Inter Regular v4.0, extracted from
+  `extras/ttf/Inter-Regular.ttf` of the upstream release)
+- **Original source:** https://github.com/rsms/inter (release v4.0)
+- **License:** [SIL Open Font License, Version 1.1](https://scripts.sil.org/OFL)
+- **Copyright:** `Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)`
+- **Attribution required:** Yes — under OFL 1.1, redistribution of the Font Software
+  must include the copyright notice and license. Bundled below in machine-readable
+  form (this file) per OFL §2 ("These can be included either as stand-alone text files,
+  human-readable headers or in the appropriate machine-readable metadata fields").
+- **Reserved Font Name:** "Inter" is a Reserved Font Name under OFL §3. We bundle
+  the unmodified font binary under its original name; no modified version is shipped.
+- **Replaces:** the previously-bundled Microsoft Calibri Regular (T-126). Calibri is
+  Microsoft-proprietary and was not redistributable; it has been removed and overwritten
+  by Inter at the same path (`assets/fonts/main.ttf`) so the `FontManager.FONT_PATH`
+  reference (`fonts/main.ttf`) remains valid.
+
+**License preamble (verbatim from the upstream `LICENSE.txt`):**
+
+> Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)
+>
+> This Font Software is licensed under the SIL Open Font License, Version 1.1.
+> This license is copied below, and is also available with a FAQ at:
+> http://scripts.sil.org/OFL
+
+The full SIL Open Font License 1.1 text is available at
+https://scripts.sil.org/OFL and ships verbatim with every upstream Inter release
+(`LICENSE.txt`). The font binary itself also carries the license in its name table.
+
+---
+
 ## Generated assets (original work, included for completeness)
 
 These are produced by code in this repository at build time or runtime. They are
