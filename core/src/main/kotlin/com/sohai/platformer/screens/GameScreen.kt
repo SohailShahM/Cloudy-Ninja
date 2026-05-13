@@ -27,14 +27,13 @@ import com.sohai.platformer.entities.EcoToken
 import com.sohai.platformer.entities.Enemy
 import com.sohai.platformer.entities.MovingPlatform
 import com.sohai.platformer.entities.PlayerController
-import com.sohai.platformer.entities.SmogSprite
 import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.entities.StormSentinel
 import com.sohai.platformer.i18n.StringKey
 import com.sohai.platformer.i18n.Strings
 import com.sohai.platformer.levels.Level
+import com.sohai.platformer.levels.LevelEntityFactory
 import com.sohai.platformer.levels.LevelManager
-import com.sohai.platformer.levels.TmxLevel
 import com.sohai.platformer.persist.SettingsManager
 import com.sohai.platformer.physics.WorldContactListener
 import com.sohai.platformer.rendering.CharacterAnimator
@@ -208,65 +207,14 @@ class GameScreen(
         // ── Wire particle callbacks from player ───────────────────────────────
         // renderer is created below; player callbacks reference renderer via lambda closure.
 
-        // Instantiate enemies from level definition (shared list: renderer draws, runState updates)
-        val enemies = mutableListOf<Enemy>()
-        if (level is TmxLevel) {
-            for (def in level.getEnemyDefs()) {
-                when (def.type) {
-                    "smog_sprite" -> enemies.add(
-                        SmogSprite.create(
-                            world,
-                            x = def.xPx / Constants.PPM,
-                            y = def.yPx / Constants.PPM,
-                            patrolLeftX = def.patrolLeftPx / Constants.PPM,
-                            patrolRightX = def.patrolRightPx / Constants.PPM
-                        )
-                    )
-                    else -> Gdx.app.error("GameScreen", "Unknown enemy type: ${def.type}")
-                }
-            }
-            if (enemies.isNotEmpty()) {
-                Gdx.app.log("GameScreen", "Spawned ${enemies.size} enemies for level ${level.id}")
-            }
-        }
-
-        // Instantiate Drift Husks from level definition (parallel to enemies; T-062)
-        val driftHusks = mutableListOf<DriftHusk>()
-        if (level is TmxLevel) {
-            for (def in level.getDriftHuskDefs()) {
-                driftHusks.add(
-                    DriftHusk.create(
-                        world,
-                        x        = def.xPx        / Constants.PPM,
-                        y        = def.yPx        / Constants.PPM,
-                        triggerX = def.triggerXPx / Constants.PPM
-                    )
-                )
-            }
-            if (driftHusks.isNotEmpty()) {
-                Gdx.app.log("GameScreen", "Spawned ${driftHusks.size} Drift Husks for level ${level.id}")
-            }
-        }
-
-        // Instantiate boss from level definition, if present
-        if (level is TmxLevel) {
-            val bdef = level.getBossDef()
-            if (bdef != null) {
-                when (bdef.type) {
-                    "storm_sentinel" -> {
-                        sentinel = StormSentinel(
-                            world,
-                            x          = bdef.xPx          / Constants.PPM,
-                            y          = bdef.yPx          / Constants.PPM,
-                            arenaLeft  = bdef.arenaLeftPx  / Constants.PPM,
-                            arenaRight = bdef.arenaRightPx / Constants.PPM
-                        )
-                        Gdx.app.log("GameScreen", "Storm Sentinel spawned at (${bdef.xPx}, ${bdef.yPx}) px")
-                    }
-                    else -> Gdx.app.error("GameScreen", "Unknown boss type: ${bdef.type}")
-                }
-            }
-        }
+        // T-106: Instantiate enemies + drift husks + boss via the factory.
+        // GameScreen still owns the Box2D world; factory just builds the entities.
+        // New entity types plug in via LevelEntityFactory, not via more parallel
+        // blocks here.
+        val spawned = LevelEntityFactory.spawn(level, world)
+        val enemies = spawned.enemies
+        val driftHusks = spawned.driftHusks
+        sentinel = spawned.boss
 
         tileRenderer = TileRenderer(spriteBatch, camera)
 
