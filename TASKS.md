@@ -479,12 +479,12 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Constraints:** SettingsScreen-only. Don't add new assets. Music test plays for 3s then stops (don't leave music looping behind the player after test).
 
 ### T-146 — Achievement notification log in AchievementsScreen  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`
 - **Tier:** M
 - **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
+- **Agent:** `claude-code-sub-agent` *(2026-05-13)*
+- **Branch:** `claude/T-146-achievement-timestamps`
 - **Depends on:** T-128, T-113  *(unlocker pipeline + save migration scaffold for new timestamp field)*
 - **GDD ref:** GAME_PLAN.md (completionist engagement — players want a timeline of when they unlocked each achievement)
 - **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt` (add `achievementTimestamps: Map<String, Long> = emptyMap()` additive field; ISO date or epoch ms), `core/src/main/kotlin/com/sohai/platformer/progression/AchievementUnlocker.kt` (record timestamp on unlock), `core/src/main/kotlin/com/sohai/platformer/screens/AchievementsScreen.kt` (show "Unlocked: YYYY-MM-DD" under each row), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
