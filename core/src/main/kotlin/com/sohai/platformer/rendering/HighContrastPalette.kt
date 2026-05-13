@@ -31,86 +31,9 @@ import com.badlogic.gdx.graphics.Color
  */
 object HighContrastPalette {
 
-    /**
-     * Semantic categories the renderer uses when asking for a high-contrast
-     * replacement. Each role corresponds to a *visual function* in the game
-     * world (what the player needs to read at a glance), not a specific
-     * source colour. The mapping table below picks the most readable swatch
-     * for each role under WCAG-AAA-style high-contrast assumptions.
-     */
-    enum class ColorRole {
-        /** Player sprite tint. Mapped to pure white. */
-        PLAYER,
-
-        /** Generic enemy body / silhouette. Mapped to pure black. */
-        ENEMY,
-
-        /** Standard ground / platform tile face. Mapped to light grey. */
-        PLATFORM,
-
-        /** Slightly brighter highlight on top of a [PLATFORM]. */
-        PLATFORM_HIGHLIGHT,
-
-        /** Subtle bottom shadow under a [PLATFORM]. Mapped to dark grey. */
-        PLATFORM_SHADOW,
-
-        /** Vertical wall tiles. Mapped to dark grey for high contrast. */
-        WALL,
-
-        /** Wall side-edge highlight. */
-        WALL_EDGE,
-
-        /** Moving platform face. Mapped to mid grey (distinct from terrain). */
-        MOVING_PLATFORM,
-
-        /** Moving platform top highlight. */
-        MOVING_PLATFORM_HIGHLIGHT,
-
-        /** Lethal hazard (spike base/stripe/tip). Mapped to saturated red. */
-        HAZARD,
-
-        /** Cleansed/safe hazard. Mapped to saturated green. */
-        HAZARD_CLEANED,
-
-        /** Level exit door body. Mapped to saturated yellow. */
-        EXIT,
-
-        /** Level exit door edge highlight. */
-        EXIT_EDGE,
-
-        /** Locked-portal door (hub world). Mapped to dark grey. */
-        PORTAL_LOCKED,
-
-        /** Unlocked-portal door (hub world). Mapped to saturated yellow. */
-        PORTAL_UNLOCKED,
-
-        /** Inactive checkpoint orb. Mapped to mid grey. */
-        CHECKPOINT_INACTIVE,
-
-        /** Activated checkpoint orb. Mapped to saturated green. */
-        CHECKPOINT_ACTIVE,
-
-        /** Eco-token pickup. Mapped to saturated yellow. */
-        TOKEN,
-
-        /** Cloud Atlas snapshot pickup body. Mapped to saturated cyan. */
-        SNAPSHOT,
-
-        /** Snapshot/token sparkle particle. Mapped to pure white. */
-        SPARKLE,
-
-        /** Player-fired projectile. Mapped to saturated red (matches HAZARD). */
-        PROJECTILE,
-
-        /** Ability VFX (Ebo droplets, Laya/Zephyr wind trails). Mapped to white. */
-        ABILITY_VFX,
-
-        /** Grass / vegetation tuft. Mapped to saturated green (matches CHECKPOINT_ACTIVE). */
-        GRASS,
-
-        /** Ambient particle burst (smoke, dust, footstep). Mapped to mid grey. */
-        PARTICLE
-    }
+    // The [ColorRole] enum lives in [ColorRoles.kt] (T-160 — extracted so that
+    // future palette layers can depend on the role taxonomy without depending
+    // on this object). Same package, so no import is required.
 
     // ── Mapping table (immutable, single-instance Color allocations) ─────
     //

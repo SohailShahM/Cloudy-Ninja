@@ -1,7 +1,7 @@
 package com.sohai.platformer.rendering
 
 import com.badlogic.gdx.graphics.Color
-import com.sohai.platformer.rendering.HighContrastPalette.ColorRole
+import com.sohai.platformer.rendering.ColorRole
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.floats.plusOrMinus
