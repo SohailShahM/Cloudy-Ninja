@@ -275,19 +275,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
      (shake/duck), mute shortcut, slot-delete confirm, i18n audit.
 ═══════════════════════════════════════════════════════════════ -->
 
-### T-111 — SoundManager unknown-id: log → error  [P3]
-- **Status:** Todo
-- **Tool:** `copilot-agent`  *(autonomous from GitHub Issue)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** HANDOFF.md source-side quirk #1 — `SoundManager` unknown-id uses `Gdx.app.log` not `Gdx.app.error`; IS an error state
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/audio/SoundManager.kt`, `core/src/test/kotlin/com/sohai/platformer/audio/SoundManagerTest.kt`
-- **Goal:** In the unknown-sound-id branch of `SoundManager.play()` (search for `Gdx.app.log` referring to unknown ids), switch to `Gdx.app.error(...)`. Update the existing test to assert error-level logging instead of info.
-- **Done when:** Unknown sound id triggers an error-level log; existing tests pass; smoke CI passes.
-
 ### T-118 — Master mute keyboard shortcut (M key)  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -327,25 +314,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Change `defaultKeybinds()` for `"swap"` from `Input.Keys.S` to `Input.Keys.Q`. In `SettingsManager.load()` add a tiny migration: if a loaded `Settings` has `swap = Input.Keys.S` AND the user has never opened the Controls panel (track a new `keybindsCustomized: Boolean = false` flag), upgrade to `Q`. If the user HAS opened Controls, respect their saved binding even if it's still S. Add `keybindsCustomized` setter to fire on any rebind in `SettingsScreen`.
 - **Done when:** Fresh installs default to Q for swap; players who already touched Controls keep their bindings; players who never touched Controls auto-upgrade on next launch; test covers all three cases.
 - **Constraints:** Save-data-adjacent. Existing saves without `keybindsCustomized` field treated as `false` (i.e., legacy user gets the upgrade — they wouldn't be filing bug reports about S working). Cite T-073 research in the PR description.
-
-### T-122 — Wire 3 high-confidence i18n strings to StringKey (T-120 follow-up)  [P3]
-- **Status:** Todo
-- **Tool:** `copilot-agent`  *(Copilot dogfood — single-purpose, file-isolated)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-098, T-101  *(LevelRenderer + Strings contention)*
-- **GDD ref:** `research/i18n-coverage.md` (T-120 deliverable) — 3 high-confidence hardcoded English-phrase hits
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/VictoryScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`
-- **Goal:** Add 3 new `StringKey` entries and replace the literals at:
-  - `VictoryScreen.kt:61` — `"−%.2fs under best"` → `StringKey.VICTORY_DELTA_UNDER` (format arg: seconds)
-  - `VictoryScreen.kt:62` — `"+%.2fs slower"` → `StringKey.VICTORY_DELTA_OVER`
-  - `LevelRenderer.kt:500` — `"[Locked]"` → `StringKey.HUB_PORTAL_LOCKED`
-  Use `Strings.format(key, ...)` consistently with the existing 130+ keys pattern.
-- **Done when:** The 3 literals are gone from source; smoke CI passes; existing tests pass.
-- **Constraints:** Only these 3 strings. Do NOT broaden scope to the 7 numeric format templates from the audit — those are deferred until a second locale lands.
-
 
 <!-- ═══════════════════════════════════════════════════════════════
      ALPHA BLOCKERS — surfaced mid-autonomous-run by completed audits.
@@ -535,531 +503,6 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
-
-### T-140 — Per-character ability tooltip in pause overlay  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-140-character-ability-tooltip
-- **Started:** 2026-05-13
-- **Depends on:** T-063, T-128  *(pause overlay + achievement predicates refactor — GameScreen contention)*
-- **GDD ref:** GAME_PLAN.md (player onboarding — currently characters swap freely but pause overlay doesn't say what they do)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt` (pause overlay render path), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** In the pause overlay, below the existing resume/quit buttons, show a 3-row card listing: `Ebo — Seed Slam (action key)`, `Laya — Wind Dash (action key)`, `Zephyr — Cloud Float (action key)`. Highlight the currently-selected character with the existing toast accent color. Pull binding labels from `Settings.keybinds["action"]` (T-036 keybind system).
-- **Done when:** Pause overlay shows the 3-character ability summary; current character highlighted; keys reflect current bindings; smoke CI passes.
-- **Constraints:** Pause-overlay only. Don't add a new screen. New StringKey entries via `Strings.kt`.
-
-### T-144 — Camera look-ahead in motion direction  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-144-camera-look-ahead
-- **Started:** 2026-05-13
-- **Depends on:** T-116  *(LevelRenderer camera-offset infrastructure)*
-- **GDD ref:** GAME_PLAN.md (feel polish — fixed camera reveals less ahead of motion than feel-good platformers do)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt` (new `cameraLookAhead: Boolean = true`), `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt` (Display section toggle)
-- **Goal:** When player is moving horizontally, smoothly offset the camera up to ±48px in the direction of motion (lerp 0.15/frame). Resets to centered when player stops. Adds to the T-116 screen-shake camera offset (both sum). Toggle in Settings → Display (default ON; off for static-camera preference).
-- **Done when:** Walking right shifts camera ~48px right; walking left shifts ~48px left; standing still centers; shake still works; toggle disables look-ahead but leaves shake; smoke CI passes.
-- **Constraints:** Don't break level boundaries — clamp camera target to level extents. Don't introduce camera oscillation (smooth lerp).
-
-### T-133 — Quick-restart hotkey (R) in-game  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-133-quick-restart-hotkey
-- **Started:** 2026-05-13
-- **Depends on:** T-036  *(adds new keybind to existing system)*
-- **GDD ref:** GAME_PLAN.md (player flow — speedrunners + casual retry experience)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/input/InputManager.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
-- **Goal:** Add `keybind("restart")` default `Input.Keys.R`. Holding R for 0.5s (NOT a tap — prevent accidental restarts) triggers level restart. Visual feedback: small radial progress indicator near HUD while held. Releasing before 0.5s cancels. Rebindable in Settings → Controls.
-- **Done when:** Hold-R-to-restart works at 0.5s; tap-R is a no-op; rebindable; persists; smoke CI passes (autopilot won't hold R — confirmed safe).
-- **Constraints:** Hold-not-tap is deliberate — accidental R presses are common. The 0.5s threshold is the standard for "are you sure?" patterns in indie games.
-
-### T-138 — SFX on achievement unlock (audio feedback)  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-138-achievement-sfx
-- **Started:** 2026-05-13
-- **Depends on:** T-037, T-128  *(achievement unlock pipeline + post-refactor toast trigger site)*
-- **GDD ref:** GAME_PLAN.md (player engagement — currently achievement toasts are silent)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/AchievementToast.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/SoundManager.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/ProceduralSoundGenerator.kt` (or equivalent)
-- **Goal:** Generate a procedural "achievement unlock" SFX (short 0.3s C-major arpeggio chime via existing procedural-audio pattern). Play once when `AchievementToast.show(id)` fires. Volume scales with `volSfx` (or new `volUi` if that bus exists). Respect `enabled` flag in SoundManager.
-- **Done when:** Achievement unlock plays the chime; volume responds to sfx slider; tests cover playback gating; smoke CI passes.
-- **Constraints:** Procedural only — no new audio asset files. Don't double-fire on multi-achievement unlocks in same frame (debounce 200ms).
-
-### T-134 — MainMenu background music  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-134-mainmenu-music
-- **Started:** 2026-05-13
-- **Depends on:** T-030, T-129  *(audio gate must be in place before MainMenu plays music)*
-- **GDD ref:** GAME_PLAN.md (atmosphere — silent MainMenu undersells the game)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/ProceduralMusicGenerator.kt`
-- **Goal:** Add a 4th procedural track `ambient_menu` — softer than `ambient_arid`, more harmonic. Generate via existing `ProceduralMusicGenerator` pattern (60s loop). `MainMenuScreen` plays it on enter; transitions to level-specific track on Play. Crossfade pattern from T-030 applies.
-- **Done when:** MainMenu has background music; volume responds to Music slider; ducks correctly on Settings open (per T-117 pattern if applicable); smoke CI passes.
-- **Constraints:** Procedural only (no new audio file assets). Keep under 30 lines added to the generator.
-
-### T-130 — Death recap overlay  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-130-death-recap-overlay
-- **Started:** 2026-05-13
-- **Depends on:** T-097, T-128  *(LevelRunState contention with predicates refactor)*
-- **GDD ref:** GAME_PLAN.md (player engagement — "what just happened" feedback after death)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/DeathRecapOverlay.kt` (new), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** When the player dies (after T-097 death animation completes), show a small overlay with: cause-of-death (enemy contact / lethal hazard / fall / boss attack), time-into-level, stomps-this-run, tokens-this-run, "Retry?" button + "Quit to menu" button. Auto-fade after 3s or on Retry/Quit input.
-- **Done when:** Death triggers overlay; stats are accurate per-run; Retry restarts level; Quit returns to MainMenu; smoke CI passes (autopilot dies sometimes — verify it doesn't lock up on the overlay).
-- **Constraints:** Read cause-of-death from existing LevelRunState death-cause field if one exists; otherwise add a `DeathCause` enum. Don't broaden scope — no leaderboards, no telemetry.
-
-### T-141 — Cloud Atlas search/filter  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-141-atlas-search-filter
-- **Started:** 2026-05-13
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (atlas accessibility — with 6→12 entries planned the list needs a filter)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/CloudAtlasScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** Add a small `VisTextField` at the top of the CloudAtlas screen. Filtering is substring-match against entry title (case-insensitive) + entry summary text. Clear button (✕) resets filter. If 0 results: show `No entries match` message. Filter is transient (doesn't persist).
-- **Done when:** Typing in the field narrows the visible entries; clear button works; smoke CI passes (autopilot doesn't enter the atlas — verify).
-- **Constraints:** Atlas screen only. Don't change the registry. Don't add fuzzy matching.
-
-### T-136 — Atomic save writes (write-to-temp-then-rename)  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-136-atomic-save-writes
-- **Started:** 2026-05-13
-- **Depends on:** T-113  *(builds on save format scaffold)*
-- **GDD ref:** GAME_PLAN.md (alpha durability — a crash mid-save must not corrupt the player's saved file)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/SaveManager.kt`, `core/src/test/kotlin/com/sohai/platformer/persist/SaveManagerTest.kt`
-- **Goal:** Rewrite the save-write path to use atomic semantics: write JSON to `<slot>.tmp`, fsync, then atomic-rename to `<slot>`. If any step fails, the original `<slot>` file remains untouched and loadable. Cross-platform: use `java.nio.file.Files.move(..., REPLACE_EXISTING, ATOMIC_MOVE)` with a fallback for filesystems that don't support `ATOMIC_MOVE`.
-- **Done when:** Mid-write crash (simulated by deliberately throwing between temp write and rename) leaves original save intact; test covers the crash-mid-write path; smoke CI passes.
-- **Constraints:** **Save-data-adjacent.** Existing saves must still load. Don't change the schema. Don't add a new field.
-
-### T-137 — First-run tutorial overlay on Sky Sanctuary entry  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-137-hub-tutorial-overlay
-- **Started:** 2026-05-13
-- **Depends on:** T-033, T-091
-- **GDD ref:** GAME_PLAN.md (onboarding — new players don't know about Seed Slam, character swap, or hub portals)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/levels/Level0_0.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/HubTutorialOverlay.kt` (new), `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt` (add `tutorialSeen: Boolean = false` additive field, migrate via T-113 scaffold), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** First time a player enters the Sky Sanctuary hub (Level0_0), show a small overlay with 3 hint cards: (1) "Move with A/D, Jump with SPACE", (2) "Swap character with Q to use water-cycle abilities", (3) "Walk into a portal to enter a world". Player dismisses with any key. Sets `tutorialSeen = true`. Never shown again unless save is reset.
-- **Done when:** Fresh save shows overlay on first hub entry; subsequent entries do NOT show it; new keys via Strings.kt; persists; smoke CI passes (autopilot dismisses by key — confirm doesn't lock).
-- **Constraints:** No new assets. Use the existing pause-overlay-style modal pattern. Respect reducedMotion (no animations).
-
-### T-132 — High-contrast mode toggle (a11y)  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-132-high-contrast-mode
-- **Started:** 2026-05-13
-- **Depends on:** T-057  *(builds on existing color-blind palette infrastructure)*
-- **GDD ref:** GAME_PLAN.md (a11y completeness — beyond color-blind palette)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/rendering/HighContrastPalette.kt` (new), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** Add `highContrast: Boolean = false` to `Settings`. Toggle in Accessibility section. When on, all gameplay colors flip to maximum-contrast variants (player = pure white, enemies = pure black, platforms = inverted grey, hazards = saturated red). Separate from color-blind palette (player can have both on). Renders via a thin `HighContrastPalette` wrapper that intercepts color lookups in `LevelRenderer`.
-- **Done when:** Toggle visible in Settings → Accessibility; ON: all rendered colors map through high-contrast palette; OFF: rendering identical to pre-T-132; persists; smoke CI passes.
-- **Constraints:** Don't touch UI screens (MainMenu/Settings rendering) — only gameplay rendering. Don't replace the existing T-057 color-blind palette path; coexist.
-
-### T-135 — Per-level eco-token completion % in StatsScreen  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-135-stats-token-completion
-- **Started:** 2026-05-13
-- **Depends on:** T-107  *(uses hidden eco-token state)*
-- **GDD ref:** GAME_PLAN.md (completionist engagement — visible progress per level)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/StatsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** Add a per-level row to StatsScreen showing eco-token collection % (regular + hidden combined). Format: `Level 1: 8/10 tokens (80%)`. Show all 3 campaign levels. Hidden token discovery rate also appears as a small bonus row: `Hidden: 2/3 found`.
-- **Done when:** StatsScreen displays per-level completion; numbers reflect actual save data; smoke CI passes.
-- **Constraints:** StatsScreen-only. Don't add any new save fields — read from existing T-107 + per-level token state.
-
-### T-131 — README badges (build status + license + Kotlin version)  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`  *(or copilot-agent — single-file README edit)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-131-readme-badges
-- **Started:** 2026-05-13
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (community readiness — alpha launch presentation polish)
-- **Files:** `README.md`
-- **Goal:** Add badges to top of README: (1) CI build status — `github.com/SohailShahM/Cloudy-Ninja/actions/workflows/ci.yml/badge.svg`, (2) AI smoke status — same path with `ai-smoke.yml`, (3) license — proprietary badge linked to `LICENSE`, (4) Kotlin version — derived from gradle, (5) libGDX version. Use shields.io for static text badges; native GH badges for workflow status. Group above first heading.
-- **Done when:** Badges render; all link targets correct; no broken images; CI passes.
-- **Constraints:** README-only. Don't restructure existing sections; just add the badge block at the very top.
-
-### T-129 — Audio gate on first user input  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-129-audio-gate-first-input
-- **Started:** 2026-05-13
-- **Depends on:** T-104  *(splash now precedes MainMenu)*
-- **GDD ref:** GAME_PLAN.md — desktop usually doesn't need this, but **future HTML5 web demo (T-123 Option 2)** will hard-require a user-gesture before audio can play. Pre-bake the gate now so the web port doesn't need a runtime fork.
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/SplashScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`
-- **Goal:** Splash screen waits for first keypress OR mouse-click before transitioning to MainMenu (in addition to the existing 1s minimum + preload gate). When the gate fires, MusicManager.play() is allowed to start. Smoke mode bypasses this gate (already configured in T-104).
-- **Done when:** On desktop, splash shows a small "Press any key to continue" hint after the 1s minimum + preload complete. Key/click advances to MainMenu. Smoke CI passes unchanged.
-- **Constraints:** Don't break smoke. Don't add network calls. Hint text via Strings.kt new key `SPLASH_PRESS_ANY_KEY`.
-
-### T-128 — Refactor achievement unlock predicates to pure functions  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`  *(re-spec from a 2026-05-13 spawn-task chip whose dispatched agent died silently)*
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-128-predicates-refactor
-- **Started:** 2026-05-13
-- **Depends on:** T-107  *(AchievementRegistry + LevelRunState contention — wait for T-107 to land first)*
-- **GDD ref:** HANDOFF.md source-side quirk #4 — predicate-firing tests need a source refactor
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt` (12+ inline `tryUnlock` sites), `core/src/main/kotlin/com/sohai/platformer/screens/LevelTransitionController.kt` (3 sites + duplicate `tryUnlock` helper), `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt` (1 site at L305 for `boss_defeated`), `core/src/main/kotlin/com/sohai/platformer/progression/AchievementRegistry.kt` (or new `AchievementPredicates.kt`), new test file
-- **Goal:** Extract each achievement's unlock condition into a pure function `(AchievementInputs) -> Boolean`. `AchievementInputs` data class carries `totalStomps`, `atlasSize`, `completedLevels`, `levelTimer`, `levelId`, `noDeathRun`, `unlockedAchievements: Set<String>`, `collectedHiddenTokens: Set<String>` (from T-107), etc. Add `evaluate(inputs, currentlyUnlocked): List<String>` orchestrator returning newly-firing achievement IDs. Rewrite call sites to build inputs and loop; keep `tryUnlock` itself (it's the impure toast+save side). Consolidate the two duplicate `tryUnlock` helpers.
-- **Done when:** Each predicate is testable headless without `Gdx.*`; behavior identical (no achievement fires earlier or later than before); test file covers each predicate with met/unmet/already-unlocked cases.
-- **Constraints:** **BEHAVIOR MUST STAY IDENTICAL.** Don't fix bugs as part of the refactor — surface them in LEARNINGS.md and QUESTIONS.md instead. Don't refactor T-107's `collector` predicate beyond what fits this pattern.
-
-### T-106 — Extract `LevelEntityFactory` from GameScreen  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-106-level-entity-factory
-- **Started:** 2026-05-13
-- **Depends on:** _none_
-- **GDD ref:** Code health — `GameScreen.kt` grew by 30+ lines per new entity type (T-029 SmogSprite, T-034 StormSentinel, T-062 DriftHusk all added parallel instantiation blocks)
-- **Files:** `screens/GameScreen.kt`, `levels/LevelEntityFactory.kt` (new)
-- **Goal:** Extract the entity-instantiation logic out of `GameScreen.init` (currently lines ~194–250 with three parallel `if (level is TmxLevel) { for (def in level.getXxx()) { … } }` blocks for enemies + boss + drift husks) into a new `LevelEntityFactory.spawn(level, world): SpawnedEntities` data class. `GameScreen` becomes a one-liner: `val spawned = LevelEntityFactory.spawn(level, world)`. Future enemy types (T-046's sprite work, future ticket additions) plug in via the factory, not via more parallel blocks in `GameScreen`.
-- **Done when:** `GameScreen.init` is shorter; entity behavior unchanged; smoke CI passes; future entity additions need no GameScreen edit.
-
-### T-112 — Auto-pause on window focus loss  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-112-auto-pause-focus
-- **Started:** 2026-05-13
-- **Depends on:** T-104  *(both touch `Main.kt` — sequential)*
-- **GDD ref:** GAME_PLAN.md (alpha polish — players will alt-tab during testing)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
-- **Goal:** Implement libGDX's `ApplicationListener.pause()` in `Main` (or the active `Game` subclass) to forward to the active screen if it's a `GameScreen`. `GameScreen.pause()` activates the existing pause overlay (T-063). On `resume()`, the overlay stays up — player must explicitly resume. Respect `SMOKE_MODE` — skip auto-pause in smoke.
-- **Done when:** Alt-tab while in-game triggers the pause overlay; resume keeps overlay up until input; smoke CI passes (no auto-pause in smoke mode).
-
-### T-107 — Hidden eco-token in each campaign level + "Collector" achievement  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-107-hidden-eco-tokens
-- **Started:** 2026-05-13
-- **Depends on:** T-019, T-037
-- **GDD ref:** GAME_PLAN.md (collectibles + replay-value loop)
-- **Files:** `levels/TmxLevelDefinition.kt` (add 1 hidden eco-token per level1/2/3 in an off-path location), `progression/AchievementRegistry.kt` (add `collector` achievement: "Find all 3 hidden eco-tokens"), `screens/LevelRunState.kt` (track hidden-token collection separately + emit unlock)
-- **Goal:** Add 1 visually-distinct "hidden" eco-token to each of level1/2/3, placed in an out-of-the-way spot (e.g. behind a wall jump, in a ceiling alcove). Collecting all 3 across runs unlocks a new `collector` achievement. Hidden tokens render with a slight golden tint to distinguish from regular ones.
-- **Done when:** Each campaign level has 1 hidden token; collecting all 3 unlocks `collector`; smoke CI passes (autopilot is unlikely to find them — that's fine, they're hidden).
-
-### T-117 — Audio ducking on pause overlay  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-117-audio-duck-pause
-- **Started:** 2026-05-13
-- **Depends on:** T-104  *(MusicManager contention)*
-- **GDD ref:** GAME_PLAN.md (alpha audio polish)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
-- **Goal:** Add `MusicManager.duck(amount: Float = 0.3f, fadeMs: Int = 250)` and `MusicManager.unduck(fadeMs: Int = 250)`. While ducked, effective volume is `volMusic * amount`. `GameScreen` calls `duck()` on pause-overlay open, `unduck()` on close. Stacks idempotently — multiple `duck()` calls collapse, one `unduck()` restores.
-- **Done when:** Pause open ↔ music dips audibly; close ↔ music restores; rapid open/close doesn't desync the fade; existing `MusicManagerTest` passes; new test covers duck/unduck math; smoke CI passes.
-
-### T-119 — Save slot delete confirmation modal  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-119-slot-delete-confirm
-- **Started:** 2026-05-13
-- **Depends on:** T-099, T-100  *(MainMenuScreen contention)*
-- **GDD ref:** GAME_PLAN.md (alpha safety — accidental slot deletion is a top-of-funnel rage bug)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** Tapping Delete on a save slot now opens a modal: `Delete slot {N}? This cannot be undone.` with `Cancel` / `Delete`. Default-focus is `Cancel`. `Esc` cancels. Only `Delete` fires `SaveManager.deleteSlot()`. Empty slots hide (or disable) the delete affordance to match existing slot-card style.
-- **Done when:** No path deletes a slot without the confirm modal; Cancel preserves the slot; smoke CI passes (verify autopilot doesn't open the modal — that path stays unaffected).
-
-### T-115 — In-game crash report dumper  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-115-crash-reporter
-- **Started:** 2026-05-13
-- **Depends on:** T-104  *(both touch `Main.kt` — sequential)*
-- **GDD ref:** GAME_PLAN.md (alpha bug-reporting — players need something to attach)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/CrashReporter.kt` (new), `core/src/test/kotlin/com/sohai/platformer/persist/CrashReporterTest.kt` (new)
-- **Goal:** Wire `Thread.setDefaultUncaughtExceptionHandler` in `Main.create()` to write a crash file at `<userHome>/.cloudy-ninja/crashes/crash-{yyyyMMdd-HHmmss}.log` containing: timestamp, OS + JDK + game version (`BUILD_VERSION` from T-100), full stack trace, save-slot metadata (slot indices + completed-level counts, **no PII**). After writing, re-throw or exit per libGDX convention. `CrashReporter` is a pure object; `Main` calls into it. Respect `SMOKE_MODE` — no-op in smoke.
-- **Done when:** A deliberately-thrown exception in dev produces a crash file in the documented path; smoke CI doesn't write crash files; tests cover the pure-function formatter path.
-- **Constraints:** Don't read save *contents* into the crash log (PII risk). Only metadata.
-
-### T-110 — ScreenFade semantics: rename or doc  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-110-screenfade-rename
-- **Started:** 2026-05-13
-- **Depends on:** _none_
-- **GDD ref:** HANDOFF.md source-side quirk #3 — `fadeIn` / `fadeOut` semantics are intuitively reversed (`fadeIn` makes screen clear)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/rendering/ScreenFade.kt` + all callers (find via `Grep "fadeIn|fadeOut" --type kt`)
-- **Goal:** Pick ONE and apply consistently: **(A)** rename `fadeIn` → `fadeFromBlack` and `fadeOut` → `fadeToBlack`, update all callers + tests; **(B)** add a KDoc paragraph above each function explaining the reversed-from-intuition semantics. Default to (A) unless caller count exceeds 20.
-- **Done when:** No caller is left ambiguous; existing `ScreenFadeTest` passes (renamed if (A) chosen); smoke CI passes.
-
-### T-116 — Screen shake on stomp + boss hit  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** `claude/T-116-screen-shake`
-- **Started:** 2026-05-13
-- **Depends on:** T-098  *(both touch `LevelRenderer.kt` — sequential)*
-- **GDD ref:** GAME_PLAN.md (combat juice — T-098 hit-flash pairs with shake for full hit-feedback)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/physics/WorldContactListener.kt`, `core/src/main/kotlin/com/sohai/platformer/rendering/ScreenShake.kt` (new), `core/src/test/kotlin/com/sohai/platformer/rendering/ScreenShakeTest.kt` (new)
-- **Goal:** Add `ScreenShake` utility (decaying amplitude over time, `update(delta)` + `offset(): Vector2`). On stomp-defeat in `WorldContactListener` and Storm Sentinel hit-confirm, call `ScreenShake.trigger(amplitude=4f, duration=0.15f)`. `LevelRenderer` applies the offset to the camera before rendering each frame. **Respect `Settings.reducedMotion`** — when on, `trigger()` is a no-op.
-- **Done when:** Visible shake on stomp + boss hit; no shake when `reducedMotion` is on; shake never exceeds duration; pure-function tests on the decay curve pass; smoke CI passes.
-
-### T-100 — Game version + build info on MainMenu (bottom corner)  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-100-version-label
-- **Started:** 2026-05-13
-- **Depends on:** T-091
-- **GDD ref:** GAME_PLAN.md (release readiness — let players report exact version)
-- **Files:** `screens/MainMenuScreen.kt`, `Constants.kt` (add `BUILD_VERSION` + `BUILD_DATE`), `i18n/Strings.kt`
-- **Goal:** Add `BUILD_VERSION` and `BUILD_DATE` constants in `Constants.kt` (manually maintained for alpha). MainMenu shows a tiny right-bottom label: `v{0} · {1}` (e.g. `v0.1.0 · 2026-05-12`). Style: `FontManager.getShared(11)`, dim grey `(0.5f, 0.5f, 0.5f, 0.6f)`, 8px from corner. Add `StringKey.MENU_BUILD_INFO`.
-- **Done when:** Label visible on MainMenu; reads from constants; smoke CI passes.
-
-### T-099 — Achievement progress counter on MainMenu  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-099-menu-achievement-progress
-- **Started:** 2026-05-13
-- **Depends on:** T-037, T-091
-- **GDD ref:** GAME_PLAN.md (player engagement signals)
-- **Files:** `screens/MainMenuScreen.kt`, `i18n/Strings.kt`
-- **Goal:** Below the slot cards on MainMenu, render `Achievements: {0}/12 unlocked` showing the **max** count across the 3 save slots. Style: `FontManager.getShared(14)`, light grey, 12px padded. Use `Strings.format(StringKey.MENU_ACHIEVEMENT_PROGRESS, count, total)` — new key. If all 12 unlocked: `MENU_ACHIEVEMENT_PROGRESS_COMPLETE` rendered in gold `(1f, 0.85f, 0.1f, 1f)`.
-- **Done when:** Counter visible reflecting save data; both states verified; smoke CI passes.
-
-### T-098 — Enemy hit-flash on takeDamage (200ms white tint)  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent *(re-dispatched 2026-05-13 — prior agent died silently)*
-- **Branch:** `claude/T-098-enemy-hit-flash`
-- **Started:** 2026-05-12
-- **Depends on:** T-029, T-062
-- **GDD ref:** GAME_PLAN.md (combat juice)
-- **Files:** `entities/Enemy.kt` (abstract base — add `hitFlashTimer`), `entities/SmogSprite.kt` + `entities/DriftHusk.kt` (set timer in takeDamage), `screens/LevelRenderer.kt` (lerp color toward white when timer > 0)
-- **Goal:** Add `hitFlashTimer: Float = 0f` to `Enemy`. `takeDamage()` sets it to 0.2f. `update(delta)` decrements. `LevelRenderer` reads `enemy.hitFlashTimer` and lerps base color toward white `(1, 1, 1, 1)` by `clamp(timer / 0.2f)`. Don't touch defeat path; just hit-feedback frames.
-- **Done when:** Visible hit-flash on Seed-Slamming SmogSprite + DriftHusk; unchanged when not hit; smoke CI passes.
-
-### T-123 — HTML5 / web-demo viability spike  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`  *(research-only, but technical — needs codebase-aware judgement)*
-- **Tier:** S
-- **Autonomous-eligible:** yes-with-review  *(go/no-go memo informs whether to invest in a real port)*
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-123-html5-spike
-- **Started:** 2026-05-13
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (alpha discovery — itch.io HTML5 embed dramatically increases play-through rate vs. download)
-- **Files:** `research/html5-web-demo-viability.md` (new)
-- **Goal:** Investigate whether Cloudy-Ninja can be ported to an HTML5 / GWT (libGDX-Teavm) target. Assess: (a) does our current libGDX version support GWT/Teavm backends? (b) which deps are GWT-hostile (Box2D-native, Kotlin stdlib reflection, GSON/Jackson)? (c) what's the rough effort estimate (S/M/L/XL)? (d) which game systems would need refactor or graceful-degrade (save serialization, audio formats, font baking)? Produce a go/no-go memo with options: (1) ship desktop-only alpha + web demo deferred; (2) cut a stripped web demo (1-2 levels, no save); (3) full web port.
-- **Done when:** Memo exists with the 4 questions answered, a clear recommendation (one of the 3 options), and a rough effort estimate.
-- **Constraints:** **Research-only.** Do NOT add a Teavm/GWT module, do NOT touch gradle build files, do NOT modify any deps. Read-only investigation. Use `WebSearch` for libGDX-Teavm / libGDX-html status circa 2025.
-
-### T-124 — itch.io page draft + Tag Wizard order (T-075 follow-up)  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`  *(re-routed 2026-05-13 from claude-code-sonnet — parent dispatched as sub-agent)*
-- **Tier:** S
-- **Autonomous-eligible:** yes-with-review  *(marketing copy benefits from user voice — surface the draft for editing)*
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-124-itch-page-draft
-- **Started:** 2026-05-13
-- **Depends on:** T-075, T-077  *(uses Steam-tag research + presskit scaffold)*
-- **GDD ref:** `marketing/steam-tags-research.md` + `marketing/presskit/` — Sprint D launch needs an itch.io page
-- **Files:** `marketing/itch-page-draft.md` (new)
-- **Goal:** Draft the full itch.io page content: short description (160 chars), long description (~500 words, plain markdown, no autolinks), feature list (5-8 bullets), system requirements, controls reference (refer to T-073 default mapping), genre + tag list (primary tags first per T-075 — `Pixel Graphics`, `Platformer`, `2D`, `Nature`, then stretch). Also draft the Tag Wizard order (Steam-style — itch uses a similar discovery mechanism). Embed placeholders for screenshots + a future trailer.
-- **Done when:** Markdown draft exists; tag order matches T-075's primary→stretch recommendation; no accidental Steam-specific terminology bleed-through; ready for the user to copy-paste into itch.io's CMS.
-- **Constraints:** Marketing copy — do not invent feature claims. Every bullet must reflect what's actually shipped (cross-check with TASKS.md `## Done`). No promised features in "coming soon" section.
-
-### T-125 — Asset attribution audit (alpha-blocking legal)  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`  *(re-routed 2026-05-13 from claude-code-sonnet — dispatched as sub-agent for autonomous run)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-125-asset-attribution-audit
-- **Started:** 2026-05-13
-- **Depends on:** _none_
-- **GDD ref:** `LICENSE` + `NOTICE.md` — alpha launch must not ship with an under-attributed or mis-licensed asset
-- **Files:** `research/asset-attribution-audit.md` (new), append entries to `QUESTIONS.md` if any gaps found
-- **Goal:** Walk every file under `assets/` (and `core/src/main/resources/` if any). For each: identify the source, license (CC0, CC-BY, custom), author/attribution string, and compare to what `NOTICE.md` actually declares. Flag (a) assets used but not credited, (b) assets credited but not used (stale entries), (c) any license that requires more than NOTICE.md provides (e.g. CC-BY needs visible in-game credit, not just NOTICE). Cross-reference Kenney CC0 declarations + any audio files generated by `ProceduralMusicGenerator` (those are own-IP).
-- **Done when:** Audit report exists; mismatches are documented; if any (a) or (c) gaps exist, a high-priority `QUESTIONS.md` entry is filed BEFORE the alpha can ship.
-- **Constraints:** **Research-only.** Do NOT modify `NOTICE.md` or `LICENSE` in this PR — surface gaps for human resolution. Do NOT modify any asset files.
-
-### T-073 — User research: pixel-platformer default keyboard layouts  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from antigravity — autonomous-run velocity)*
-- **Tier:** S  *(research-only, no code)*
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-073-keyboard-layout-research
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (default input scheme)
-- **Files:** `research/keyboard-layout-conventions.md` (new)
-- **Goal:** Catalog default keyboard bindings across 10–15 popular indie pixel platformers (Celeste, Hollow Knight, Hyper Light Drifter, Hades, Dead Cells, Risk of Rain, Stardew Valley, Owlboy, Shovel Knight, etc.). Capture for each: jump key, action key, dash key, alt-action key, pause key, inventory key, accessibility-mode key (if any). Synthesize a most-common default + a recommended Cloudy-Ninja default that maximizes "feels familiar to platformer players."
-- **Done when:** `research/keyboard-layout-conventions.md` exists with a comparison table + a recommended default mapping for Cloudy Ninja's 5 actions (left/right/jump/action/swap), plus a 2-sentence rationale per binding.
-
-### T-075 — Steam tags + keyword research  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from antigravity — autonomous-run velocity)*
-- **Tier:** S  *(research-only, no code)*
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-075-steam-tags-research
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (launch/visibility plan)
-- **Files:** `marketing/steam-tags-research.md` (new)
-- **Goal:** Cloudy Ninja's eventual Steam listing needs the right tag combination. Survey Steam's top-rated 2D pixel-art platformers with eco/climate/accessibility angles. Cross-reference Steam's official tag taxonomy. Identify: (a) tag combinations correlating with discovery success, (b) tag conflicts that *hurt* visibility, (c) the 3-5 must-have tags for our pitch, (d) 5-8 "stretch" tags that broaden audience without diluting positioning.
-- **Done when:** `marketing/steam-tags-research.md` exists with a recommended primary tag set, a stretch tag set, and rationale citing 3+ comparable games per tag.
-
-### T-114 — itch.io deploy workflow (butler)  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes-with-review  *(secret-handling needs sanity check)*
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-114-itch-deploy
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (Sprint D — public alpha to itch.io)
-- **Files:** `.github/workflows/itch-deploy.yml` (new), `scripts/deploy-itch.sh` (new), `docs/itch-deploy.md` (new)
-- **Goal:** Manual-trigger (`workflow_dispatch`) workflow that (1) builds the desktop JAR (`./gradlew desktop:dist`), (2) downloads butler, (3) uploads via `butler push <jar> sohailshahm/cloudy-ninja:<channel> --userversion <tag>`. Reads `ITCH_API_KEY` from repo secrets. Inputs: `channel` (default `desktop`), `version-tag` (optional, defaults to short SHA). `docs/itch-deploy.md` explains itch.io page setup + API key creation.
-- **Done when:** Workflow file exists; runs cleanly on dispatch with a valid secret; docs explain setup.
-- **Constraints:** **Do NOT add the `ITCH_API_KEY` secret yourself** — note in PR description that the user runs `gh secret set ITCH_API_KEY` before the workflow can fire. Do NOT change signing config. Do NOT publish a build from the PR itself.
-
-### T-109 — FontManager testability seam  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-109-fontmanager-seam
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** HANDOFF.md source-side quirk #2 — `FontManager.create()` is unreachable headlessly; needs a factory seam for end-to-end testability
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/FontManager.kt`, `core/src/test/kotlin/com/sohai/platformer/FontManagerTest.kt`
-- **Goal:** Extract the font-loading codepath inside `FontManager.create()` into a small delegate (e.g. `interface FontLoader { fun load(handle: FileHandle): BitmapFont }`) with a default `Gdx.files`-backed implementation. Expose a package-private setter so tests can inject a no-op loader without mocking `Gdx.files`. Runtime behavior unchanged.
-- **Done when:** Existing `FontManagerTest` no longer needs to mock `Gdx.files` for the loader path; the `create()` codepath becomes reachable in headless tests; no behavioral regression in-game; smoke CI passes.
-
-### T-101 — Credits screen  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-101-credits-screen
-- **Started:** 2026-05-12
-- **Depends on:** T-031, T-046a
-- **GDD ref:** GAME_PLAN.md (legal compliance + community goodwill)
-- **Files:** `screens/CreditsScreen.kt` (new), `screens/SettingsScreen.kt` (add a "Credits" button in the footer row), `i18n/Strings.kt` (credit-related keys)
-- **Goal:** Scrollable Credits screen reachable from Settings. Sections: **Game** (Sohail Shah, design + code, 2026); **Code assistants** (Claude Code/Anthropic, GitHub Copilot, Antigravity/Gemini/Google, NotebookLM); **Art** (Kenney pixel-platformer, CC0, kenney.nl + entries from `art-research/tileset-candidates.md`); **Audio** (procedural via T-013/T-030 + candidates in `art-research/audio-candidates.md`); **Engine** (libGDX, Box2D, Kotlin, VisUI, Kotest); **Climate sources** (NOAA, NASA Earth Observatory, IPCC etc. — see `research/climate-sources/INDEX.md`). Section header `FontManager.getShared(22)`, body `getShared(14)`. Back button bottom-center.
-- **Done when:** Screen reachable, all sections render, no asset URLs hardcoded (in `Strings.kt`), smoke CI passes.
-
-### T-113 — Save format version field + migration scaffold  [P2]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-113-save-format-version
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (alpha launch — once players have saves, schema changes must be migration-safe)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/SaveManager.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/SaveMigrations.kt` (new), `core/src/test/kotlin/com/sohai/platformer/persist/SaveMigrationsTest.kt` (new)
-- **Goal:** Add `saveFormatVersion: Int = 1` to `GameState`. In `SaveManager.loadGame()`, route the deserialized JSON through `SaveMigrations.migrate(json): GameState` before returning. `SaveMigrations` is a chain of `(version, JsonValue) -> JsonValue` steps; v1 is an identity no-op. Existing saves without a version field are treated as v1. Persist writes always use the current version.
-- **Done when:** Saves carry a version field; loads route through the migration chain; existing saves remain loadable; new test covers the migration scaffold with a fake v0→v1 step; smoke CI passes.
-- **Constraints:** Don't change the save schema beyond adding the version field. The scaffold is what matters, not migrations themselves.
-
-### T-120 — Localization coverage audit  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from antigravity — autonomous-run velocity)*
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent
-- **Branch:** claude/T-120-i18n-coverage-audit
-- **Started:** 2026-05-12
-- **Depends on:** T-091  *(i18n format API)*
-- **GDD ref:** HANDOFF.md ("i18n scaffolding (T-059) + Strings.format API (T-091); 130+ keys") — verify nothing leaked
-- **Files:** `research/i18n-coverage.md` (new), entries in `QUESTIONS.md` if hardcoded user-facing strings found
-- **Goal:** Scan all `*.kt` files under `core/src/main/kotlin/com/sohai/platformer/screens/`, `entities/`, and other UI-adjacent paths for string literals that look user-facing (`Label("...")`, `TextButton("...")`, `setText("...")`; log messages excluded). For each hit record: file, line, literal, recommended `StringKey` name. Group by category (settings/menu/gameplay/achievements). Produce a punch-list — **do NOT modify code**. If high-confidence cases are found, file ONE summary QUESTIONS.md entry asking whether to wire each as a follow-up Copilot ticket.
-- **Done when:** `research/i18n-coverage.md` exists with a table of all candidate strings + recommended keys; QUESTIONS.md gets one summary entry if any are found; no source-code changes in this PR.
-- **Constraints:** Research-only. Do NOT add new `StringKey` entries. Do NOT modify Kotlin source files. Do NOT auto-fix.
-
-### T-104 — Splash / asset-preload progress bar  [P3]
-- **Status:** In Progress
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** claude-code-sub-agent *(re-dispatched 2026-05-13 — prior agent died silently)*
-- **Branch:** claude/T-104-splash-preload
-- **Started:** 2026-05-12
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (cold-start UX)
-- **Files:** `screens/SplashScreen.kt` (new), `Main.kt` (start with SplashScreen instead of MainMenu), `audio/MusicManager.kt` (load tracks lazily via AssetManager hook if not already)
-- **Goal:** On first launch, show a 1-second minimum splash with a horizontal progress bar tracking asset preload (atlas pack, music tracks via `ProceduralMusicGenerator`, 8 SFX). Transition to `MainMenuScreen` when preload completes AND the 1s minimum has elapsed. The minimum prevents flash-frames on fast machines.
-- **Done when:** Splash visible on every cold start; progress bar reflects real preload; transition happens once both gates are met; smoke CI passes (smoke mode should fast-skip the splash via existing `cloudy.smokeMode` system property).
 
 <!--
 ### T-XXX — <title>
@@ -1569,6 +1012,348 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Outcome:** `marketing/itch-listing-style-guide.md` analyzing 12 itch.io listings across three buckets — precision platformers (Celeste, Sheepy, Frogfall, SELF, Öoo), Metroidvanias (Pseudoregalia, Lone Fungus, Alwa's Awakening, Vapor Trails, Anodyne), eco/nature (A Short Hike, Terra Nil). Synthesis: 5 headline patterns, screenshot rules (lead with GIF; protagonist in hero shot; 5–7 gallery assets), 60–75s trailer beat sheet, 3 differentiator surfaces for Cloudy Ninja (split-frame corrupted/restored cover, mid-air character-switch GIF, accessibility callout above sysreqs). **Notable finding:** trailer embeds are nearly absent from top-rated indie pages — autoplaying GIFs dominate; influences our launch asset priorities. Re-routed from `antigravity` → `claude-code-sub-agent` (parallel with T-049).
 - **Commit/PR:** PR #25 (squashed merge `d60d2f4`)
 - **Tool:** `claude-code-sub-agent` (re-routed from `antigravity`)
+
+### T-140 — Per-character ability tooltip in pause overlay
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Per-character ability tooltip in pause overlay.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt` (pause overlay render path), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** In the pause overlay, below the existing resume/quit buttons, show a 3-row card listing: `Ebo — Seed Slam (action key)`, `Laya — Wind Dash (action key)`, `Zephyr — Cloud Float (action key)`. Highlight the currently-selected character with the existing toast accent color. Pull binding labels from `Settings.keybinds["action"]` (T-036 keybind system).
+- **Commit/PR:** PR #110
+- **Tool:** `claude-code-sonnet`
+
+### T-144 — Camera look-ahead in motion direction
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Camera look-ahead in motion direction.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt` (new `cameraLookAhead: Boolean = true`), `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt` (Display section toggle)
+- **Goal:** When player is moving horizontally, smoothly offset the camera up to ±48px in the direction of motion (lerp 0.15/frame). Resets to centered when player stops. Adds to the T-116 screen-shake camera offset (both sum). Toggle in Settings → Display (default ON; off for static-camera preference).
+- **Commit/PR:** PR #112
+- **Tool:** `claude-code-sonnet`
+
+### T-133 — Quick-restart hotkey (R) in-game
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Quick-restart hotkey (hold R 0.5s).
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/input/InputManager.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
+- **Goal:** Add `keybind("restart")` default `Input.Keys.R`. Holding R for 0.5s (NOT a tap — prevent accidental restarts) triggers level restart. Visual feedback: small radial progress indicator near HUD while held. Releasing before 0.5s cancels. Rebindable in Settings → Controls.
+- **Commit/PR:** PR #108
+- **Tool:** `claude-code-sonnet`
+
+### T-138 — SFX on achievement unlock (audio feedback)
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** SFX on achievement unlock.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/AchievementToast.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/SoundManager.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/ProceduralSoundGenerator.kt` (or equivalent)
+- **Goal:** Generate a procedural "achievement unlock" SFX (short 0.3s C-major arpeggio chime via existing procedural-audio pattern). Play once when `AchievementToast.show(id)` fires. Volume scales with `volSfx` (or new `volUi` if that bus exists). Respect `enabled` flag in SoundManager.
+- **Commit/PR:** PR #107
+- **Tool:** `claude-code-sonnet`
+
+### T-134 — MainMenu background music
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** MainMenu background music (ambient_menu).
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/ProceduralMusicGenerator.kt`
+- **Goal:** Add a 4th procedural track `ambient_menu` — softer than `ambient_arid`, more harmonic. Generate via existing `ProceduralMusicGenerator` pattern (60s loop). `MainMenuScreen` plays it on enter; transitions to level-specific track on Play. Crossfade pattern from T-030 applies.
+- **Commit/PR:** PR #106
+- **Tool:** `claude-code-sonnet`
+
+### T-130 — Death recap overlay
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Death recap overlay.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/DeathRecapOverlay.kt` (new), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** When the player dies (after T-097 death animation completes), show a small overlay with: cause-of-death (enemy contact / lethal hazard / fall / boss attack), time-into-level, stomps-this-run, tokens-this-run, "Retry?" button + "Quit to menu" button. Auto-fade after 3s or on Retry/Quit input.
+- **Commit/PR:** PR #109
+- **Tool:** `claude-code-sonnet`
+
+### T-141 — Cloud Atlas search/filter
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Cloud Atlas search/filter.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/CloudAtlasScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Add a small `VisTextField` at the top of the CloudAtlas screen. Filtering is substring-match against entry title (case-insensitive) + entry summary text. Clear button (✕) resets filter. If 0 results: show `No entries match` message. Filter is transient (doesn't persist).
+- **Commit/PR:** PR #103
+- **Tool:** `claude-code-sonnet`
+
+### T-136 — Atomic save writes (write-to-temp-then-rename)
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Atomic save writes.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/SaveManager.kt`, `core/src/test/kotlin/com/sohai/platformer/persist/SaveManagerTest.kt`
+- **Goal:** Rewrite the save-write path to use atomic semantics: write JSON to `<slot>.tmp`, fsync, then atomic-rename to `<slot>`. If any step fails, the original `<slot>` file remains untouched and loadable. Cross-platform: use `java.nio.file.Files.move(..., REPLACE_EXISTING, ATOMIC_MOVE)` with a fallback for filesystems that don't support `ATOMIC_MOVE`.
+- **Commit/PR:** PR #102
+- **Tool:** `claude-code-sonnet`
+
+### T-137 — First-run tutorial overlay on Sky Sanctuary entry
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** First-run tutorial overlay on Sky Sanctuary entry.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/levels/Level0_0.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/HubTutorialOverlay.kt` (new), `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt` (add `tutorialSeen: Boolean = false` additive field, migrate via T-113 scaffold), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** First time a player enters the Sky Sanctuary hub (Level0_0), show a small overlay with 3 hint cards: (1) "Move with A/D, Jump with SPACE", (2) "Swap character with Q to use water-cycle abilities", (3) "Walk into a portal to enter a world". Player dismisses with any key. Sets `tutorialSeen = true`. Never shown again unless save is reset.
+- **Commit/PR:** PR #104
+- **Tool:** `claude-code-sonnet`
+
+### T-132 — High-contrast mode toggle (a11y)
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** High-contrast mode toggle (a11y).
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/rendering/HighContrastPalette.kt` (new), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Add `highContrast: Boolean = false` to `Settings`. Toggle in Accessibility section. When on, all gameplay colors flip to maximum-contrast variants (player = pure white, enemies = pure black, platforms = inverted grey, hazards = saturated red). Separate from color-blind palette (player can have both on). Renders via a thin `HighContrastPalette` wrapper that intercepts color lookups in `LevelRenderer`.
+- **Commit/PR:** PR #101
+- **Tool:** `claude-code-sonnet`
+
+### T-135 — Per-level eco-token completion % in StatsScreen
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Per-level eco-token completion percentage in StatsScreen.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/StatsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Add a per-level row to StatsScreen showing eco-token collection % (regular + hidden combined). Format: `Level 1: 8/10 tokens (80%)`. Show all 3 campaign levels. Hidden token discovery rate also appears as a small bonus row: `Hidden: 2/3 found`.
+- **Commit/PR:** PR #98
+- **Tool:** `claude-code-sonnet`
+
+### T-131 — README badges (build status + license + Kotlin version)
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** README badges (build, license, versions).
+- **Files:** `README.md`
+- **Goal:** Add badges to top of README: (1) CI build status — `github.com/SohailShahM/Cloudy-Ninja/actions/workflows/ci.yml/badge.svg`, (2) AI smoke status — same path with `ai-smoke.yml`, (3) license — proprietary badge linked to `LICENSE`, (4) Kotlin version — derived from gradle, (5) libGDX version. Use shields.io for static text badges; native GH badges for workflow status. Group above first heading.
+- **Commit/PR:** PR #96
+- **Tool:** `claude-code-sonnet`  *(or copilot-agent — single-file README edit)*
+
+### T-129 — Audio gate on first user input
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Audio gate on first user input.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/SplashScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`
+- **Goal:** Splash screen waits for first keypress OR mouse-click before transitioning to MainMenu (in addition to the existing 1s minimum + preload gate). When the gate fires, MusicManager.play() is allowed to start. Smoke mode bypasses this gate (already configured in T-104).
+- **Commit/PR:** PR #99
+- **Tool:** `claude-code-sonnet`
+
+### T-128 — Refactor achievement unlock predicates to pure functions
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Refactor achievement unlock predicates to pure functions.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt` (12+ inline `tryUnlock` sites), `core/src/main/kotlin/com/sohai/platformer/screens/LevelTransitionController.kt` (3 sites + duplicate `tryUnlock` helper), `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt` (1 site at L305 for `boss_defeated`), `core/src/main/kotlin/com/sohai/platformer/progression/AchievementRegistry.kt` (or new `AchievementPredicates.kt`), new test file
+- **Goal:** Extract each achievement's unlock condition into a pure function `(AchievementInputs) -> Boolean`. `AchievementInputs` data class carries `totalStomps`, `atlasSize`, `completedLevels`, `levelTimer`, `levelId`, `noDeathRun`, `unlockedAchievements: Set<String>`, `collectedHiddenTokens: Set<String>` (from T-107), etc. Add `evaluate(inputs, currentlyUnlocked): List<String>` orchestrator returning newly-firing achievement IDs. Rewrite call sites to build inputs and loop; keep `tryUnlock` itself (it's the impure toast+save side). Consolidate the two duplicate `tryUnlock` helpers.
+- **Commit/PR:** PR #100
+- **Tool:** `claude-code-sonnet`  *(re-spec from a 2026-05-13 spawn-task chip whose dispatched agent died silently)*
+
+### T-106 — Extract `LevelEntityFactory` from GameScreen
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Extract LevelEntityFactory from GameScreen.
+- **Files:** `screens/GameScreen.kt`, `levels/LevelEntityFactory.kt` (new)
+- **Goal:** Extract the entity-instantiation logic out of `GameScreen.init` (currently lines ~194–250 with three parallel `if (level is TmxLevel) { for (def in level.getXxx()) { … } }` blocks for enemies + boss + drift husks) into a new `LevelEntityFactory.spawn(level, world): SpawnedEntities` data class. `GameScreen` becomes a one-liner: `val spawned = LevelEntityFactory.spawn(level, world)`. Future enemy types (T-046's sprite work, future ticket additions) plug in via the factory, not via more parallel blocks in `GameScreen`.
+- **Commit/PR:** PR #95
+- **Tool:** `claude-code-sonnet`
+
+### T-112 — Auto-pause on window focus loss
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Auto-pause on window focus loss.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
+- **Goal:** Implement libGDX's `ApplicationListener.pause()` in `Main` (or the active `Game` subclass) to forward to the active screen if it's a `GameScreen`. `GameScreen.pause()` activates the existing pause overlay (T-063). On `resume()`, the overlay stays up — player must explicitly resume. Respect `SMOKE_MODE` — skip auto-pause in smoke.
+- **Commit/PR:** PR #91
+- **Tool:** `claude-code-sonnet`
+
+### T-107 — Hidden eco-token in each campaign level + "Collector" achievement
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Hidden eco-token in each campaign level + Collector achievement.
+- **Files:** `levels/TmxLevelDefinition.kt` (add 1 hidden eco-token per level1/2/3 in an off-path location), `progression/AchievementRegistry.kt` (add `collector` achievement: "Find all 3 hidden eco-tokens"), `screens/LevelRunState.kt` (track hidden-token collection separately + emit unlock)
+- **Goal:** Add 1 visually-distinct "hidden" eco-token to each of level1/2/3, placed in an out-of-the-way spot (e.g. behind a wall jump, in a ceiling alcove). Collecting all 3 across runs unlocks a new `collector` achievement. Hidden tokens render with a slight golden tint to distinguish from regular ones.
+- **Commit/PR:** PR #93
+- **Tool:** `claude-code-sonnet`
+
+### T-117 — Audio ducking on pause overlay
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Audio ducking on pause overlay.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
+- **Goal:** Add `MusicManager.duck(amount: Float = 0.3f, fadeMs: Int = 250)` and `MusicManager.unduck(fadeMs: Int = 250)`. While ducked, effective volume is `volMusic * amount`. `GameScreen` calls `duck()` on pause-overlay open, `unduck()` on close. Stacks idempotently — multiple `duck()` calls collapse, one `unduck()` restores.
+- **Commit/PR:** PR #90
+- **Tool:** `claude-code-sonnet`
+
+### T-119 — Save slot delete confirmation modal
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Save slot delete confirmation modal.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Tapping Delete on a save slot now opens a modal: `Delete slot {N}? This cannot be undone.` with `Cancel` / `Delete`. Default-focus is `Cancel`. `Esc` cancels. Only `Delete` fires `SaveManager.deleteSlot()`. Empty slots hide (or disable) the delete affordance to match existing slot-card style.
+- **Commit/PR:** PR #88
+- **Tool:** `claude-code-sonnet`
+
+### T-115 — In-game crash report dumper
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** In-game crash report dumper.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/CrashReporter.kt` (new), `core/src/test/kotlin/com/sohai/platformer/persist/CrashReporterTest.kt` (new)
+- **Goal:** Wire `Thread.setDefaultUncaughtExceptionHandler` in `Main.create()` to write a crash file at `<userHome>/.cloudy-ninja/crashes/crash-{yyyyMMdd-HHmmss}.log` containing: timestamp, OS + JDK + game version (`BUILD_VERSION` from T-100), full stack trace, save-slot metadata (slot indices + completed-level counts, **no PII**). After writing, re-throw or exit per libGDX convention. `CrashReporter` is a pure object; `Main` calls into it. Respect `SMOKE_MODE` — no-op in smoke.
+- **Commit/PR:** PR #87
+- **Tool:** `claude-code-sonnet`
+
+### T-110 — ScreenFade semantics: rename or doc
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** ScreenFade semantics — rename or doc.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/rendering/ScreenFade.kt` + all callers (find via `Grep "fadeIn|fadeOut" --type kt`)
+- **Goal:** Pick ONE and apply consistently: **(A)** rename `fadeIn` → `fadeFromBlack` and `fadeOut` → `fadeToBlack`, update all callers + tests; **(B)** add a KDoc paragraph above each function explaining the reversed-from-intuition semantics. Default to (A) unless caller count exceeds 20.
+- **Commit/PR:** PR #86
+- **Tool:** `claude-code-sonnet`
+
+### T-116 — Screen shake on stomp + boss hit
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Screen shake on stomp + boss hit.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/physics/WorldContactListener.kt`, `core/src/main/kotlin/com/sohai/platformer/rendering/ScreenShake.kt` (new), `core/src/test/kotlin/com/sohai/platformer/rendering/ScreenShakeTest.kt` (new)
+- **Goal:** Add `ScreenShake` utility (decaying amplitude over time, `update(delta)` + `offset(): Vector2`). On stomp-defeat in `WorldContactListener` and Storm Sentinel hit-confirm, call `ScreenShake.trigger(amplitude=4f, duration=0.15f)`. `LevelRenderer` applies the offset to the camera before rendering each frame. **Respect `Settings.reducedMotion`** — when on, `trigger()` is a no-op.
+- **Commit/PR:** PR #89
+- **Tool:** `claude-code-sonnet`
+
+### T-100 — Game version + build info on MainMenu (bottom corner)
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Game version + build info label on MainMenu.
+- **Files:** `screens/MainMenuScreen.kt`, `Constants.kt` (add `BUILD_VERSION` + `BUILD_DATE`), `i18n/Strings.kt`
+- **Goal:** Add `BUILD_VERSION` and `BUILD_DATE` constants in `Constants.kt` (manually maintained for alpha). MainMenu shows a tiny right-bottom label: `v{0} · {1}` (e.g. `v0.1.0 · 2026-05-12`). Style: `FontManager.getShared(11)`, dim grey `(0.5f, 0.5f, 0.5f, 0.6f)`, 8px from corner. Add `StringKey.MENU_BUILD_INFO`.
+- **Commit/PR:** PR #81
+- **Tool:** `claude-code-sonnet`
+
+### T-099 — Achievement progress counter on MainMenu
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Achievement progress counter on MainMenu.
+- **Files:** `screens/MainMenuScreen.kt`, `i18n/Strings.kt`
+- **Goal:** Below the slot cards on MainMenu, render `Achievements: {0}/12 unlocked` showing the **max** count across the 3 save slots. Style: `FontManager.getShared(14)`, light grey, 12px padded. Use `Strings.format(StringKey.MENU_ACHIEVEMENT_PROGRESS, count, total)` — new key. If all 12 unlocked: `MENU_ACHIEVEMENT_PROGRESS_COMPLETE` rendered in gold `(1f, 0.85f, 0.1f, 1f)`.
+- **Commit/PR:** PR #76
+- **Tool:** `claude-code-sonnet`
+
+### T-098 — Enemy hit-flash on takeDamage (200ms white tint)
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Enemy hit-flash on takeDamage (200ms white tint).
+- **Files:** `entities/Enemy.kt` (abstract base — add `hitFlashTimer`), `entities/SmogSprite.kt` + `entities/DriftHusk.kt` (set timer in takeDamage), `screens/LevelRenderer.kt` (lerp color toward white when timer > 0)
+- **Goal:** Add `hitFlashTimer: Float = 0f` to `Enemy`. `takeDamage()` sets it to 0.2f. `update(delta)` decrements. `LevelRenderer` reads `enemy.hitFlashTimer` and lerps base color toward white `(1, 1, 1, 1)` by `clamp(timer / 0.2f)`. Don't touch defeat path; just hit-feedback frames.
+- **Commit/PR:** PR #82
+- **Tool:** `claude-code-sonnet`
+
+### T-123 — HTML5 / web-demo viability spike
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** HTML5 / web-demo viability spike.
+- **Files:** `research/html5-web-demo-viability.md` (new)
+- **Goal:** Investigate whether Cloudy-Ninja can be ported to an HTML5 / GWT (libGDX-Teavm) target. Assess: (a) does our current libGDX version support GWT/Teavm backends? (b) which deps are GWT-hostile (Box2D-native, Kotlin stdlib reflection, GSON/Jackson)? (c) what's the rough effort estimate (S/M/L/XL)? (d) which game systems would need refactor or graceful-degrade (save serialization, audio formats, font baking)? Produce a go/no-go memo with options: (1) ship desktop-only alpha + web demo deferred; (2) cut a stripped web demo (1-2 levels, no save); (3) full web port.
+- **Commit/PR:** PR #78
+- **Tool:** `claude-code-sub-agent`  *(research-only, but technical — needs codebase-aware judgement)*
+
+### T-124 — itch.io page draft + Tag Wizard order (T-075 follow-up)
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** itch.io page draft + tag order.
+- **Files:** `marketing/itch-page-draft.md` (new)
+- **Goal:** Draft the full itch.io page content: short description (160 chars), long description (~500 words, plain markdown, no autolinks), feature list (5-8 bullets), system requirements, controls reference (refer to T-073 default mapping), genre + tag list (primary tags first per T-075 — `Pixel Graphics`, `Platformer`, `2D`, `Nature`, then stretch). Also draft the Tag Wizard order (Steam-style — itch uses a similar discovery mechanism). Embed placeholders for screenshots + a future trailer.
+- **Commit/PR:** PR #77
+- **Tool:** `claude-code-sub-agent`  *(re-routed 2026-05-13 from claude-code-sonnet — parent dispatched as sub-agent)*
+
+### T-125 — Asset attribution audit (alpha-blocking legal)
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Asset attribution audit.
+- **Files:** `research/asset-attribution-audit.md` (new), append entries to `QUESTIONS.md` if any gaps found
+- **Goal:** Walk every file under `assets/` (and `core/src/main/resources/` if any). For each: identify the source, license (CC0, CC-BY, custom), author/attribution string, and compare to what `NOTICE.md` actually declares. Flag (a) assets used but not credited, (b) assets credited but not used (stale entries), (c) any license that requires more than NOTICE.md provides (e.g. CC-BY needs visible in-game credit, not just NOTICE). Cross-reference Kenney CC0 declarations + any audio files generated by `ProceduralMusicGenerator` (those are own-IP).
+- **Commit/PR:** PR #79
+- **Tool:** `claude-code-sub-agent`  *(re-routed 2026-05-13 from claude-code-sonnet — dispatched as sub-agent for autonomous run)*
+
+### T-073 — User research: pixel-platformer default keyboard layouts
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Pixel-platformer keyboard layout research.
+- **Files:** `research/keyboard-layout-conventions.md` (new)
+- **Goal:** Catalog default keyboard bindings across 10–15 popular indie pixel platformers (Celeste, Hollow Knight, Hyper Light Drifter, Hades, Dead Cells, Risk of Rain, Stardew Valley, Owlboy, Shovel Knight, etc.). Capture for each: jump key, action key, dash key, alt-action key, pause key, inventory key, accessibility-mode key (if any). Synthesize a most-common default + a recommended Cloudy-Ninja default that maximizes "feels familiar to platformer players."
+- **Commit/PR:** PR #73
+- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from antigravity — autonomous-run velocity)*
+
+### T-075 — Steam tags + keyword research
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Steam tags + keyword research.
+- **Files:** `marketing/steam-tags-research.md` (new)
+- **Goal:** Cloudy Ninja's eventual Steam listing needs the right tag combination. Survey Steam's top-rated 2D pixel-art platformers with eco/climate/accessibility angles. Cross-reference Steam's official tag taxonomy. Identify: (a) tag combinations correlating with discovery success, (b) tag conflicts that *hurt* visibility, (c) the 3-5 must-have tags for our pitch, (d) 5-8 "stretch" tags that broaden audience without diluting positioning.
+- **Commit/PR:** PR #74
+- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from antigravity — autonomous-run velocity)*
+
+### T-114 — itch.io deploy workflow (butler)
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** itch.io deploy workflow (butler, dispatch-only).
+- **Files:** `.github/workflows/itch-deploy.yml` (new), `scripts/deploy-itch.sh` (new), `docs/itch-deploy.md` (new)
+- **Goal:** Manual-trigger (`workflow_dispatch`) workflow that (1) builds the desktop JAR (`./gradlew desktop:dist`), (2) downloads butler, (3) uploads via `butler push <jar> sohailshahm/cloudy-ninja:<channel> --userversion <tag>`. Reads `ITCH_API_KEY` from repo secrets. Inputs: `channel` (default `desktop`), `version-tag` (optional, defaults to short SHA). `docs/itch-deploy.md` explains itch.io page setup + API key creation.
+- **Commit/PR:** PR #70
+- **Tool:** `claude-code-sonnet`
+
+### T-109 — FontManager testability seam
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** FontManager testability seam.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/FontManager.kt`, `core/src/test/kotlin/com/sohai/platformer/FontManagerTest.kt`
+- **Goal:** Extract the font-loading codepath inside `FontManager.create()` into a small delegate (e.g. `interface FontLoader { fun load(handle: FileHandle): BitmapFont }`) with a default `Gdx.files`-backed implementation. Expose a package-private setter so tests can inject a no-op loader without mocking `Gdx.files`. Runtime behavior unchanged.
+- **Commit/PR:** PR #69
+- **Tool:** `claude-code-sonnet`
+
+### T-101 — Credits screen
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Credits screen.
+- **Files:** `screens/CreditsScreen.kt` (new), `screens/SettingsScreen.kt` (add a "Credits" button in the footer row), `i18n/Strings.kt` (credit-related keys)
+- **Goal:** Scrollable Credits screen reachable from Settings. Sections: **Game** (Sohail Shah, design + code, 2026); **Code assistants** (Claude Code/Anthropic, GitHub Copilot, Antigravity/Gemini/Google, NotebookLM); **Art** (Kenney pixel-platformer, CC0, kenney.nl + entries from `art-research/tileset-candidates.md`); **Audio** (procedural via T-013/T-030 + candidates in `art-research/audio-candidates.md`); **Engine** (libGDX, Box2D, Kotlin, VisUI, Kotest); **Climate sources** (NOAA, NASA Earth Observatory, IPCC etc. — see `research/climate-sources/INDEX.md`). Section header `FontManager.getShared(22)`, body `getShared(14)`. Back button bottom-center.
+- **Commit/PR:** PR #65
+- **Tool:** `claude-code-sub-agent`
+
+### T-113 — Save format version field + migration scaffold
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Save format version field + migration scaffold.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/SaveManager.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/SaveMigrations.kt` (new), `core/src/test/kotlin/com/sohai/platformer/persist/SaveMigrationsTest.kt` (new)
+- **Goal:** Add `saveFormatVersion: Int = 1` to `GameState`. In `SaveManager.loadGame()`, route the deserialized JSON through `SaveMigrations.migrate(json): GameState` before returning. `SaveMigrations` is a chain of `(version, JsonValue) -> JsonValue` steps; v1 is an identity no-op. Existing saves without a version field are treated as v1. Persist writes always use the current version.
+- **Commit/PR:** PR #71
+- **Tool:** `claude-code-sub-agent`
+
+### T-120 — Localization coverage audit
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** i18n coverage audit.
+- **Files:** `research/i18n-coverage.md` (new), entries in `QUESTIONS.md` if hardcoded user-facing strings found
+- **Goal:** Scan all `*.kt` files under `core/src/main/kotlin/com/sohai/platformer/screens/`, `entities/`, and other UI-adjacent paths for string literals that look user-facing (`Label("...")`, `TextButton("...")`, `setText("...")`; log messages excluded). For each hit record: file, line, literal, recommended `StringKey` name. Group by category (settings/menu/gameplay/achievements). Produce a punch-list — **do NOT modify code**. If high-confidence cases are found, file ONE summary QUESTIONS.md entry asking whether to wire each as a follow-up Copilot ticket.
+- **Commit/PR:** PR #72
+- **Tool:** `claude-code-sub-agent` *(re-routed 2026-05-12 from antigravity — autonomous-run velocity)*
+
+### T-104 — Splash / asset-preload progress bar
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Splash + asset-preload progress bar.
+- **Files:** `screens/SplashScreen.kt` (new), `Main.kt` (start with SplashScreen instead of MainMenu), `audio/MusicManager.kt` (load tracks lazily via AssetManager hook if not already)
+- **Goal:** On first launch, show a 1-second minimum splash with a horizontal progress bar tracking asset preload (atlas pack, music tracks via `ProceduralMusicGenerator`, 8 SFX). Transition to `MainMenuScreen` when preload completes AND the 1s minimum has elapsed. The minimum prevents flash-frames on fast machines.
+- **Commit/PR:** PR #83
+- **Tool:** `claude-code-sonnet`
+
+### T-111 — SoundManager unknown-id: log → error
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Switched unknown-sound-id branch from `Gdx.app.log` to `Gdx.app.error`. Closes HANDOFF source-side quirk #1. Originally drafted by Copilot via PR #68 but that PR became blocked behind GitHub Actions bot-contributor approval policy + the `gh pr close/reopen` deletes-runs gotcha; re-submitted byte-identical from a Claude branch with Copilot Co-authored-by preserved.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/audio/SoundManager.kt`, `core/src/test/kotlin/com/sohai/platformer/audio/SoundManagerTest.kt`
+- **Goal:** In the unknown-sound-id branch of `SoundManager.play()`, switch from `Gdx.app.log` (info) to `Gdx.app.error`. Update the existing test to assert error-level logging.
+- **Commit/PR:** PR #134 (superseded original Copilot PR #68 which was closed)
+- **Tool:** `copilot-agent` (drafted) → `claude-code-opus` (re-submitted)
+
+### T-122 — Wire 3 high-confidence i18n strings to StringKey (T-120 follow-up)
+- **Status:** Done
+- **Completed:** 2026-05-13
+- **Outcome:** Routed 3 hardcoded literals through `Strings.kt` via new `VICTORY_DELTA_UNDER`, `VICTORY_DELTA_OVER`, `HUB_PORTAL_LOCKED` keys (T-120 audit follow-up). Originally drafted by Copilot via PR #85 but that branch was ~50 commits stale of main and the rebase wasn't clean; re-applied the same logical diff manually from a fresh Claude branch with Copilot Co-authored-by preserved.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/VictoryScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`
+- **Goal:** Add 3 new `StringKey` entries and replace the literals at `VictoryScreen.kt:61-62` and `LevelRenderer.kt`.
+- **Commit/PR:** PR #135 (superseded original Copilot PR #85 which was closed)
+- **Tool:** `copilot-agent` (drafted) → `claude-code-opus` (re-submitted)
 
 <!--
 Template for moving a task here:
