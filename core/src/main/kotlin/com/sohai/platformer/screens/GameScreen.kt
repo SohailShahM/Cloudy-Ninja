@@ -31,6 +31,8 @@ import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.entities.StormSentinel
 import com.sohai.platformer.i18n.StringKey
 import com.sohai.platformer.i18n.Strings
+import com.sohai.platformer.input.InputManager
+import com.sohai.platformer.input.RestartHoldTracker
 import com.sohai.platformer.levels.Level
 import com.sohai.platformer.levels.LevelEntityFactory
 import com.sohai.platformer.levels.LevelManager
@@ -124,6 +126,9 @@ class GameScreen(
 
     // ── Body destruction queue ────────────────────────────────────────────────
     private val pendingBodyDestroy = mutableSetOf<Body>()
+
+    // ── T-133: quick-restart hotkey (hold rebindable `restart` key 0.5s) ─────
+    private val restartHold = RestartHoldTracker(holdDurationSeconds = 0.5f)
 
     private var isDisposed = false
 
@@ -380,6 +385,30 @@ class GameScreen(
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) setPaused(!isPaused)
 
+        // T-133: hold-restart timer. Ticked only while gameplay is active —
+        // pause/overlay/smoke-mode all freeze the tracker (release-state
+        // semantics: held=false resets heldSeconds to 0). The autopilot
+        // never presses R (verified: LevelRunState.setDebugHeld only drives
+        // left/right/jump/action), so this is safe under SMOKE_MODE too.
+        val restartGameplayActive = !isPaused
+            && atlasOverlay == null
+            && levelCompleteOverlay == null
+            && gameOverOverlay == null
+            && !runState.isGameOver
+            && !runState.levelCompleted
+            && !Constants.SMOKE_MODE
+        val restartHeldNow = restartGameplayActive && InputManager.isRestartHeld()
+        if (restartHold.update(clampedDelta, restartHeldNow)) {
+            // Threshold reached — restart the level. Match PauseOverlay.onRestart
+            // (re-instantiate GameScreen on the same level, dispose this one).
+            restartHold.reset()
+            if (game != null) {
+                game.screen = GameScreen(level, game, isTimeTrial = isTimeTrial)
+                dispose()
+                return
+            }
+        }
+
         if (Constants.SMOKE_MODE) {
             // Smoke mode: always tick update() so the auto-quit timer fires
             // regardless of overlays (Cloud Atlas snapshots), pause state, or
@@ -425,6 +454,15 @@ class GameScreen(
 
         // Layer 4.5: achievement toast (above HUD, below pause/fade)
         achievementToast.render(spriteBatch)
+
+        // Layer 4.6: T-133 radial restart progress indicator. Drawn near the
+        // top-right of the HUD (just under the score/timer block) only while
+        // the player is actively holding the restart key. A short tap never
+        // triggers a draw because heldSeconds returns to 0 the same frame the
+        // key is released.
+        if (restartHold.isHolding()) {
+            renderRestartHoldIndicator(restartHold.progress())
+        }
 
         // Layer 5: screen fade overlay
         screenFade.render()
@@ -479,6 +517,59 @@ class GameScreen(
                 return
             }
         }
+    }
+
+    /**
+     * T-133: render a small radial progress arc near the top-right of the
+     * HUD while the player holds the restart key. Uses screen-space pixel
+     * coordinates (matches HUD's [Constants.VIRTUAL_WIDTH]×[Constants.VIRTUAL_HEIGHT]
+     * virtual viewport) so it lines up visually with the score/timer block in
+     * [Hud]. Implementation: filled background ring + foreground filled-arc
+     * proportional to [progress] (0..1). No new texture assets.
+     */
+    private fun renderRestartHoldIndicator(progress: Float) {
+        // Anchor near the top-right (mirrors HUD's topRight table padding
+        // ~40px right, ~20px top — drop the ring just under the timer).
+        val cx = Constants.VIRTUAL_WIDTH - 56f
+        val cy = Constants.VIRTUAL_HEIGHT - 96f
+        val outerR = 14f
+        val innerR = 10f
+
+        val width  = Gdx.graphics.width.toFloat()
+        val height = Gdx.graphics.height.toFloat()
+        shapeRenderer.projectionMatrix.setToOrtho2D(
+            0f, 0f,
+            Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT
+        )
+        // Preserve any GL state we touch.
+        Gdx.gl.glEnable(GL20.GL_BLEND)
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
+
+        // Background ring: faint dark backdrop so the foreground arc reads
+        // against the level.
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.color = Color(0f, 0f, 0f, 0.45f)
+        shapeRenderer.circle(cx, cy, outerR, 24)
+        shapeRenderer.color = Color(0.07f, 0.10f, 0.14f, 0.85f)
+        shapeRenderer.circle(cx, cy, innerR, 24)
+
+        // Foreground arc: bright green, swept clockwise from 12 o'clock by
+        // (progress * 360°). libGDX's arc() takes start-degrees + sweep-degrees
+        // measured CCW from +X axis; rotating start to 90° puts the 0% mark at
+        // 12 o'clock, and negating sweep produces a clockwise fill.
+        if (progress > 0f) {
+            shapeRenderer.color = Color(0.3f, 1f, 0.55f, 0.95f)
+            // Outer disk swept arc + inner punch-out reproduces a ring without
+            // ShapeRenderer.Line aliasing.
+            shapeRenderer.arc(cx, cy, outerR, 90f, -progress * 360f, 32)
+            shapeRenderer.color = Color(0.07f, 0.10f, 0.14f, 1f)
+            shapeRenderer.circle(cx, cy, innerR, 24)
+        }
+        shapeRenderer.end()
+
+        // Restore identity-ish projection for subsequent renderers that rely
+        // on the world-camera matrix (level fade overlay is next).
+        shapeRenderer.projectionMatrix.setToOrtho2D(0f, 0f, width, height)
     }
 
     override fun resize(width: Int, height: Int) {

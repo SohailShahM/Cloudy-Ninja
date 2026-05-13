@@ -159,4 +159,19 @@ object InputManager {
         if (Gdx.input.isKeyJustPressed(keyFor("action"))) return true
         return false
     }
+
+    /**
+     * T-133: returns true while the rebindable `restart` key (default R) is
+     * physically held. Used by [com.sohai.platformer.screens.GameScreen] to
+     * drive a 0.5s hold-to-restart gesture with a radial progress indicator
+     * — tap-R is a no-op by design.
+     *
+     * Intentionally bypasses the debug-override path: the smoke autopilot
+     * never asserts a restart, so we keep the raw keyboard probe simple and
+     * autopilot-safe. (Verified: `LevelRunState` only calls `setDebugHeld`
+     * for left/right/jump/action; it never touches restart.)
+     */
+    fun isRestartHeld(): Boolean {
+        return Gdx.input.isKeyPressed(keyFor("restart"))
+    }
 }

@@ -182,13 +182,15 @@ class SettingsScreen(
         // ══════════════════════════════════════════════════════════════════
         sectionHeader(Strings.get(StringKey.SETTINGS_CONTROLS), topPad = 12f)
 
-        val actionNames = listOf("left", "right", "jump", "action", "swap")
+        val actionNames = listOf("left", "right", "jump", "action", "swap", "restart")
         val displayNames = mapOf(
             "left" to Strings.get(StringKey.SETTINGS_MOVE_LEFT),
             "right" to Strings.get(StringKey.SETTINGS_MOVE_RIGHT),
             "jump" to Strings.get(StringKey.SETTINGS_JUMP),
             "action" to Strings.get(StringKey.SETTINGS_ACTION),
-            "swap" to Strings.get(StringKey.SETTINGS_SWAP_CHARACTER)
+            "swap" to Strings.get(StringKey.SETTINGS_SWAP_CHARACTER),
+            // T-133: rebindable quick-restart hotkey (held 0.5s in-game).
+            "restart" to Strings.get(StringKey.SETTINGS_RESTART_LEVEL)
         )
 
         // Track buttons so we can update their text after rebind
