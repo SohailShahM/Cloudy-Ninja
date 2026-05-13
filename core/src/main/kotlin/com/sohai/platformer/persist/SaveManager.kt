@@ -4,6 +4,11 @@ import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.files.FileHandle
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.IOException
+import java.io.RandomAccessFile
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 /**
  * Manages saving and loading game state to/from JSON files.
@@ -25,28 +30,101 @@ object SaveManager {
     private val cache = mutableMapOf<String, GameState>()
 
     /**
-     * Save the current game state to a JSON file.
+     * Test-only hook: if non-null, invoked after the temp file has been written
+     * and fsync'd but BEFORE the atomic rename. Throwing from this hook
+     * simulates a process crash mid-save and lets tests assert that the
+     * original target file is left intact.
      *
-     * Atomic-ish: writes to `<filename>.tmp`, then copies to the final path.
-     * A crash mid-write leaves the previous save intact (libGDX has no rename
-     * primitive on the FileHandle API; copyTo + delete is the closest we get).
+     * Production code MUST NOT set this. It is `internal` for visibility from
+     * tests in the same module.
+     */
+    internal var crashAfterTempWriteHook: (() -> Unit)? = null
+
+    /**
+     * Test-only hook: if non-null, invoked DURING the write to the temp file
+     * (after open, before fsync/close). Throwing simulates a crash mid-write
+     * and lets tests assert that the original target file is untouched.
+     */
+    internal var crashDuringWriteHook: (() -> Unit)? = null
+
+    /**
+     * Save the current game state to a JSON file using atomic write semantics.
+     *
+     * Sequence (T-136):
+     *  1. Serialize `state` to JSON.
+     *  2. Write bytes to `<filename>.tmp` and fsync via [java.nio.channels.FileChannel.force].
+     *  3. Atomically rename `<filename>.tmp` → `<filename>` using
+     *     [Files.move] with [StandardCopyOption.ATOMIC_MOVE].
+     *  4. Fallback to non-atomic [StandardCopyOption.REPLACE_EXISTING] move
+     *     and log a warning if the filesystem rejects atomic moves
+     *     (e.g. some FAT/SMB shares).
+     *
+     * Crash semantics:
+     *  - Crash during step 2 → temp file may be partial; original target
+     *    untouched and still loadable. Temp file is best-effort cleaned up.
+     *  - Crash between step 2 and step 3 → original target untouched.
+     *  - Crash during step 3 → either the old or the new file is at the
+     *    target path; both are valid JSON, so the load path always succeeds.
      */
     fun saveGame(state: GameState, filename: String = DEFAULT_SAVE_FILE) {
-        try {
-            val saveDir = Gdx.files.local(SAVE_DIR)
-            if (!saveDir.exists()) saveDir.mkdirs()
+        // Resolve via libGDX so the save directory lives wherever the
+        // platform wants it (desktop: working dir, Android: app data, etc.),
+        // but perform the actual I/O through java.nio.file for atomic move
+        // semantics that FileHandle doesn't expose.
+        val saveDirHandle = Gdx.files.local(SAVE_DIR)
+        if (!saveDirHandle.exists()) saveDirHandle.mkdirs()
 
-            val tmp   = Gdx.files.local("$SAVE_DIR/$filename.tmp")
-            val final = Gdx.files.local("$SAVE_DIR/$filename")
-            val jsonString = json.encodeToString(state)
-            tmp.writeString(jsonString, false)
-            // Replace target atomically (within libGDX's API)
-            if (final.exists()) final.delete()
-            tmp.copyTo(final)
-            tmp.delete()
+        val tmpHandle   = Gdx.files.local("$SAVE_DIR/$filename.tmp")
+        val finalHandle = Gdx.files.local("$SAVE_DIR/$filename")
+        val tmpPath   = tmpHandle.file().toPath()
+        val finalPath = finalHandle.file().toPath()
+
+        val jsonString = json.encodeToString(state)
+        val payload = jsonString.toByteArray(Charsets.UTF_8)
+
+        try {
+            // Step 2: write + fsync. RandomAccessFile gives us a FileChannel
+            // so we can force(true) (data + metadata) before close.
+            RandomAccessFile(tmpPath.toFile(), "rw").use { raf ->
+                raf.setLength(0L)
+                raf.write(payload)
+                crashDuringWriteHook?.invoke()
+                raf.fd.sync()
+            }
+
+            // Test-only seam between fsync and rename.
+            crashAfterTempWriteHook?.invoke()
+
+            // Step 3: atomic rename. Fall back if the filesystem refuses.
+            try {
+                Files.move(
+                    tmpPath,
+                    finalPath,
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING
+                )
+            } catch (e: AtomicMoveNotSupportedException) {
+                Gdx.app.log(
+                    "SaveManager",
+                    "Atomic move not supported on this filesystem; falling back to REPLACE_EXISTING. ${e.message}"
+                )
+                Files.move(tmpPath, finalPath, StandardCopyOption.REPLACE_EXISTING)
+            }
+
             cache[filename] = state   // keep cache coherent after save
             Gdx.app.log("SaveManager", "Saved to $filename")
         } catch (e: Exception) {
+            // Best-effort cleanup of the partial temp file. The original
+            // target (if any) was never touched, so the previous save is
+            // still loadable.
+            try {
+                Files.deleteIfExists(tmpPath)
+            } catch (cleanup: IOException) {
+                Gdx.app.error(
+                    "SaveManager",
+                    "Failed to clean up temp file after save error: ${cleanup.message}"
+                )
+            }
             Gdx.app.error("SaveManager", "Failed to save: ${e.message}")
         }
     }
