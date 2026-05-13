@@ -28,7 +28,7 @@ class ScreenFade(
     private var targetAlpha = 0f
     private var speed       = 2f
 
-    var onFadeOutComplete: (() -> Unit)? = null
+    var onFadeToBlackComplete: (() -> Unit)? = null
 
     init {
         val pm = Pixmap(1, 1, Pixmap.Format.RGBA8888)
@@ -39,19 +39,33 @@ class ScreenFade(
         proj.setToOrtho2D(0f, 0f, viewportW, viewportH)
     }
 
-    fun fadeIn(speed: Float = 2f) {
+    /**
+     * Reveal the gameplay scene by clearing the black overlay.
+     *
+     * Starts with the screen fully covered (alpha=1f) and lerps alpha DOWN to 0f
+     * so the scene becomes visible. Use this when entering a level or scene.
+     */
+    fun fadeFromBlack(speed: Float = 2f) {
         alpha = 1f; targetAlpha = 0f; this.speed = speed
     }
 
-    fun fadeOut(speed: Float = 1f, onComplete: (() -> Unit)? = null) {
+    /**
+     * Cover the gameplay scene with a black overlay.
+     *
+     * Starts with the screen fully clear (alpha=0f) and lerps alpha UP to 1f
+     * so the scene is hidden behind black. Use this when leaving a level,
+     * on death, or before a transition. The optional [onComplete] callback
+     * fires exactly once when alpha reaches the target.
+     */
+    fun fadeToBlack(speed: Float = 1f, onComplete: (() -> Unit)? = null) {
         alpha = 0f; targetAlpha = 1f; this.speed = speed
-        onFadeOutComplete = onComplete
+        onFadeToBlackComplete = onComplete
     }
 
     fun update(delta: Float) {
         if (alpha < targetAlpha) {
             alpha = (alpha + delta * speed).coerceAtMost(targetAlpha)
-            if (alpha >= targetAlpha) onFadeOutComplete?.invoke()
+            if (alpha >= targetAlpha) onFadeToBlackComplete?.invoke()
         } else if (alpha > targetAlpha) {
             alpha = (alpha - delta * speed).coerceAtLeast(targetAlpha)
         }

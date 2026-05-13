@@ -150,7 +150,7 @@ class LevelRunState(
     private companion object {
         const val DEATH_ANIM_DURATION = 0.5f
         const val DEATH_ZOOM_AMOUNT   = 0.2f      // camera.zoom goes 1.0 → 1.2
-        const val DEATH_FLASH_SPEED   = 5f        // ScreenFade.fadeOut: 0→1 in 0.2s
+        const val DEATH_FLASH_SPEED   = 5f        // ScreenFade.fadeToBlack: 0→1 in 0.2s
     }
     private var deathAnimT: Float = 0f
     private var deathAnimActive = false
@@ -527,7 +527,7 @@ class LevelRunState(
                 renderer.playerAlpha = 1f
                 performDeathRespawn(assistSettings)
                 // Brief 0.2s screen flash (0 → 1 alpha at speed 5/s).
-                screenFade.fadeOut(speed = DEATH_FLASH_SPEED)
+                screenFade.fadeToBlack(speed = DEATH_FLASH_SPEED)
             }
         } else if (playerDied) {
             // Instant feedback (sfx, shake, hitstop, sparkle, spirit-health

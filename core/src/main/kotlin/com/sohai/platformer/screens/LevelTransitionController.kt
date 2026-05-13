@@ -58,7 +58,7 @@ class LevelTransitionController(
         onContinue: () -> Unit
     ): LevelCompleteOverlay {
         SoundManager.play("level_complete")
-        screenFade.fadeOut(speed = 0.4f)
+        screenFade.fadeToBlack(speed = 0.4f)
 
         val totalEco    = level.getEcoTokenPositions().size
         val ecoCollected = totalEco - ecoTokens.size
