@@ -328,20 +328,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Implement libGDX's `ApplicationListener.pause()` in `Main` (or the active `Game` subclass) to forward to the active screen if it's a `GameScreen`. `GameScreen.pause()` activates the existing pause overlay (T-063). On `resume()`, the overlay stays up — player must explicitly resume. Respect `SMOKE_MODE` — skip auto-pause in smoke.
 - **Done when:** Alt-tab while in-game triggers the pause overlay; resume keeps overlay up until input; smoke CI passes (no auto-pause in smoke mode).
 
-### T-115 — In-game crash report dumper  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-104  *(both touch `Main.kt` — sequential)*
-- **GDD ref:** GAME_PLAN.md (alpha bug-reporting — players need something to attach)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/CrashReporter.kt` (new), `core/src/test/kotlin/com/sohai/platformer/persist/CrashReporterTest.kt` (new)
-- **Goal:** Wire `Thread.setDefaultUncaughtExceptionHandler` in `Main.create()` to write a crash file at `<userHome>/.cloudy-ninja/crashes/crash-{yyyyMMdd-HHmmss}.log` containing: timestamp, OS + JDK + game version (`BUILD_VERSION` from T-100), full stack trace, save-slot metadata (slot indices + completed-level counts, **no PII**). After writing, re-throw or exit per libGDX convention. `CrashReporter` is a pure object; `Main` calls into it. Respect `SMOKE_MODE` — no-op in smoke.
-- **Done when:** A deliberately-thrown exception in dev produces a crash file in the documented path; smoke CI doesn't write crash files; tests cover the pure-function formatter path.
-- **Constraints:** Don't read save *contents* into the crash log (PII risk). Only metadata.
-
 ### T-116 — Screen shake on stomp + boss hit  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -516,6 +502,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-115 — In-game crash report dumper  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-115-crash-reporter
+- **Started:** 2026-05-13
+- **Depends on:** T-104  *(both touch `Main.kt` — sequential)*
+- **GDD ref:** GAME_PLAN.md (alpha bug-reporting — players need something to attach)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/CrashReporter.kt` (new), `core/src/test/kotlin/com/sohai/platformer/persist/CrashReporterTest.kt` (new)
+- **Goal:** Wire `Thread.setDefaultUncaughtExceptionHandler` in `Main.create()` to write a crash file at `<userHome>/.cloudy-ninja/crashes/crash-{yyyyMMdd-HHmmss}.log` containing: timestamp, OS + JDK + game version (`BUILD_VERSION` from T-100), full stack trace, save-slot metadata (slot indices + completed-level counts, **no PII**). After writing, re-throw or exit per libGDX convention. `CrashReporter` is a pure object; `Main` calls into it. Respect `SMOKE_MODE` — no-op in smoke.
+- **Done when:** A deliberately-thrown exception in dev produces a crash file in the documented path; smoke CI doesn't write crash files; tests cover the pure-function formatter path.
+- **Constraints:** Don't read save *contents* into the crash log (PII risk). Only metadata.
 
 ### T-110 — ScreenFade semantics: rename or doc  [P3]
 - **Status:** In Progress
