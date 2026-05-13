@@ -519,30 +519,64 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
   7. Smoke CI passes.
 - **Constraints:** **Don't change visible behavior in non-high-contrast mode.** That path stays byte-identical. **Don't move the `ColorRole.ENEMY` palette mapping** out of `LevelRenderer.hc()` — that helper stays where it is; entities can call it via `LevelRenderer.hc(...)` if needed, or LevelRenderer can pre-resolve the color and pass it in. Pick whichever causes fewer cross-file refs (likely: pre-resolve + pass).
 
-### T-171 — `GlobalInputProcessor` — stop screens clobbering input  [P3]
+### T-171 — `GlobalInputRouter` Phase A: scaffold + MainMenu proof  [P3]
 - **Status:** Todo
-- **Tool:** `human-then-claude-code-sonnet`  *(architecture decision is human; implementation is mechanical)*
-- **Tier:** L
-- **Autonomous-eligible:** **no**  *(touches every Screen file; input regressions cascade; needs deliberate review)*
+- **Tool:** `claude-code-sonnet`  *(architecture decision approved 2026-05-13; Phase A is a small, validated step)*
+- **Tier:** M  *(was L; split into two phases)*
+- **Autonomous-eligible:** yes  *(Phase A is small and reversible; Phase B is the big migration)*
 - **Agent:** _unclaimed_
 - **Branch:** _none_
-- **Depends on:** _none_  *(but conflicts widely — schedule when other Screen work is quiet)*
+- **Depends on:** _none_
 - **GDD ref:** LEARNINGS.md 2026-05-13 "Every Screen resets Gdx.input.inputProcessor"; surfaced by T-147.
-- **Files:** new `core/src/main/kotlin/com/sohai/platformer/input/GlobalInputRouter.kt`, `core/src/main/kotlin/com/sohai/platformer/Main.kt` (install at app create, intercept global hotkeys), every Screen file that currently sets `Gdx.input.inputProcessor` (grep — likely ~15 files): MainMenu, Settings, Achievements, Credits, Stats, Victory, GameScreen, CloudAtlas, SplashScreen, LevelSelect, plus any overlays that take input.
-- **Goal:** Introduce a single `InputMultiplexer` owned by `GlobalInputRouter` and installed once at `Main.create()`. Screens **push** their Stage in `show()` and **pop** it in `hide()` rather than overwriting `Gdx.input.inputProcessor` outright. Global hotkeys (F12 from T-147, M-mute from T-118, future debug toggles) live at the top of the multiplexer permanently — no more polling in `Main.render()`.
-- **Architecture decision (proposed; awaiting user sign-off):**
-  - Singleton `object GlobalInputRouter` wraps a private `InputMultiplexer`.
-  - `register(global: InputProcessor)` adds at the END (highest priority — global hotkeys outrank screen input).
-  - `pushScreen(stage: InputProcessor)` and `popScreen(stage: InputProcessor)` add/remove BEFORE the global block. Screens call these in `show`/`hide`.
-  - `Main.create()` installs the router as `Gdx.input.inputProcessor` ONCE. After that, `Gdx.input.inputProcessor` is never reassigned anywhere.
-  - T-147's per-frame F12 polling in `Main.render()` migrates back to a real `InputAdapter.keyDown(F12)` once the router is in place. T-118's M-key similarly migrates from InputManager to a global adapter (cleaner).
+- **Files:** new `core/src/main/kotlin/com/sohai/platformer/input/GlobalInputRouter.kt`, new `core/src/test/kotlin/com/sohai/platformer/input/GlobalInputRouterTest.kt`, `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt`
+- **Goal:** Introduce `GlobalInputRouter` and migrate ONE screen (MainMenuScreen) as proof of concept. Other ~14 screens keep their current `Gdx.input.inputProcessor = stage` pattern as a legacy fallback until Phase B (T-172) handles the bulk migration.
+- **Design:**
+  ```
+  object GlobalInputRouter {
+    private val mux = InputMultiplexer()
+    fun install() { Gdx.input.inputProcessor = mux }     // re-install after any clobber
+    fun register(global: InputProcessor) {
+      // Globals at END so screen processors get the event first
+      // (and can return-true to consume). Globals only fire when no
+      // screen handler consumed.
+      mux.addProcessor(mux.size, global)
+    }
+    fun pushScreen(stage: InputProcessor) { mux.addProcessor(0, stage) }
+    fun popScreen(stage: InputProcessor)  { mux.removeProcessor(stage) }
+    fun isActive(): Boolean = Gdx.input.inputProcessor === mux
+  }
+  ```
 - **Done when:**
-  1. `GlobalInputRouter` exists with the API above + Kotest spec covering register/push/pop ordering.
-  2. Every Screen's `show()` calls `pushScreen(stage)`; `hide()` calls `popScreen(stage)`. **Zero remaining `Gdx.input.inputProcessor = ...` assignments** outside `Main.create()`.
-  3. F12 + M-mute migrate from polling to real adapters; `Main.render()` is no longer responsible for input polling.
-  4. All existing screen interactions still work (click buttons, type in rebind, etc.).
-  5. Smoke CI passes (autopilot is a fake InputProcessor injected via the router, not a clobber — verify).
-- **Constraints:** **DO NOT START** until user signs off on the design above. The risk concentrates on (a) overlay screens that may not always have a `hide()` pair, (b) Stage focus/keyboardFocus interactions, (c) smoke autopilot's input injection pathway. Each is solvable but needs deliberation. Surface to QUESTIONS.md once a sub-agent's review of the codebase reveals the actual overlay-and-focus situation.
+  1. `GlobalInputRouter.kt` exists with the API above. Kotest spec covers register / pushScreen / popScreen / isActive / event-ordering invariant.
+  2. `Main.create()` calls `GlobalInputRouter.install()` AFTER existing init, and registers F12 + M-mute as real `InputAdapter`s on the router.
+  3. `MainMenuScreen.show()` calls `GlobalInputRouter.install()` + `pushScreen(stage)` instead of `Gdx.input.inputProcessor = stage`. `MainMenuScreen.hide()` calls `popScreen(stage)`.
+  4. **The double-fire concern:** T-147's F12 polling in `Main.render()` and T-118's M-key polling in `InputManager` continue to fire on screens that haven't migrated. To prevent double-fire on MainMenuScreen (where both adapter + poll would fire), gate the polls with `if (!GlobalInputRouter.isActive())` — i.e. polling is the fallback path; adapter is the primary on the migrated screen. Apply this gate to BOTH the F12 polling site and the M-key handler.
+  5. All existing screen interactions still work: clicking MainMenu buttons, F12 anywhere (still produces a PNG), M anywhere (still toggles mute).
+  6. Smoke CI passes.
+- **Constraints:**
+  - **Don't migrate any screen other than MainMenuScreen.** The other ~14 Screens keep their current `Gdx.input.inputProcessor = stage` calls — they clobber the router on `show()`, and the polling fallback covers F12/M for them until Phase B.
+  - **Don't delete the F12 polling or T-118 M-key polling.** Those stay as the legacy fallback in Phase A.
+  - **Don't touch `LevelRenderer.kt`, `ScreenShake.kt`, entity files, Settings family** — other work in flight.
+  - **Don't change the smoke autopilot input injection path.** Smoke runs use `InputManager.setDebugOverrideEnabled` — orthogonal. If it breaks, STOP and surface.
+
+### T-172 — `GlobalInputRouter` Phase B: full screen migration  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(after Phase A lands and bakes for one smoke session)*
+- **Tier:** M-L
+- **Autonomous-eligible:** yes-with-review
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-171  *(Phase A must land first)*
+- **GDD ref:** T-171 outcome
+- **Files:** every Screen file still doing `Gdx.input.inputProcessor = stage` (grep after T-171 — should be ~14 files): SettingsScreen, AchievementsScreen, CreditsScreen, StatsScreen, VictoryScreen, GameScreen, CloudAtlasScreen, SplashScreen, LevelSelectScreen, plus overlays. Also `Main.kt` (delete F12 polling), `InputManager.kt` (delete M-key polling).
+- **Goal:** Migrate the remaining screens to `GlobalInputRouter.pushScreen` / `popScreen`. Delete the polling fallbacks (T-147 F12 in Main.render, T-118 M in InputManager). After this lands, **zero** `Gdx.input.inputProcessor = ...` assignments outside `Main.create()`.
+- **Done when:**
+  1. Every Screen's `show()` calls `pushScreen(stage)`; every `hide()` calls `popScreen(stage)`.
+  2. T-147 polling block in `Main.render()` deleted.
+  3. T-118 M-key polling in `InputManager` deleted (the global adapter installed in Phase A is now the only handler).
+  4. `grep "Gdx.input.inputProcessor"` returns exactly one hit (in Main.create()).
+  5. All interactions still work; smoke CI passes.
+- **Constraints:** **Surface to QUESTIONS.md** anything unexpected: overlays that don't always have a `hide()` pair, Stage.keyboardFocus interactions across push/pop, smoke autopilot input injection if perturbed.
 
 
 
