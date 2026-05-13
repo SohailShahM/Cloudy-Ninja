@@ -20,7 +20,12 @@ fun defaultKeybinds(): Map<String, Int> = mapOf(
     "right" to Input.Keys.D,
     "jump" to Input.Keys.SPACE,
     "action" to Input.Keys.E,
-    "swap" to Input.Keys.S,
+    // T-121: swap moved from S → Q. Every Layout-A platformer surveyed in
+    // research/keyboard-layout-conventions.md reserves S for downward movement
+    // (crouch/drop/duck); Q has the strongest "cycle/switch" precedent.
+    // SettingsManager.load() auto-upgrades pre-T-121 saves to Q unless the
+    // user already opened the Controls panel (keybindsCustomized = true).
+    "swap" to Input.Keys.Q,
     // T-133: hold-R-to-restart hotkey. Bound to R by default; rebindable in
     // Settings → Controls. The 0.5s hold threshold is enforced at the call
     // site (GameScreen) — InputManager only reports raw held state.
@@ -66,6 +71,17 @@ data class Settings(
 
     // Keyboard bindings: action name → Input.Keys keycode
     val keybinds: Map<String, Int> = defaultKeybinds(),
+
+    // T-121: tracks whether the user has ever rebound a key in the Controls
+    // panel. SettingsManager.update(fn) flips this true whenever the
+    // [keybinds] map changes. It gates the one-shot S→Q swap-default
+    // migration in SettingsManager.load(): a player who has never opened
+    // Controls is treated as still on defaults and silently upgraded; a
+    // player who explicitly rebound is left alone even if their swap is
+    // still S. Default false keeps legacy saves byte-compatible — they
+    // wouldn't be filing bug reports about S working — and naturally
+    // routes them into the auto-upgrade branch on next launch.
+    val keybindsCustomized: Boolean = false,
 
     // Assist mode (Celeste-inspired) — flags relax difficulty for accessibility
     val assistInfiniteSpirits: Boolean = false,
@@ -123,12 +139,30 @@ object SettingsManager {
         cached?.let { return it }
         return try {
             val f = Gdx.files.local(FILE)
-            if (!f.exists()) Settings().also { cached = it }
-            else json.decodeFromString<Settings>(f.readString()).also { cached = it }
+            val raw = if (!f.exists()) Settings()
+            else json.decodeFromString<Settings>(f.readString())
+            migrate(raw).also { cached = it }
         } catch (e: Exception) {
             Gdx.app.error("SettingsManager", "Failed to load: ${e.message}; using defaults")
             Settings().also { cached = it }
         }
+    }
+
+    /**
+     * T-121 swap-default migration. If the user has never opened the Controls
+     * panel ([Settings.keybindsCustomized] is false) and they're still on the
+     * pre-T-121 default of S for swap, silently upgrade their swap binding
+     * to Q. Players who already rebound (or who explicitly kept S) are
+     * detected by [Settings.keybindsCustomized] = true and left alone.
+     *
+     * Idempotent: once the swap is Q, the function is a no-op on subsequent
+     * calls regardless of the customized flag.
+     */
+    private fun migrate(s: Settings): Settings {
+        if (!s.keybindsCustomized && s.keybinds["swap"] == Input.Keys.S) {
+            return s.copy(keybinds = s.keybinds + ("swap" to Input.Keys.Q))
+        }
+        return s
     }
 
     fun save(s: Settings) {
@@ -147,7 +181,17 @@ object SettingsManager {
 
     /** Convenience: update a single field via lambda, save, and return the new state. */
     fun update(transform: (Settings) -> Settings): Settings {
-        val next = transform(load())
+        val prior = load()
+        val transformed = transform(prior)
+        // T-121: any change to the [keybinds] map (regardless of caller) flips
+        // the customized flag so we never auto-upgrade a player who has
+        // explicitly touched their controls. This is done in the persist
+        // layer so SettingsScreen (and any future rebinding UI) doesn't
+        // need to be aware of the flag — see T-121 PR for the scope note
+        // on why this is not detected in SettingsScreen itself.
+        val next = if (!transformed.keybindsCustomized && transformed.keybinds != prior.keybinds) {
+            transformed.copy(keybindsCustomized = true)
+        } else transformed
         save(next)
         return next
     }

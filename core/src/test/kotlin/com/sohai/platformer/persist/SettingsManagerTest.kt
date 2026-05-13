@@ -3,6 +3,7 @@ package com.sohai.platformer.persist
 import com.badlogic.gdx.Application
 import com.badlogic.gdx.Files
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.Input
 import com.badlogic.gdx.files.FileHandle
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
@@ -110,6 +111,138 @@ class SettingsManagerTest : BehaviorSpec({
             then("both fields persist") {
                 read.volMaster shouldBe 0.25f
                 read.muted shouldBe true
+            }
+        }
+    }
+
+    // ----------------------------------------------------------------------
+    // T-121: swap-keybind default change S → Q, with one-shot migration for
+    // players who never opened the Controls panel. Six cases per the ticket.
+    // ----------------------------------------------------------------------
+
+    given("T-121 case A: fresh install (no settings.json on disk)") {
+
+        `when`("load() is called") {
+            resetWorld()
+            val s = SettingsManager.load()
+
+            then("the default swap binding is Q") {
+                s.keybinds["swap"] shouldBe Input.Keys.Q
+            }
+            then("keybindsCustomized defaults to false") {
+                s.keybindsCustomized shouldBe false
+            }
+        }
+    }
+
+    given("T-121 case B: legacy save with swap=S and no customized flag") {
+
+        `when`("load() runs the migration") {
+            resetWorld()
+            // Legacy file: pre-T-121, has swap=S, lacks keybindsCustomized.
+            // We build the JSON from Input.Keys.* constants rather than
+            // hard-coded keycodes so the test stays correct if libGDX ever
+            // renumbers (unlikely, but cheap insurance).
+            val legacy = """{"keybinds":{"left":${Input.Keys.A},"right":${Input.Keys.D},"jump":${Input.Keys.SPACE},"action":${Input.Keys.E},"swap":${Input.Keys.S},"restart":${Input.Keys.R},"mute":${Input.Keys.M}}}"""
+            File(tmpRoot, "settings.json").writeText(legacy)
+            SettingsManager.resetCacheForTest()
+            val read = SettingsManager.load()
+
+            then("swap is auto-upgraded to Q") {
+                read.keybinds["swap"] shouldBe Input.Keys.Q
+            }
+            then("keybindsCustomized stays false — they haven't customized, we just migrated the default") {
+                read.keybindsCustomized shouldBe false
+            }
+            then("other keybinds are untouched by the migration") {
+                read.keybinds["jump"] shouldBe Input.Keys.SPACE
+                read.keybinds["left"] shouldBe Input.Keys.A
+            }
+        }
+    }
+
+    given("T-121 case C: user opened Controls and explicitly kept swap=S") {
+
+        `when`("load() reads a customized save with swap=S") {
+            resetWorld()
+            val customized =
+                """{"keybinds":{"left":${Input.Keys.A},"right":${Input.Keys.D},"jump":${Input.Keys.SPACE},"action":${Input.Keys.E},"swap":${Input.Keys.S},"restart":${Input.Keys.R},"mute":${Input.Keys.M}},"keybindsCustomized":true}"""
+            File(tmpRoot, "settings.json").writeText(customized)
+            SettingsManager.resetCacheForTest()
+            val read = SettingsManager.load()
+
+            then("their swap=S is respected") {
+                read.keybinds["swap"] shouldBe Input.Keys.S
+            }
+            then("the customized flag is preserved") {
+                read.keybindsCustomized shouldBe true
+            }
+        }
+    }
+
+    given("T-121 case D: idempotent reload after a migrated session") {
+
+        `when`("we save the migrated state and reload twice") {
+            resetWorld()
+            val legacy = """{"keybinds":{"swap":${Input.Keys.S}}}"""
+            File(tmpRoot, "settings.json").writeText(legacy)
+            SettingsManager.resetCacheForTest()
+            val firstLoad = SettingsManager.load()
+            firstLoad.keybinds["swap"] shouldBe Input.Keys.Q
+            firstLoad.keybindsCustomized shouldBe false
+
+            // Persist the migrated state, then re-read from disk.
+            SettingsManager.save(firstLoad)
+            SettingsManager.resetCacheForTest()
+            val secondLoad = SettingsManager.load()
+
+            then("swap stays Q after a save/reload cycle") {
+                secondLoad.keybinds["swap"] shouldBe Input.Keys.Q
+            }
+            then("keybindsCustomized stays false — migration is a no-op once swap≠S") {
+                secondLoad.keybindsCustomized shouldBe false
+            }
+        }
+    }
+
+    given("T-121 case E: update() flips keybindsCustomized when keybinds map changes") {
+
+        `when`("update() rebinds jump to K") {
+            resetWorld()
+            val initial = SettingsManager.load()
+            initial.keybindsCustomized shouldBe false
+
+            SettingsManager.update {
+                it.copy(keybinds = it.keybinds + ("jump" to Input.Keys.K))
+            }
+            SettingsManager.resetCacheForTest()
+            val read = SettingsManager.load()
+
+            then("the rebind persists") {
+                read.keybinds["jump"] shouldBe Input.Keys.K
+            }
+            then("keybindsCustomized flips to true") {
+                read.keybindsCustomized shouldBe true
+            }
+        }
+    }
+
+    given("T-121 case F: update() does NOT flip the flag on non-keybind changes") {
+
+        `when`("update() mutates only volMaster") {
+            resetWorld()
+            val initial = SettingsManager.load()
+            initial.keybindsCustomized shouldBe false
+
+            SettingsManager.update { it.copy(volMaster = 0.5f) }
+            SettingsManager.resetCacheForTest()
+            val read = SettingsManager.load()
+
+            then("volMaster persists") {
+                read.volMaster shouldBe 0.5f
+            }
+            then("keybindsCustomized stays false") {
+                read.keybindsCustomized shouldBe false
             }
         }
     }
