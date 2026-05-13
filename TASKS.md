@@ -446,20 +446,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 
 
 
-### T-137 — First-run tutorial overlay on Sky Sanctuary entry  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-033, T-091
-- **GDD ref:** GAME_PLAN.md (onboarding — new players don't know about Seed Slam, character swap, or hub portals)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/levels/Level0_0.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/HubTutorialOverlay.kt` (new), `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt` (add `tutorialSeen: Boolean = false` additive field, migrate via T-113 scaffold), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** First time a player enters the Sky Sanctuary hub (Level0_0), show a small overlay with 3 hint cards: (1) "Move with A/D, Jump with SPACE", (2) "Swap character with Q to use water-cycle abilities", (3) "Walk into a portal to enter a world". Player dismisses with any key. Sets `tutorialSeen = true`. Never shown again unless save is reset.
-- **Done when:** Fresh save shows overlay on first hub entry; subsequent entries do NOT show it; new keys via Strings.kt; persists; smoke CI passes (autopilot dismisses by key — confirm doesn't lock).
-- **Constraints:** No new assets. Use the existing pause-overlay-style modal pattern. Respect reducedMotion (no animations).
-
 ### T-138 — SFX on achievement unlock (audio feedback)  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -574,6 +560,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Goal:** Rewrite the save-write path to use atomic semantics: write JSON to `<slot>.tmp`, fsync, then atomic-rename to `<slot>`. If any step fails, the original `<slot>` file remains untouched and loadable. Cross-platform: use `java.nio.file.Files.move(..., REPLACE_EXISTING, ATOMIC_MOVE)` with a fallback for filesystems that don't support `ATOMIC_MOVE`.
 - **Done when:** Mid-write crash (simulated by deliberately throwing between temp write and rename) leaves original save intact; test covers the crash-mid-write path; smoke CI passes.
 - **Constraints:** **Save-data-adjacent.** Existing saves must still load. Don't change the schema. Don't add a new field.
+
+### T-137 — First-run tutorial overlay on Sky Sanctuary entry  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-137-hub-tutorial-overlay
+- **Started:** 2026-05-13
+- **Depends on:** T-033, T-091
+- **GDD ref:** GAME_PLAN.md (onboarding — new players don't know about Seed Slam, character swap, or hub portals)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/levels/Level0_0.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/HubTutorialOverlay.kt` (new), `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt` (add `tutorialSeen: Boolean = false` additive field, migrate via T-113 scaffold), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** First time a player enters the Sky Sanctuary hub (Level0_0), show a small overlay with 3 hint cards: (1) "Move with A/D, Jump with SPACE", (2) "Swap character with Q to use water-cycle abilities", (3) "Walk into a portal to enter a world". Player dismisses with any key. Sets `tutorialSeen = true`. Never shown again unless save is reset.
+- **Done when:** Fresh save shows overlay on first hub entry; subsequent entries do NOT show it; new keys via Strings.kt; persists; smoke CI passes (autopilot dismisses by key — confirm doesn't lock).
+- **Constraints:** No new assets. Use the existing pause-overlay-style modal pattern. Respect reducedMotion (no animations).
 
 ### T-132 — High-contrast mode toggle (a11y)  [P3]
 - **Status:** In Progress
