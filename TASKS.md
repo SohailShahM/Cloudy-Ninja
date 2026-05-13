@@ -452,6 +452,41 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Constraints:** Only these 3 strings. Do NOT broaden scope to the 7 numeric format templates from the audit — those are deferred until a second locale lands.
 
 
+<!-- ═══════════════════════════════════════════════════════════════
+     ALPHA BLOCKERS — surfaced mid-autonomous-run by completed audits.
+     T-126 is HUMAN-REQUIRED (Calibri license violation). T-127 is
+     derived from T-123's HTML5 spike finding (dead deps).
+═══════════════════════════════════════════════════════════════ -->
+
+### T-126 — Replace Calibri Regular font (ALPHA-BLOCKING LEGAL)  [P1]
+- **Status:** Todo
+- **Tool:** `human-then-claude-code-sonnet`  *(user picks the replacement font and confirms visual regression is acceptable; sub-agent wires it in)*
+- **Tier:** M
+- **Autonomous-eligible:** **NO**  *(font swap affects every UI screen; visual eyeballing required; smoke CI does NOT validate font readability)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_  *(but **blocks alpha launch**)*
+- **GDD ref:** `research/asset-attribution-audit.md` (T-125 deliverable) §HIGH-1; `QUESTIONS.md` T-125-Q1
+- **Files:** `assets/fonts/main.ttf` (replace), `core/src/main/kotlin/com/sohai/platformer/FontManager.kt` (path + sizing tweaks if metrics differ), `NOTICE.md` (add attribution for new font)
+- **Goal:** `assets/fonts/main.ttf` is currently **Microsoft Calibri Regular** — proprietary, redistribution-forbidden, and the repo being public counts as redistribution. Replace with a SIL OFL 1.1-licensed font (T-125 recommends **Inter**, alt: Atkinson Hyperlegible for accessibility). Verify rendering legibility across MainMenu, SettingsScreen, AchievementsScreen, CreditsScreen, StatsScreen, VictoryScreen, GameScreen HUD, and CloudAtlasScreen. Update `NOTICE.md` with the new font's SIL OFL attribution.
+- **Done when:** No Microsoft-proprietary font in repo; all text renders legibly at all `FontManager` sizes (currently used: 11, 14, 22 — verify others); NOTICE.md attribution complete; smoke CI passes; user visually confirms across the 8+ screens.
+- **Constraints:** Save-data-adjacent? No (no font baked into save files). UI-visual? Yes — VISUAL REGRESSION RISK IS HIGH. Do not flip-flop fonts late in alpha; pick once and stick. After this lands, append a LEARNINGS.md entry: "always vet bundled fonts against their TTF name-table license string before shipping."
+
+### T-127 — Remove dead gradle deps (ashley, gdx-ai) — T-123 follow-up  [P3]
+- **Status:** Todo
+- **Tool:** `copilot-agent`  *(single gradle file, single-purpose; or `claude-code-sonnet` if Copilot busy)*
+- **Tier:** S
+- **Autonomous-eligible:** yes-with-verification  *(grep twice, remove, run full test suite)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** `research/html5-web-demo-viability.md` (T-123 deliverable) — flagged `ashley` (Entity-Component-System) and `gdx-ai` (AI utility lib) as declared in `core/build.gradle` but never imported in `core/src/main/kotlin/`
+- **Files:** `core/build.gradle` (or `core/build.gradle.kts`)
+- **Goal:** Confirm via grep (TWICE — `Grep "ashley" core/src/main/kotlin/` and `Grep "com.badlogic.gdx.ai" core/src/main/kotlin/` separately) that neither package is imported. If confirmed zero hits, remove the `ashley` and `gdx-ai` dependency lines from `core/build.gradle`. If ANY hit found (even in comments), abort and surface to QUESTIONS.md. Run `./gradlew :core:test` after removal — full suite must pass green.
+- **Done when:** Deps removed; `./gradlew :core:build` clean; smoke CI passes; PR description cites T-123's finding.
+- **Constraints:** Verify twice before removing. If Copilot picks this up, the grep step must be the first commit on the branch — don't bundle with the removal.
+
+
 
 ---
 
