@@ -264,7 +264,7 @@ class GameScreen(
                 Gdx.app.log("GameScreen", "Storm Sentinel defeated — level complete")
                 runState.levelCompleted = true
                 hud.showTransientMessage(Strings.get(StringKey.RUN_BOSS_DEFEATED), 2.5f)
-                runState.tryUnlock("boss_defeated")
+                runState.fireBossDefeatedAchievements()
             }
         }
 
