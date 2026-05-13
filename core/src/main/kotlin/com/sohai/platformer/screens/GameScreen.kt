@@ -32,6 +32,7 @@ import com.sohai.platformer.entities.SnapshotPickup
 import com.sohai.platformer.entities.StormSentinel
 import com.sohai.platformer.i18n.StringKey
 import com.sohai.platformer.i18n.Strings
+import com.sohai.platformer.input.GlobalInputRouter
 import com.sohai.platformer.input.InputManager
 import com.sohai.platformer.input.RestartHoldTracker
 import com.sohai.platformer.levels.Level
@@ -138,6 +139,39 @@ class GameScreen(
 
     private var isDisposed = false
 
+    /**
+     * T-172 (Phase B): tracks which stage is currently pushed onto the
+     * [GlobalInputRouter] so [setActiveInputStage] can pop the previous one
+     * before pushing the new one. Overlay open/close paths flow through
+     * [setActiveInputStage] instead of clobbering `Gdx.input.inputProcessor`,
+     * keeping the F12 + M-key router-registered adapters live during gameplay.
+     * Null until [show] (or one of the legacy init-time push sites) has run.
+     */
+    private var activeInputStage: com.badlogic.gdx.scenes.scene2d.Stage? = null
+
+    /**
+     * T-172 (Phase B): swap the currently-active stage on the router. Pops the
+     * previously-active stage (if any) and pushes [newStage] to the front. Used
+     * by overlay open/close paths and the pause toggle to preserve the legacy
+     * "single modal stage at a time" semantics while keeping the router as the
+     * root `Gdx.input.inputProcessor`. Idempotent if [newStage] is already
+     * active (it'll get popped + re-pushed, which is a no-op in practice).
+     */
+    private fun setActiveInputStage(newStage: com.badlogic.gdx.scenes.scene2d.Stage) {
+        val prev = activeInputStage
+        if (prev != null && prev !== newStage) {
+            GlobalInputRouter.popScreen(prev)
+        }
+        // Re-install in case an unmigrated cousin clobbered the router between
+        // pushes (defensive — GameScreen is now migrated, so this is a no-op
+        // in steady state).
+        GlobalInputRouter.install()
+        if (prev !== newStage) {
+            GlobalInputRouter.pushScreen(newStage)
+        }
+        activeInputStage = newStage
+    }
+
     init {
         camera.position.set(viewport.worldWidth / 2f, viewport.worldHeight / 2f, 0f)
 
@@ -209,7 +243,10 @@ class GameScreen(
         hud = Hud(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
         hud.onSwapCharacter = { runState.switchCharacter() }
         hud.setTimeTrial(isTimeTrial)
-        Gdx.input.inputProcessor = hud.stage
+        // T-172 (Phase B): defer the initial input wiring to show() so the
+        // router stays the root processor. The init block runs from the
+        // constructor before libGDX has called show(); pushing here would
+        // race with the previous screen's hide().
 
         achievementToast = AchievementToast(Constants.VIRTUAL_WIDTH, Constants.VIRTUAL_HEIGHT)
 
@@ -295,16 +332,19 @@ class GameScreen(
             atlasOverlay = CloudAtlasOverlay(snap.entry) {
                 atlasOverlay?.dispose()
                 atlasOverlay = null
-                Gdx.input.inputProcessor = hud.stage
+                // T-172 (Phase B): restore HUD as active input via the router.
+                setActiveInputStage(hud.stage)
             }
-            Gdx.input.inputProcessor = atlasOverlay!!.stage
+            // T-172 (Phase B): modal-swap to the atlas overlay's stage.
+            setActiveInputStage(atlasOverlay!!.stage)
         }
         runState.onGameOverStart = {
             gameOverOverlay = GameOverOverlay(
                 onRestart  = { if (game != null) { game.screen = GameScreen(level, game); dispose() } },
                 onMainMenu = { if (game != null) { game.screen = MainMenuScreen(game); dispose() } }
             )
-            Gdx.input.inputProcessor = gameOverOverlay!!.stage
+            // T-172 (Phase B): modal-swap to the game-over overlay's stage.
+            setActiveInputStage(gameOverOverlay!!.stage)
         }
         // T-130: show the death-recap overlay after the death animation
         // finishes (or instantly on the reducedMotion/instant-respawn path).
@@ -334,13 +374,16 @@ class GameScreen(
                     tokensThisRun  = tokens,
                 ))
                 deathRecapOverlay = overlay
-                Gdx.input.inputProcessor = overlay.stage
+                // T-172 (Phase B): modal-swap to the death-recap overlay's stage.
+                setActiveInputStage(overlay.stage)
             }
         }
         transitionCtrl = LevelTransitionController(
             level, game, screenFade, ecoTokens,
             CHECKPOINT_AUTOSAVE_FILE,
-            onInputChange    = { stage -> Gdx.input.inputProcessor = stage },
+            // T-172 (Phase B): route the level-complete overlay's stage through
+            // the router instead of clobbering Gdx.input.inputProcessor.
+            onInputChange    = { stage -> setActiveInputStage(stage) },
             onDispose        = { dispose() },
             isTimeTrial      = isTimeTrial,
             achievementToast = achievementToast,
@@ -403,7 +446,9 @@ class GameScreen(
         // T-117: dip music while the pause overlay is up so the menu reads cleanly,
         // restore on close. duck()/unduck() are idempotent — rapid toggles collapse.
         if (paused) MusicManager.duck() else MusicManager.unduck()
-        Gdx.input.inputProcessor = if (paused) pauseOverlay.stage else hud.stage
+        // T-172 (Phase B): route pause toggle through the router instead of
+        // clobbering Gdx.input.inputProcessor directly.
+        setActiveInputStage(if (paused) pauseOverlay.stage else hud.stage)
     }
 
     fun queueBodyDestroy(body: Body) { pendingBodyDestroy.add(body) }
@@ -422,7 +467,17 @@ class GameScreen(
             radiusPx / Constants.VIRTUAL_WIDTH)
     }
 
-    override fun show() {}
+    /**
+     * T-172 (Phase B): wire input via the router on show. The initial pushed
+     * stage is whichever overlay/HUD is currently active — typically [hud.stage]
+     * on a fresh GameScreen, but if an overlay was opened during the init
+     * sequence (e.g. the first-run hub tutorial flows that don't gate on
+     * input) this preserves it.
+     */
+    override fun show() {
+        val initial = activeInputStage ?: hud.stage
+        setActiveInputStage(initial)
+    }
 
     override fun render(delta: Float) {
         val clampedDelta = delta.coerceAtMost(Constants.MAX_FRAME_DELTA)
@@ -710,11 +765,27 @@ class GameScreen(
     override fun resume() {
         // Intentionally a no-op — overlay persists until explicit input.
     }
-    override fun hide()   {}
+
+    /**
+     * T-172 (Phase B): pop whatever stage is currently active on the router so
+     * the next screen owns input wiring cleanly. The router itself stays
+     * installed.
+     */
+    override fun hide() {
+        val active = activeInputStage
+        if (active != null) GlobalInputRouter.popScreen(active)
+        activeInputStage = null
+    }
 
     override fun dispose() {
         if (isDisposed) return
         isDisposed = true
+        // T-172 (Phase B): defensive pop in case dispose() is reached without
+        // a preceding hide() (e.g. an exception path). popScreen is a no-op if
+        // the stage isn't currently in the router.
+        val active = activeInputStage
+        if (active != null) GlobalInputRouter.popScreen(active)
+        activeInputStage = null
         // Destroy boss body before world.dispose() to avoid stale-reference risk
         sentinel?.let { world.destroyBody(it.body) }
         sentinel = null

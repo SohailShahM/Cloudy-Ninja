@@ -188,38 +188,11 @@ object InputManager {
     }
 
     /**
-     * T-118: poll the master-mute hotkey (default M, rebindable in Settings →
-     * Controls). On a fresh key edge, invokes [performMuteToggle].
-     *
-     * **T-171 (Phase A):** gated on `!GlobalInputRouter.isActive()` so the
-     * router's M-key adapter handles the action whenever a migrated screen
-     * (e.g. [com.sohai.platformer.screens.MainMenuScreen]) owns the input
-     * processor. Unmigrated screens leave the router inactive, the gate
-     * passes, and this polling path remains the legacy fallback. Phase B
-     * (T-172) deletes the polling path once every screen cooperates.
-     *
-     * Returns `true` if the toggle fired this frame and the new state is
-     * "muted" (so the caller can flash a `[MUTED]` toast on the active screen).
-     * Returns `false` on no edge, on toggle-off, or when the router is
-     * active — quiet by design.
-     *
-     * Designed to be called from a single global hook ([com.sohai.platformer.Main.render])
-     * so the hotkey works from any screen without each Screen subclass
-     * having to opt in.
-     */
-    fun pollMuteHotkey(): Boolean {
-        if (GlobalInputRouter.isActive()) return false
-        if (!Gdx.input.isKeyJustPressed(keyFor("mute"))) return false
-        return performMuteToggle()
-    }
-
-    /**
-     * T-118 / T-171 (Phase A): the action half of the master-mute hotkey,
-     * extracted from [pollMuteHotkey] so it can be invoked from **both** the
-     * legacy polling path (when no screen has cooperated with the router) AND
-     * the [GlobalInputRouter]-registered keyDown adapter wired up in
-     * [com.sohai.platformer.Main.create]. Single source of truth for the
-     * toggle + persist + propagate + log sequence; two trigger paths.
+     * T-118 / T-171 / T-172 (Phase B): the action half of the master-mute
+     * hotkey. Now the **sole** mute path — the legacy polling helper
+     * `pollMuteHotkey()` is deleted in Phase B because every screen
+     * cooperates with the [GlobalInputRouter], so the router's M-key adapter
+     * (registered in [com.sohai.platformer.Main.create]) is always live.
      *
      * Flips [com.sohai.platformer.persist.Settings.muted], persists via
      * [SettingsManager.update], and propagates the new state to

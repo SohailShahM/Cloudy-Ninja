@@ -31,6 +31,7 @@ import com.sohai.platformer.audio.MusicManager
 import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.i18n.StringKey
 import com.sohai.platformer.i18n.Strings
+import com.sohai.platformer.input.GlobalInputRouter
 import com.sohai.platformer.input.InputManager
 import com.sohai.platformer.persist.ColorBlindMode
 import com.sohai.platformer.persist.GameState
@@ -95,7 +96,8 @@ class SettingsScreen(
     }
 
     init {
-        Gdx.input.inputProcessor = stage
+        // T-172 (Phase B): input wiring moves from init to show()/hide() via the
+        // GlobalInputRouter so this screen no longer clobbers the router's mux.
         // T-143: stage-level ESC handler so the Reset modal can be dismissed
         // via keyboard regardless of which actor has scene-graph focus.
         stage.addListener(escKeyListener)
@@ -720,7 +722,15 @@ class SettingsScreen(
     }
 
     override fun resize(width: Int, height: Int) { viewport.update(width, height, true) }
-    override fun show() {}
+    /**
+     * T-172 (Phase B): re-install the router (any unmigrated sibling we came
+     * from will have clobbered Gdx.input.inputProcessor) and push our stage so
+     * scene2d events route here while F12/M-key globals remain wired.
+     */
+    override fun show() {
+        GlobalInputRouter.install()
+        GlobalInputRouter.pushScreen(stage)
+    }
     override fun pause() {}
     override fun resume() {}
 
@@ -730,13 +740,21 @@ class SettingsScreen(
      * test button would survive the screen transition and stop music the
      * player started afterwards (e.g. via Level Select → game start in
      * that 3-second window).
+     *
+     * T-172 (Phase B): pop our stage off the router so the next screen's
+     * wiring takes over cleanly. The router itself stays installed.
      */
     override fun hide() {
+        GlobalInputRouter.popScreen(stage)
         musicTestStopTask?.cancel()
         musicTestStopTask = null
     }
 
     override fun dispose() {
+        // T-172 (Phase B): defensive pop in case dispose() is reached without
+        // a preceding hide() (e.g. an exception path). popScreen is a no-op if
+        // the stage isn't currently in the router.
+        GlobalInputRouter.popScreen(stage)
         musicTestStopTask?.cancel()
         musicTestStopTask = null
         stage.dispose()
