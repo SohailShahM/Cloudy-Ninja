@@ -328,19 +328,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Goal:** Implement libGDX's `ApplicationListener.pause()` in `Main` (or the active `Game` subclass) to forward to the active screen if it's a `GameScreen`. `GameScreen.pause()` activates the existing pause overlay (T-063). On `resume()`, the overlay stays up — player must explicitly resume. Respect `SMOKE_MODE` — skip auto-pause in smoke.
 - **Done when:** Alt-tab while in-game triggers the pause overlay; resume keeps overlay up until input; smoke CI passes (no auto-pause in smoke mode).
 
-### T-116 — Screen shake on stomp + boss hit  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-098  *(both touch `LevelRenderer.kt` — sequential)*
-- **GDD ref:** GAME_PLAN.md (combat juice — T-098 hit-flash pairs with shake for full hit-feedback)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/physics/WorldContactListener.kt`, `core/src/main/kotlin/com/sohai/platformer/rendering/ScreenShake.kt` (new), `core/src/test/kotlin/com/sohai/platformer/rendering/ScreenShakeTest.kt` (new)
-- **Goal:** Add `ScreenShake` utility (decaying amplitude over time, `update(delta)` + `offset(): Vector2`). On stomp-defeat in `WorldContactListener` and Storm Sentinel hit-confirm, call `ScreenShake.trigger(amplitude=4f, duration=0.15f)`. `LevelRenderer` applies the offset to the camera before rendering each frame. **Respect `Settings.reducedMotion`** — when on, `trigger()` is a no-op.
-- **Done when:** Visible shake on stomp + boss hit; no shake when `reducedMotion` is on; shake never exceeds duration; pure-function tests on the decay curve pass; smoke CI passes.
-
 ### T-117 — Audio ducking on pause overlay  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -533,6 +520,20 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Files:** `core/src/main/kotlin/com/sohai/platformer/rendering/ScreenFade.kt` + all callers (find via `Grep "fadeIn|fadeOut" --type kt`)
 - **Goal:** Pick ONE and apply consistently: **(A)** rename `fadeIn` → `fadeFromBlack` and `fadeOut` → `fadeToBlack`, update all callers + tests; **(B)** add a KDoc paragraph above each function explaining the reversed-from-intuition semantics. Default to (A) unless caller count exceeds 20.
 - **Done when:** No caller is left ambiguous; existing `ScreenFadeTest` passes (renamed if (A) chosen); smoke CI passes.
+
+### T-116 — Screen shake on stomp + boss hit  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** `claude/T-116-screen-shake`
+- **Started:** 2026-05-13
+- **Depends on:** T-098  *(both touch `LevelRenderer.kt` — sequential)*
+- **GDD ref:** GAME_PLAN.md (combat juice — T-098 hit-flash pairs with shake for full hit-feedback)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/physics/WorldContactListener.kt`, `core/src/main/kotlin/com/sohai/platformer/rendering/ScreenShake.kt` (new), `core/src/test/kotlin/com/sohai/platformer/rendering/ScreenShakeTest.kt` (new)
+- **Goal:** Add `ScreenShake` utility (decaying amplitude over time, `update(delta)` + `offset(): Vector2`). On stomp-defeat in `WorldContactListener` and Storm Sentinel hit-confirm, call `ScreenShake.trigger(amplitude=4f, duration=0.15f)`. `LevelRenderer` applies the offset to the camera before rendering each frame. **Respect `Settings.reducedMotion`** — when on, `trigger()` is a no-op.
+- **Done when:** Visible shake on stomp + boss hit; no shake when `reducedMotion` is on; shake never exceeds duration; pure-function tests on the decay curve pass; smoke CI passes.
 
 ### T-100 — Game version + build info on MainMenu (bottom corner)  [P3]
 - **Status:** In Progress
