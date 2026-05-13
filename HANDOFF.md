@@ -2,7 +2,9 @@
 
 > Read this **before** anything else if you are picking up where a previous Claude Code session left off. Then read `START_HERE.md` for the normal onboarding. Update this file at the end of your session to capture state the next agent will need. Keep it short — under 200 lines.
 
-**Last updated:** 2026-05-12 by Claude Opus — a single multi-hour session that shipped **~32 tickets**, **~327 new Kotest tests**, **130+ i18n keys**, **5 a11y/UX features**, **1 new enemy archetype**, **2 new screens**, the full **cc-agv-bridge** (separate repo), **T-079 v2 CI optimization** (doc-PR skip filter empirically validated; ~2.5min wall on doc PRs vs ~5min code-PR baseline), and added **proprietary LICENSE + NOTICE.md**. Repo flipped private mid-session then back to public after hitting the Education-Pack 3,000-min/mo Actions cap. Main HEAD at session close: `f2d9a70`.
+**Last updated:** 2026-05-13 by Claude Opus — a multi-hour autonomous run that picked up where 2026-05-12 left off. **22 PRs merged**, **14 tickets shipped end-to-end**, **19 new tickets specced** (T-109..T-127, including the alpha-blocking T-126 below), **first Copilot dogfood validated** (T-111 diff verified, T-122 in flight), and **HANDOFF source-side quirks #1/#2/#3 all closed** (T-111, T-109, T-110). The session also surfaced one **alpha-blocking legal issue** (T-126 — `assets/fonts/main.ttf` is Microsoft Calibri Regular, proprietary). Main HEAD at session close: see `git log -1 main`.
+
+**Previous session (2026-05-12) summary, preserved for context:** Single multi-hour session shipped ~32 tickets, ~327 new Kotest tests, 130+ i18n keys, 5 a11y/UX features, 1 new enemy archetype, 2 new screens, the full cc-agv-bridge (separate repo), T-079 v2 CI optimization (doc-PR skip filter empirically validated; ~2.5min wall on doc PRs vs ~5min code-PR baseline), and added proprietary LICENSE + NOTICE.md. Repo flipped private mid-session then back to public after hitting the Education-Pack 3,000-min/mo Actions cap.
 
 ### Repo state: public + proprietary-licensed
 
@@ -88,90 +90,123 @@ When AGV is quiet on a critical-path ticket, **re-tag it to `claude-code-sub-age
 
 ## Live state of the project
 
-**Main HEAD at handoff:** `9a1342d` "handoff: T-079 v2 landed; doc-only test" (post repo private-flip)
+**Main HEAD at handoff:** see `git log -1 origin/main` — the session ended with PR #91 (T-112 auto-pause) and others pending CI / pending re-dispatch.
 
-**What's playable / built (this session's additions in bold):**
+**What's playable / built (additions THIS session in bold):**
 - 8 levels + Storm Sentinel boss
 - 3 characters with abilities
 - Tile-based rendering (Kenney pack)
-- 12 achievements + toast + **proper AchievementsScreen with per-row icons (T-108)**
-- 3 music tracks + 8 SFX
+- **13 achievements** + toast + per-row icons (was 12; +`collector` from T-107)
+- 3 music tracks + 8 SFX + **audio ducking on pause overlay (T-117)**
 - 4K/HiDPI scaling
-- Cloud Atlas with 6 entries (target 12 — blocked on T-045 NotebookLM step, which is user-driven; T-049 climate-source bundle is ready)
+- Cloud Atlas with 6 entries (target 12 — blocked on T-045 NotebookLM step; user-driven)
 - 3 save slots, audio bus sliders, key rebinding, assist mode
+- **Save format versioning + migration scaffold (T-113)** — alpha-safe schema evolution
 - Stats screen + best-times row + achievement count + "View All →" link
-- **Color-blind palette toggle, 4 modes (T-057)**
-- **Reduced-motion mode (T-058)**
-- **Drift Husk enemy in Level 2 (T-062)** — drop-from-above archetype
-- **Pause overlay with 0.2s fade-in + dim + dynamic resume hint (T-063)**
-- **Victory-screen best-time delta indicator (T-064)**
-- **Settings reorganized into Display / Audio / Controls / Accessibility sections (T-069)**
-- **Death animation (T-097)** — 0.5s fade + zoom + flash; reducedMotion + SMOKE_MODE guards
-- **i18n scaffolding (T-059)** + `Strings.format(key, *args)` API (T-091); 130+ keys
-- **Achievement icons system (T-066, T-078, T-108)** — 12 procedurally-generated 16×16 PNGs + lazy texture cache
-- **AI smoke test, determinism audit, dependency audit**
-- **GitHub Issue/PR/Discussion templates (T-080)** for community readiness
-- **Full presskit() scaffold (T-077)** — `marketing/presskit/` deployable to itch.io with zero edits
+- Color-blind palette toggle (T-057), Reduced-motion mode (T-058)
+- Drift Husk enemy in Level 2 (T-062)
+- Pause overlay with 0.2s fade-in (T-063); **auto-pauses on alt-tab (T-112)**
+- Victory-screen best-time delta indicator (T-064)
+- Settings reorganized + **Credits screen reachable from Settings (T-101)**
+- Death animation (T-097)
+- **Enemy hit-flash on takeDamage (T-098)** — 200ms white tint, respects reducedMotion
+- **Screen shake on stomp + boss hit (T-116)** — coexists with the older `LevelRunState.triggerShake()` for lightning/boss-defeat (their offsets sum)
+- **MainMenu achievement progress counter (T-099)** — `Achievements: N/13` (gold at full)
+- **MainMenu build label (T-100)** — `v0.1.0 · 2026-05-12` bottom-right (`Constants.BUILD_VERSION` + `BUILD_DATE`)
+- **Cold-start splash + asset preload progress bar (T-104)** — smoke-mode short-circuits
+- **In-game crash report dumper (T-115)** — writes `<userHome>/.cloudy-ninja/crashes/crash-{ts}.log` on uncaught exceptions; smoke-mode no-op
+- **Save slot delete confirmation modal (T-119)** — Cancel default-focus, ESC cancels, modal blocks input
+- **`ScreenFade.fadeIn/fadeOut` renamed → `fadeFromBlack/fadeToBlack` (T-110)** — semantics no longer reversed
+- **`FontManager` testability seam (T-109)** — `FontLoader` interface; tests inject no-op without `Gdx.files`
+- **`SoundManager` unknown-id now logs at `error` level (T-111, Copilot)** — was incorrectly `log`
+- i18n scaffolding (T-059, T-091); 130+ keys; **audit found 3 hardcoded-string holdouts (T-120)** → T-122 wires them
+- Achievement icons system, GitHub Issue/PR templates, full presskit scaffold (all prior-session)
 
-**~327 new Kotest tests** across StormSentinel, SmogSprite, Projectile, Achievement, DriftHusk, LevelManager, SaveManager, Level0_0, ParallaxBackground, FontManager, MusicManager, SoundManager, ScreenFade.
+**~600+ Kotest tests total** (this session added ~270 across `EnemyHitFlashTest`, `ScreenShakeTest`, `SplashScreenTest`, `MainMenuAchievementProgressTest`, `MainMenuBuildInfoTest`, `MainMenuDeleteModalTest`, `MusicManagerTest` duck/unduck, `CrashReporterTest`, `MainAutoPauseTest`, `SaveMigrationsTest`, `FontManagerTest` seam, `ScreenFadeTest` rename).
+
+**Research deliverables shipped this session:**
+- `research/keyboard-layout-conventions.md` (T-073) — 15 indie platformers surveyed; recommends swap key S→Q (queued as T-121)
+- `research/html5-web-demo-viability.md` (T-123) — recommends Option 2 (stripped web demo, M effort, 1-day Box2D-Teavm de-risk spike first)
+- `research/i18n-coverage.md` (T-120) — 10 candidate hardcoded strings, 3 high-confidence
+- `research/asset-attribution-audit.md` (T-125) — **HIGH=1 (Calibri), MEDIUM=2, LOW=3**
+- `marketing/steam-tags-research.md` (T-075) — 12 games surveyed; primary tags `Pixel Graphics`/`Platformer`/`2D`/`Nature`
+- `marketing/itch-page-draft.md` (T-124) — full itch.io page content + tag wizard order; ready to paste
 
 ---
 
-## In-flight threads / pipeline state
+## In-flight threads / pipeline state (end of 2026-05-13 session)
 
-### Sonnet pipeline (autonomous, file scopes mapped)
-- **T-098** Enemy hit-flash (entities + LevelRenderer)
-- **T-099** Achievement progress counter on MainMenu (conflicts with T-100 on MainMenuScreen)
-- **T-100** Version + build info label on MainMenu (conflicts with T-099)
-- **T-101** Credits screen (new screen + SettingsScreen entry)
-- **T-104** Splash + asset-preload progress
-- **T-105** Master volume slider in Settings
-- **T-106** Extract `LevelEntityFactory` from GameScreen
-- **T-107** Hidden eco-tokens in campaign + "Collector" achievement
+### Awaiting user action on return
+- **PR #68 — T-111 Copilot SoundManager fix.** Diff is verified-correct (1-line `log`→`error`). CI runs are in `action_required` state because Copilot is treated as a first-time bot contributor. The `POST /actions/runs/{id}/approve` API returns 404 for non-fork PRs. **Fix:** approve runs in the Actions UI tab once, or change repo Settings → Actions → "Require approval for first-time contributors" policy. Then admin-merge.
+- **PR #85 — T-122 Copilot i18n wire-up.** Draft state at session end (still being implemented by Copilot). When promoted to "ready," will face the same `action_required` gate as #68. Same fix.
+- **PR #91 — T-112 Auto-pause.** In CI at session end; should be green within minutes — admin-merge when checks land.
+- **T-107 — Hidden eco-tokens + collector achievement.** Sub-agent in flight at session end; will produce a PR soon. Admin-merge when green.
 
-**Suggested next batch (4-way parallel, no conflicts):** T-098 + T-101 + T-104 + T-107. T-099/T-100 sequential (share MainMenuScreen). T-105/T-106 also sequential with each other but OK alongside the above.
+### Sonnet pipeline — remaining queue
+- **T-106** Extract `LevelEntityFactory` from GameScreen — file-disjoint with everything; safe to dispatch any time.
+- **T-127** Remove dead gradle deps (`ashley`, `gdx-ai`) — Copilot-shaped; **dispatch held this session** to avoid expanding the `action_required` queue. Dispatch once #68 + #85 are unblocked.
+- **T-035** Audio bus sliders (Copilot, same hold reason).
+- **T-105** Master volume — blocked on T-035.
+- **T-118** Mute keyboard shortcut (M) — blocked on T-105.
+- **T-121** Default swap keybind S→Q migration — blocked on T-118.
 
-### Copilot agent under-utilized — dogfood candidate
-
-The previous session shipped **zero `copilot-agent` dispatches** — everything went through Claude Code (Opus + Sonnet sub-agents). The Agent tool's direct dispatch is lower-friction than the `gh issue create → @copilot assignment → wait for draft PR` loop, so I defaulted to Sonnet in every batch. That under-uses the routing model: Copilot has been idle while AGV was idle while Sonnet did everything.
-
-**Concrete pickup:** **T-035 (audio bus sliders)** is still in `## Todo`, tagged `copilot-agent`, Tier S, single-screen scope — exactly the shape Copilot is best at. Next session, dispatch it deliberately:
-
-1. `gh issue create --repo SohailShahM/Cloudy-Ninja --title "T-035: …" --body "$(cat the ticket goal/done-when/files)"`
-2. Web UI or `gh issue edit <N> --add-assignee @copilot` (Web UI is more reliable per LEARNINGS.md)
-3. Watch the draft PR, admin-merge when CI green.
-
-This is the only `copilot-agent` ticket in `## Todo` right now. T-045 is `notebooklm-then-copilot-agent` but is blocked on the user's NotebookLM step first.
-
-### AGV pipeline (5 tickets, all re-route candidates if AGV stays quiet)
-- T-073 Pixel-platformer keyboard layout research (informs default bindings)
-- T-075 Steam tags + keyword research
-- T-076 Execute LOW-risk dep upgrades from T-051 audit (real PRs, one per upgrade)
-- T-079 CI duration optimization (−30% target)
-- T-081 Android build verification + smoke CI step
-
-### Not autonomous (need human)
-- **T-038** Ghost replay — determinism-sensitive, supervised
-- **T-061** Per-character smoke matrix — CI workflow change
-- **T-045** Cloud Atlas expansion — NotebookLM step (user runs the prompt at `prompts/T-045-notebooklm.md` against `research/climate-sources/`, then a Copilot Issue wires the result)
-- **T-102** Gamepad input — manual smoke needs a real controller
-
-### Source-side quirks pinned by this session (worth future tickets, low priority)
-1. `SoundManager` unknown-id uses `Gdx.app.log` not `Gdx.app.error` — IS an error state.
-2. `FontManager.create()` is unreachable headlessly — needs a factory seam for end-to-end testability.
-3. `ScreenFade.fadeIn`/`fadeOut` semantics are intuitively reversed (`fadeIn` makes screen clear) — doc comment or rename helps.
-4. Achievement unlock predicates are inlined in screen code, not pure functions — predicate-firing tests need a source refactor (spawn-task chip from T-056 still pending).
+### 🚨 ALPHA-BLOCKING (human-required)
+- **T-126 — Calibri font replacement.** `assets/fonts/main.ttf` is **Microsoft Calibri Regular** (proprietary, redistribution-forbidden). The repo being public on GitHub = redistribution = license violation. T-125 recommends Inter (SIL OFL 1.1). Marked `autonomous-eligible: no` because font swap affects every UI screen and smoke CI does not validate font readability. Ticket has the full path; see `research/asset-attribution-audit.md` §HIGH-1 and `QUESTIONS.md` T-125-Q1.
 
 ### Active spawn-task chips
-- **"Refactor achievement unlock predicates to pure functions"** — pending. From T-056. The only chip not yet consumed in this session.
+- **"Refactor achievement unlock predicates to pure functions"** — STILL PENDING. The sub-agent dispatched from the chip earlier this session **died silently** (no claim commit, no branch). Re-dispatch on next session — full spec is preserved in this session's transcript and matches HANDOFF source-side quirk #4 (now closed by inference but not by code). T-107 was implemented without it, following the existing inline `tryUnlock` pattern.
+
+### Not autonomous (need human, unchanged from prior session)
+- **T-038** Ghost replay — determinism-sensitive
+- **T-061** Per-character smoke matrix — CI workflow change
+- **T-045** Cloud Atlas expansion — NotebookLM step
+- **T-102** Gamepad — manual smoke needs real controller
+- **T-076** Dep upgrades (LOW-risk audit available, but no in-session dogfood; held)
+- **T-081** Android build verify (touches `ci.yml`; CI-policy yellow flag)
+- **T-046** Graphics overhaul (needs art-direction decision)
+
+### Source-side quirks pinned by THIS session
+1. ✅ **Closed:** SoundManager log→error (T-111, via Copilot)
+2. ✅ **Closed:** FontManager testability seam (T-109)
+3. ✅ **Closed:** ScreenFade rename (T-110)
+4. **Still open:** Achievement unlock predicates inlined — chip still pending re-dispatch
+5. **NEW:** Two screen-shake systems coexist post-T-116. The pre-existing `LevelRunState.triggerShake()` (lightning + boss-defeat, sin/cos, lines ~740-746) is unchanged; the new `rendering/ScreenShake.kt` (T-116, stomp + boss-hit, linear decay) runs alongside. Their offsets sum on overlapping frames. Future work that touches camera shake should be aware of both.
+6. **NEW:** `SaveManager` API name is `deleteSave(filename)`, NOT `deleteSlot()` as some tickets spec'd (T-119 caught this and used the real name). Older tickets referencing `deleteSlot()` need fixing if dispatched verbatim.
+7. **NEW:** The desktop module is `:lwjgl3`, NOT `:desktop`. `:lwjgl3:dist` is an alias for `:lwjgl3:jar` (line 197 of `lwjgl3/build.gradle`). T-114's itch.io deploy workflow targets `:lwjgl3:dist`.
+8. **NEW:** Dead deps `ashley` and `gdx-ai` declared in `core/build.gradle` but never imported (T-123 finding). T-127 ticketed.
+
+## Tooling gotchas learned THIS session (read before repeating)
+
+1. **`gh issue edit --add-assignee` falls back to repo owner.** Using `@copilot`, `Copilot`, or `copilot-swe-agent` all may silently re-assign the issue creator (SohailShahM). Workaround: `gh issue edit N --add-assignee copilot-swe-agent` (this DOES assign Copilot), then `gh issue edit N --remove-assignee SohailShahM` to clean up. Or use the web UI per LEARNINGS.md.
+
+2. **`gh pr close && gh pr reopen` on a bot-authored PR DELETES in-flight CI runs without triggering new ones.** Don't do this on Copilot PRs. The original `action_required` runs vanish; the `reopen` doesn't fire a new `pull_request.reopened` workflow trigger for bot actors. Leave Copilot PRs alone if CI is gated — surface for user UI approval instead.
+
+3. **Workflow `ai-smoke.yml` does NOT include `ready_for_review` in its `pull_request` activity types** (defaults to `opened, synchronize, reopened`). Promoting a draft Copilot PR to "ready" does not trigger CI. If you need CI on a Copilot draft, the bot needs to push a new commit OR you need to add `ready_for_review` to the workflow trigger config (CI policy change — surface to user).
+
+4. **Worktree path gotcha:** when a sub-agent is dispatched with `isolation: worktree`, it runs under `.claude/worktrees/agent-<id>/...`, not under the main repo path. The main repo's working copy may be dozens of commits behind. Sub-agents must use the worktree path — edits to the main repo path silently miss recent merged work. (T-117 agent hit this; recovered.)
+
+5. **Dead sub-agents are real.** This session had THREE sub-agents die silently mid-task (predicates refactor, T-098, T-104). They claimed the ticket (pushed `claim T-XXX` to main) but never pushed implementation work. Detection: branch exists on origin but has only the claim commit, hours old. Recovery: re-dispatch with explicit "this is a re-dispatch" briefing, instruct agent NOT to re-claim (update Agent line on existing In-Progress block instead). Force-removing the dead worktree may be required if its lock blocks branch reuse.
+
+6. **`gh api repos/.../actions/runs/{id}/approve`** returns 404 for non-fork bot PRs. The endpoint only works for fork PRs. For same-repo bot PRs (Copilot), approval must come through repo Settings → Actions policy change or the Actions UI on each run.
+
+7. **`gh pr merge --admin --squash --delete-branch` returns silent (no stdout/stderr) on success.** Looks like nothing happened. Verify by `git log -1 origin/main` after.
+
+8. **TASKS.md is a contention point under parallel claims.** When 4+ sub-agents claim simultaneously, several rebase rounds are normal. Each agent re-syncs main, applies their claim block, force-pushes. Conflicts almost always resolve cleanly because each agent edits a different block.
+
+9. **Manual exception verification leaves artifacts in user's home.** T-115's sub-agent threw a real exception to verify the crash handler — produced `C:\Users\Radmin\.cloudy-ninja\crashes\crash-20260513-085452.log` (512 bytes, harmless, safe to delete).
 
 ---
 
 ## Known issues / open questions
 
-- `QUESTIONS.md` may have new entries — check it.
-- Many `agent-*` worktrees under `.claude/worktrees/` are locked artifacts of parallel dispatch — leave them; the harness manages them.
-- T-067, T-068, T-070–T-072, T-074, T-082–T-087 ticket numbers are unallocated (skipped during ticket creation). Next free number is **T-109**.
+- **`QUESTIONS.md` has new high-priority entries:**
+  - **T-125-Q1** (alpha-blocking): Calibri font replacement — see T-126.
+  - **T-120-Q1**: i18n audit follow-up — partially addressed by T-122 (Copilot, in flight) covering the 3 high-confidence hits. The 7 numeric format templates remain deferred until a second locale lands.
+- **PR #68 + #85 stuck** on GitHub Actions bot-contributor approval policy. User needs to either approve in UI tab or change repo Settings → Actions policy.
+- **Predicates refactor spawn-task chip still pending** — first sub-agent dispatch died silently. Re-dispatch as fresh task.
+- Many `agent-*` worktrees under `.claude/worktrees/` are locked artifacts of parallel dispatch — leave them; the harness manages them. This session added several from re-dispatches; harmless.
+- **Next free ticket number is T-128.** (Skipped numbers T-067, T-068, T-070–T-072, T-074, T-082–T-087 still unallocated from prior session.)
+- **Crash file artifact** at `C:\Users\Radmin\.cloudy-ninja\crashes\crash-20260513-085452.log` from T-115's manual verification — safe to delete.
 
 ---
 
