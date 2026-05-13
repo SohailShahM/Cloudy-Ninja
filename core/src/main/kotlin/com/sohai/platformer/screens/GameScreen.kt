@@ -78,9 +78,9 @@ class GameScreen(
          * (0.15, 0.18, 0.25) reads as cave-dark; (0.45, 0.50, 0.60) reads as
          * dim-daytime, the eco-platformer's intended mood. Tune by play-testing.
          */
-        const val AMBIENT_LIGHT_R = 0.45f
-        const val AMBIENT_LIGHT_G = 0.50f
-        const val AMBIENT_LIGHT_B = 0.60f
+        const val AMBIENT_LIGHT_R = 0.39f
+        const val AMBIENT_LIGHT_G = 0.44f
+        const val AMBIENT_LIGHT_B = 0.53f
         const val AMBIENT_LIGHT_A = 0.9f
     }
 
