@@ -450,20 +450,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Button visible at bottom of Settings; modal opens and dismisses correctly; Reset restores ALL settings (audio, controls, accessibility, display) to defaults; save data untouched; persists; smoke CI passes (modal doesn't open in autopilot).
 - **Constraints:** **Don't touch save data.** Settings only. Reuse T-119's modal pattern (Cancel default-focus, ESC cancels).
 
-### T-144 — Camera look-ahead in motion direction  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-116  *(LevelRenderer camera-offset infrastructure)*
-- **GDD ref:** GAME_PLAN.md (feel polish — fixed camera reveals less ahead of motion than feel-good platformers do)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt` (new `cameraLookAhead: Boolean = true`), `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt` (Display section toggle)
-- **Goal:** When player is moving horizontally, smoothly offset the camera up to ±48px in the direction of motion (lerp 0.15/frame). Resets to centered when player stops. Adds to the T-116 screen-shake camera offset (both sum). Toggle in Settings → Display (default ON; off for static-camera preference).
-- **Done when:** Walking right shifts camera ~48px right; walking left shifts ~48px left; standing still centers; shake still works; toggle disables look-ahead but leaves shake; smoke CI passes.
-- **Constraints:** Don't break level boundaries — clamp camera target to level extents. Don't introduce camera oscillation (smooth lerp).
-
 ### T-145 — Sound test in Settings  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -564,6 +550,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Goal:** In the pause overlay, below the existing resume/quit buttons, show a 3-row card listing: `Ebo — Seed Slam (action key)`, `Laya — Wind Dash (action key)`, `Zephyr — Cloud Float (action key)`. Highlight the currently-selected character with the existing toast accent color. Pull binding labels from `Settings.keybinds["action"]` (T-036 keybind system).
 - **Done when:** Pause overlay shows the 3-character ability summary; current character highlighted; keys reflect current bindings; smoke CI passes.
 - **Constraints:** Pause-overlay only. Don't add a new screen. New StringKey entries via `Strings.kt`.
+
+### T-144 — Camera look-ahead in motion direction  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-144-camera-look-ahead
+- **Started:** 2026-05-13
+- **Depends on:** T-116  *(LevelRenderer camera-offset infrastructure)*
+- **GDD ref:** GAME_PLAN.md (feel polish — fixed camera reveals less ahead of motion than feel-good platformers do)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt` (new `cameraLookAhead: Boolean = true`), `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt` (Display section toggle)
+- **Goal:** When player is moving horizontally, smoothly offset the camera up to ±48px in the direction of motion (lerp 0.15/frame). Resets to centered when player stops. Adds to the T-116 screen-shake camera offset (both sum). Toggle in Settings → Display (default ON; off for static-camera preference).
+- **Done when:** Walking right shifts camera ~48px right; walking left shifts ~48px left; standing still centers; shake still works; toggle disables look-ahead but leaves shake; smoke CI passes.
+- **Constraints:** Don't break level boundaries — clamp camera target to level extents. Don't introduce camera oscillation (smooth lerp).
 
 ### T-133 — Quick-restart hotkey (R) in-game  [P3]
 - **Status:** In Progress
