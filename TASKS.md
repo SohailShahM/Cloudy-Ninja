@@ -391,21 +391,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 ═══════════════════════════════════════════════════════════════ -->
 
 
-### T-130 — Death recap overlay  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-097, T-128  *(LevelRunState contention with predicates refactor)*
-- **GDD ref:** GAME_PLAN.md (player engagement — "what just happened" feedback after death)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/DeathRecapOverlay.kt` (new), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** When the player dies (after T-097 death animation completes), show a small overlay with: cause-of-death (enemy contact / lethal hazard / fall / boss attack), time-into-level, stomps-this-run, tokens-this-run, "Retry?" button + "Quit to menu" button. Auto-fade after 3s or on Retry/Quit input.
-- **Done when:** Death triggers overlay; stats are accurate per-run; Retry restarts level; Quit returns to MainMenu; smoke CI passes (autopilot dies sometimes — verify it doesn't lock up on the overlay).
-- **Constraints:** Read cause-of-death from existing LevelRunState death-cause field if one exists; otherwise add a `DeathCause` enum. Don't broaden scope — no leaderboards, no telemetry.
-
-
 ### T-133 — Quick-restart hotkey (R) in-game  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -529,6 +514,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Goal:** Add a 4th procedural track `ambient_menu` — softer than `ambient_arid`, more harmonic. Generate via existing `ProceduralMusicGenerator` pattern (60s loop). `MainMenuScreen` plays it on enter; transitions to level-specific track on Play. Crossfade pattern from T-030 applies.
 - **Done when:** MainMenu has background music; volume responds to Music slider; ducks correctly on Settings open (per T-117 pattern if applicable); smoke CI passes.
 - **Constraints:** Procedural only (no new audio file assets). Keep under 30 lines added to the generator.
+
+### T-130 — Death recap overlay  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-130-death-recap-overlay
+- **Started:** 2026-05-13
+- **Depends on:** T-097, T-128  *(LevelRunState contention with predicates refactor)*
+- **GDD ref:** GAME_PLAN.md (player engagement — "what just happened" feedback after death)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/DeathRecapOverlay.kt` (new), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** When the player dies (after T-097 death animation completes), show a small overlay with: cause-of-death (enemy contact / lethal hazard / fall / boss attack), time-into-level, stomps-this-run, tokens-this-run, "Retry?" button + "Quit to menu" button. Auto-fade after 3s or on Retry/Quit input.
+- **Done when:** Death triggers overlay; stats are accurate per-run; Retry restarts level; Quit returns to MainMenu; smoke CI passes (autopilot dies sometimes — verify it doesn't lock up on the overlay).
+- **Constraints:** Read cause-of-death from existing LevelRunState death-cause field if one exists; otherwise add a `DeathCause` enum. Don't broaden scope — no leaderboards, no telemetry.
 
 ### T-141 — Cloud Atlas search/filter  [P3]
 - **Status:** In Progress
