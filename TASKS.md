@@ -405,19 +405,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Death triggers overlay; stats are accurate per-run; Retry restarts level; Quit returns to MainMenu; smoke CI passes (autopilot dies sometimes — verify it doesn't lock up on the overlay).
 - **Constraints:** Read cause-of-death from existing LevelRunState death-cause field if one exists; otherwise add a `DeathCause` enum. Don't broaden scope — no leaderboards, no telemetry.
 
-### T-132 — High-contrast mode toggle (a11y)  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** M
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-057  *(builds on existing color-blind palette infrastructure)*
-- **GDD ref:** GAME_PLAN.md (a11y completeness — beyond color-blind palette)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/rendering/HighContrastPalette.kt` (new), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** Add `highContrast: Boolean = false` to `Settings`. Toggle in Accessibility section. When on, all gameplay colors flip to maximum-contrast variants (player = pure white, enemies = pure black, platforms = inverted grey, hazards = saturated red). Separate from color-blind palette (player can have both on). Renders via a thin `HighContrastPalette` wrapper that intercepts color lookups in `LevelRenderer`.
-- **Done when:** Toggle visible in Settings → Accessibility; ON: all rendered colors map through high-contrast palette; OFF: rendering identical to pre-T-132; persists; smoke CI passes.
-- **Constraints:** Don't touch UI screens (MainMenu/Settings rendering) — only gameplay rendering. Don't replace the existing T-057 color-blind palette path; coexist.
 
 ### T-133 — Quick-restart hotkey (R) in-game  [P3]
 - **Status:** Todo
@@ -491,6 +478,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-132 — High-contrast mode toggle (a11y)  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-132-high-contrast-mode
+- **Started:** 2026-05-13
+- **Depends on:** T-057  *(builds on existing color-blind palette infrastructure)*
+- **GDD ref:** GAME_PLAN.md (a11y completeness — beyond color-blind palette)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/rendering/HighContrastPalette.kt` (new), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Add `highContrast: Boolean = false` to `Settings`. Toggle in Accessibility section. When on, all gameplay colors flip to maximum-contrast variants (player = pure white, enemies = pure black, platforms = inverted grey, hazards = saturated red). Separate from color-blind palette (player can have both on). Renders via a thin `HighContrastPalette` wrapper that intercepts color lookups in `LevelRenderer`.
+- **Done when:** Toggle visible in Settings → Accessibility; ON: all rendered colors map through high-contrast palette; OFF: rendering identical to pre-T-132; persists; smoke CI passes.
+- **Constraints:** Don't touch UI screens (MainMenu/Settings rendering) — only gameplay rendering. Don't replace the existing T-057 color-blind palette path; coexist.
 
 ### T-135 — Per-level eco-token completion % in StatsScreen  [P3]
 - **Status:** In Progress
