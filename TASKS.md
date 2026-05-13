@@ -415,20 +415,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Beating any level produces a PNG in the documented dir; toast visible; smoke CI does not write screenshots; smoke CI passes.
 - **Constraints:** Don't read user's filesystem outside the documented dir. Don't add a setting toggle yet (default-on; can ticket later). Use `Pixmap` + `PixmapIO.writePNG()` — already in libGDX.
 
-### T-140 — Per-character ability tooltip in pause overlay  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-063, T-128  *(pause overlay + achievement predicates refactor — GameScreen contention)*
-- **GDD ref:** GAME_PLAN.md (player onboarding — currently characters swap freely but pause overlay doesn't say what they do)
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt` (pause overlay render path), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
-- **Goal:** In the pause overlay, below the existing resume/quit buttons, show a 3-row card listing: `Ebo — Seed Slam (action key)`, `Laya — Wind Dash (action key)`, `Zephyr — Cloud Float (action key)`. Highlight the currently-selected character with the existing toast accent color. Pull binding labels from `Settings.keybinds["action"]` (T-036 keybind system).
-- **Done when:** Pause overlay shows the 3-character ability summary; current character highlighted; keys reflect current bindings; smoke CI passes.
-- **Constraints:** Pause-overlay only. Don't add a new screen. New StringKey entries via `Strings.kt`.
-
 
 <!-- ═══════════════════════════════════════════════════════════════
      SPRINT D wave 8 — streamer-friendly + alpha-safety + meta
@@ -563,6 +549,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 ---
 
 ## In Progress
+
+### T-140 — Per-character ability tooltip in pause overlay  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-140-character-ability-tooltip
+- **Started:** 2026-05-13
+- **Depends on:** T-063, T-128  *(pause overlay + achievement predicates refactor — GameScreen contention)*
+- **GDD ref:** GAME_PLAN.md (player onboarding — currently characters swap freely but pause overlay doesn't say what they do)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt` (pause overlay render path), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** In the pause overlay, below the existing resume/quit buttons, show a 3-row card listing: `Ebo — Seed Slam (action key)`, `Laya — Wind Dash (action key)`, `Zephyr — Cloud Float (action key)`. Highlight the currently-selected character with the existing toast accent color. Pull binding labels from `Settings.keybinds["action"]` (T-036 keybind system).
+- **Done when:** Pause overlay shows the 3-character ability summary; current character highlighted; keys reflect current bindings; smoke CI passes.
+- **Constraints:** Pause-overlay only. Don't add a new screen. New StringKey entries via `Strings.kt`.
 
 ### T-133 — Quick-restart hotkey (R) in-game  [P3]
 - **Status:** In Progress
