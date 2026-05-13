@@ -464,19 +464,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** The 3 literals are gone from source; smoke CI passes; existing tests pass.
 - **Constraints:** Only these 3 strings. Do NOT broaden scope to the 7 numeric format templates from the audit — those are deferred until a second locale lands.
 
-### T-123 — HTML5 / web-demo viability spike  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`  *(research-only, but technical — needs codebase-aware judgement)*
-- **Tier:** S
-- **Autonomous-eligible:** yes-with-review  *(go/no-go memo informs whether to invest in a real port)*
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** _none_
-- **GDD ref:** GAME_PLAN.md (alpha discovery — itch.io HTML5 embed dramatically increases play-through rate vs. download)
-- **Files:** `research/html5-web-demo-viability.md` (new)
-- **Goal:** Investigate whether Cloudy-Ninja can be ported to an HTML5 / GWT (libGDX-Teavm) target. Assess: (a) does our current libGDX version support GWT/Teavm backends? (b) which deps are GWT-hostile (Box2D-native, Kotlin stdlib reflection, GSON/Jackson)? (c) what's the rough effort estimate (S/M/L/XL)? (d) which game systems would need refactor or graceful-degrade (save serialization, audio formats, font baking)? Produce a go/no-go memo with options: (1) ship desktop-only alpha + web demo deferred; (2) cut a stripped web demo (1-2 levels, no save); (3) full web port.
-- **Done when:** Memo exists with the 4 questions answered, a clear recommendation (one of the 3 options), and a rough effort estimate.
-- **Constraints:** **Research-only.** Do NOT add a Teavm/GWT module, do NOT touch gradle build files, do NOT modify any deps. Read-only investigation. Use `WebSearch` for libGDX-Teavm / libGDX-html status circa 2025.
 
 
 ---
@@ -534,6 +521,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Files:** `screens/MainMenuScreen.kt`, `i18n/Strings.kt`
 - **Goal:** Below the slot cards on MainMenu, render `Achievements: {0}/12 unlocked` showing the **max** count across the 3 save slots. Style: `FontManager.getShared(14)`, light grey, 12px padded. Use `Strings.format(StringKey.MENU_ACHIEVEMENT_PROGRESS, count, total)` — new key. If all 12 unlocked: `MENU_ACHIEVEMENT_PROGRESS_COMPLETE` rendered in gold `(1f, 0.85f, 0.1f, 1f)`.
 - **Done when:** Counter visible reflecting save data; both states verified; smoke CI passes.
+
+### T-123 — HTML5 / web-demo viability spike  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`  *(research-only, but technical — needs codebase-aware judgement)*
+- **Tier:** S
+- **Autonomous-eligible:** yes-with-review  *(go/no-go memo informs whether to invest in a real port)*
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-123-html5-spike
+- **Started:** 2026-05-13
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (alpha discovery — itch.io HTML5 embed dramatically increases play-through rate vs. download)
+- **Files:** `research/html5-web-demo-viability.md` (new)
+- **Goal:** Investigate whether Cloudy-Ninja can be ported to an HTML5 / GWT (libGDX-Teavm) target. Assess: (a) does our current libGDX version support GWT/Teavm backends? (b) which deps are GWT-hostile (Box2D-native, Kotlin stdlib reflection, GSON/Jackson)? (c) what's the rough effort estimate (S/M/L/XL)? (d) which game systems would need refactor or graceful-degrade (save serialization, audio formats, font baking)? Produce a go/no-go memo with options: (1) ship desktop-only alpha + web demo deferred; (2) cut a stripped web demo (1-2 levels, no save); (3) full web port.
+- **Done when:** Memo exists with the 4 questions answered, a clear recommendation (one of the 3 options), and a rough effort estimate.
+- **Constraints:** **Research-only.** Do NOT add a Teavm/GWT module, do NOT touch gradle build files, do NOT modify any deps. Read-only investigation. Use `WebSearch` for libGDX-Teavm / libGDX-html status circa 2025.
 
 ### T-124 — itch.io page draft + Tag Wizard order (T-075 follow-up)  [P3]
 - **Status:** In Progress
