@@ -265,3 +265,20 @@ Quick session-end record:
 **Cause:** Crash reporter writes to user-home; manual verification paths aren't sandboxed.
 
 **Fix:** Harmless; safe to delete. Future verifications should prefer unit tests over live exception throws, or clean up the artifact after.
+
+---
+
+## 2026-05-13: Every Screen resets Gdx.input.inputProcessor — root multiplexers get clobbered (T-147)
+
+**Symptom:** T-147 set up to install an F12-intercepting `InputAdapter` at the top of a root `InputMultiplexer` in `Main.create()`. Every screen transition silently dropped the F12 handler.
+
+**Cause:** Each `Screen.show()` (MainMenuScreen, GameScreen, SettingsScreen, …) calls `Gdx.input.inputProcessor = stage` directly, overwriting whatever was installed at app init. No central input owner.
+
+**Fix:** For genuinely global, low-frequency hotkeys, poll `Gdx.input.isKeyJustPressed(...)` from `Main.render()` rather than fighting the per-screen handler. Works because:
+- Polling runs every frame regardless of which Screen owns the input processor
+- `isKeyJustPressed` is edge-triggered so it doesn't fire repeatedly while held
+- Other handlers still receive the key event normally
+
+**When to apply:** any future "global keybind" work (debug toggles, screenshot-anywhere, dev console). Don't try to install a root multiplexer — refactoring every Screen to use a shared multiplexer is the only "clean" alternative and that's a much bigger ticket.
+
+**Architectural follow-up candidate:** the per-screen `inputProcessor = stage` pattern is a smell. A future ticket could introduce a `GlobalInputRouter` that screens *push their stage into* rather than overwriting the slot — at which point root-level handlers would actually compose. Not ticketed yet; mention if a third "I need a global handler" ticket appears.
