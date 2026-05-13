@@ -38,6 +38,7 @@ import com.sohai.platformer.physics.CleanseEventQueue
 import com.sohai.platformer.rendering.CharacterAnimator
 import com.sohai.platformer.rendering.ParticleSystem
 import com.sohai.platformer.rendering.ScreenFade
+import com.sohai.platformer.rendering.ScreenShake
 import com.sohai.platformer.world.ObstacleKind
 import com.sohai.platformer.world.ObstacleManager
 
@@ -148,12 +149,13 @@ class LevelRunState(
     private val camVertSnapFallThreshold = -3f
     private var cameraTargetY           = 0f
 
-    // ── Screen shake / hitstop ────────────────────────────────────────────────
+    // ── Hitstop ───────────────────────────────────────────────────────────────
+    // (Screen-shake state lives in the [ScreenShake] singleton since T-169 —
+    // the local shakeIntensity/shakeDuration/shakeT fields and the
+    // triggerShake() helper were removed when the two shake systems were
+    // unified onto ScreenShake.trigger(...).)
 
     var hitstopFrames   = 0
-    private var shakeIntensity = 0f
-    private var shakeDuration  = 0f
-    private var shakeT         = 0f
 
     // ── Death animation (T-097) ───────────────────────────────────────────────
     // While [deathAnimT] is in (0, DEATH_ANIM_DURATION) the player is "dying":
@@ -241,13 +243,6 @@ class LevelRunState(
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
-
-    fun triggerShake(intensityMeters: Float, durationSec: Float) {
-        val s = SettingsManager.load()
-        if (!s.screenShake || s.reducedMotion) return
-        shakeIntensity = maxOf(shakeIntensity, intensityMeters)
-        shakeDuration  = maxOf(shakeDuration, durationSec)
-    }
 
     fun triggerHitstop(frames: Int) {
         hitstopFrames = maxOf(hitstopFrames, frames)
@@ -582,7 +577,7 @@ class LevelRunState(
             renderer.spawnLandingDust(player.body.position.x, player.body.position.y - 0.32f, prevPlayerVy)
             SoundManager.play("land")
             val mag = ((-prevPlayerVy - 8f) / 20f).coerceIn(0f, 0.08f)
-            if (mag > 0.02f) triggerShake(mag, 0.10f)
+            if (mag > 0.02f) ScreenShake.trigger(mag, 0.10f)
         }
         prevPlayerVy = curVy
         prevGrounded = curGrounded
@@ -646,7 +641,7 @@ class LevelRunState(
             // decrement) fires the moment death is detected, regardless of
             // whether we animate or respawn instantly.
             SoundManager.play("death")
-            triggerShake(0.18f, 0.25f)
+            ScreenShake.trigger(0.18f, 0.25f)
             triggerHitstop(5)
             renderer.spawnCollectSparkle(player.body.position.x, player.body.position.y,
                 Color(1f, 0.3f, 0.3f, 0.95f))
@@ -889,15 +884,11 @@ class LevelRunState(
         camera.position.x = camera.position.x.coerceIn(halfW, (levelW - halfW).coerceAtLeast(halfW))
         camera.position.y = camera.position.y.coerceAtLeast(halfH)
 
-        // Screen shake
-        if (shakeDuration > 0f) {
-            shakeT         += delta
-            shakeDuration  -= delta
-            val falloff = (shakeDuration / 0.2f).coerceIn(0f, 1f)
-            camera.position.x += MathUtils.sin(shakeT * 60f) * shakeIntensity * falloff
-            camera.position.y += MathUtils.cos(shakeT * 73f) * shakeIntensity * falloff
-            if (shakeDuration <= 0f) { shakeIntensity = 0f; shakeT = 0f }
-        }
+        // Screen shake is owned by [ScreenShake] (T-169 consolidation) — it
+        // ticks in LevelRenderer.renderWorld() and applies its offset to the
+        // camera position around the projection-matrix calculation. No
+        // shake-decay logic lives here any more; this method is responsible
+        // only for the dead-zone + forward-focus tracking above.
         camera.update()
 
         // Drain deferred body destructions (safe — outside world.step and contact callbacks)

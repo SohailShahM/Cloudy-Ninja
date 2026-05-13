@@ -27,7 +27,7 @@ Every feature below maps to a concrete `Settings` field and a UI control in `Set
 - **Scope of coverage (from `Settings.kt` docs):** "Disables screen shake, clamps particle bursts to a single particle, and freezes the parallax background scroll."
 - **Cross-cutting effects in tree:**
   - `EnemyHitFlashTest` (per HANDOFF) — hit-flash respects `reducedMotion`.
-  - Both screen-shake systems (`LevelRunState.triggerShake()` for lightning/boss-defeat and `rendering/ScreenShake.kt` for stomp/boss-hit, per HANDOFF source-side quirk #5) gate on this flag.
+  - The unified `rendering/ScreenShake.kt` system (T-169 consolidated the former dual implementations) gates on this flag at trigger time, covering all call sites: stomp/boss-hit/lightning (WorldContactListener) and land-bounce/death (LevelRunState).
 - **Not covered:** menu transitions and pause-overlay fade (T-063, 0.2 s) — these are short, single-direction fades and were not in T-058 scope. Screen-fade screen transitions (`fadeFromBlack`/`fadeToBlack` per T-110) also persist.
 - **Independence:** the legacy `screenShake` and `deathFlash` toggles (lines 50–51 of `Settings.kt`, both default `true`) still exist as finer-grained sub-controls. A player who wants only one of the three behaviours can mix-and-match.
 
