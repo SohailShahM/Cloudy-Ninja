@@ -154,6 +154,10 @@ enum class StringKey {
     STATS_BEST_TIMES_EMPTY,
     STATS_ACHIEVEMENTS_MISSING,
     STATS_ACHIEVEMENTS_NONE,
+    // T-135: per-level eco-token completion rows
+    STATS_LEVEL_TOKENS_HEADER,
+    STATS_LEVEL_TOKEN_PROGRESS,
+    STATS_HIDDEN_TOKEN_PROGRESS,
 
     // ── Victory screen ───────────────────────────────────────────────────────
     VICTORY_TITLE,
@@ -412,6 +416,12 @@ object Strings {
         StringKey.STATS_BEST_TIMES_EMPTY      to "Best times: (no times recorded)",
         StringKey.STATS_ACHIEVEMENTS_MISSING  to "Achievements unlocked: —",
         StringKey.STATS_ACHIEVEMENTS_NONE     to "—",
+        // T-135: per-level eco-token completion rows
+        // {0}=level name, {1}=collected, {2}=total, {3}=percent
+        StringKey.STATS_LEVEL_TOKENS_HEADER   to "Eco-tokens by level:",
+        StringKey.STATS_LEVEL_TOKEN_PROGRESS  to "{0}: {1}/{2} tokens ({3}%)",
+        // {0}=hidden collected (across campaign), {1}=hidden total
+        StringKey.STATS_HIDDEN_TOKEN_PROGRESS to "Hidden: {0}/{1} found",
 
         // Victory screen
         StringKey.VICTORY_TITLE      to "MISSION COMPLETE!",
