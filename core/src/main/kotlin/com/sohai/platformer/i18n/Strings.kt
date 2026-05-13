@@ -34,6 +34,9 @@ enum class StringKey {
     ACHIEVEMENTS_VIEW_ALL_BUTTON,
     ACHIEVEMENT_UNLOCKED_LABEL,
     ACHIEVEMENT_LOCKED_LABEL,
+    // T-146: Per-achievement unlock-timestamp line under each unlocked row.
+    ACHIEVEMENT_UNLOCKED_AT,
+    ACHIEVEMENT_UNLOCKED_AT_UNKNOWN,
     MENU_ACHIEVEMENTS,
     STATS_ACHIEVEMENT_COUNT,
     // T-099: Achievement progress counter on MainMenu
@@ -318,6 +321,9 @@ object Strings {
         StringKey.ACHIEVEMENTS_VIEW_ALL_BUTTON  to "View All →",
         StringKey.ACHIEVEMENT_UNLOCKED_LABEL    to "✓ Unlocked",
         StringKey.ACHIEVEMENT_LOCKED_LABEL      to "🔒 Locked",
+        // T-146: Per-achievement unlock-timestamp line under each unlocked row.
+        StringKey.ACHIEVEMENT_UNLOCKED_AT         to "Unlocked: {0}",
+        StringKey.ACHIEVEMENT_UNLOCKED_AT_UNKNOWN to "Unlocked: ?",
         StringKey.MENU_ACHIEVEMENTS             to "Achievements",
         StringKey.STATS_ACHIEVEMENT_COUNT       to "Achievements: {0}/{1} unlocked",
         // T-099: Achievement progress counter on MainMenu
