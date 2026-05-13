@@ -84,5 +84,5 @@ _(no questions yet — autonomous agents append here as they encounter ambiguity
   Then append three more entries to `NOTICE.md` following the same CC0 template used in T-179's PR for Martial Hero 1 / Pixel Adventure / Sunny Land. The asset-pack-inventory doc already names the expected paths.
 
   **Severity:** non-blocking. T-179's PR ships 4 packs covering the core gameplay-asset spec; the 3 missing packs are nice-to-have (2 additional protagonist sheets for visual variety + a fuller forest pack for the eco biome). T-046 integration can start with what's already in the repo.
-- **Status:** `open`
-- **Answer:** _(pending)_
+- **Status:** `resolved` (T-181 — 2026-05-14)
+- **Answer:** User manually downloaded all three ZIPs and dropped them in `C:\Users\Radmin\Downloads\`. T-181 extracted, normalized filenames, placed the packs at the documented paths, and additionally downsampled all three LuizMelo Martial Hero packs (MH1/MH2/MH3) from upstream 200/200/126 px frames to a unified 48 px frame size via nearest-neighbor interpolation (pixel-art-correct). See T-181 PR for full details.
