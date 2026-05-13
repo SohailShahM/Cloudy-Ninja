@@ -10,11 +10,13 @@ import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.Stage
+import com.badlogic.gdx.scenes.scene2d.Touchable
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.SelectBox
 import com.badlogic.gdx.scenes.scene2d.ui.Slider
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.Array as GdxArray
 import com.badlogic.gdx.utils.Timer
 import com.badlogic.gdx.utils.viewport.FitViewport
@@ -61,6 +63,32 @@ class SettingsScreen(
     // the cancel calls below.
     private var musicTestStopTask: Timer.Task? = null
 
+    /**
+     * T-143: The currently-open "Reset to defaults" confirmation modal, or
+     * null when no modal is showing. The modal mirrors the T-119 save-slot
+     * delete pattern from MainMenuScreen: a fill-parent dim layer + centered
+     * card with Cancel (default-focused) and Reset buttons. Tracked so the
+     * ESC handler knows whether to intercept and so [resetModal] can be
+     * looked up for focus management.
+     */
+    private var resetModal: VisTable? = null
+
+    /**
+     * Stage-level ESC handler (T-143, mirrors MainMenuScreen T-119). When the
+     * Reset modal is open, ESC dismisses it as a cancel-equivalent. When
+     * closed, ESC is a no-op so we don't accidentally swallow keys other
+     * widgets (e.g. the keybind capture flow) might want.
+     */
+    private val escKeyListener: InputListener = object : InputListener() {
+        override fun keyDown(event: InputEvent?, keycode: Int): Boolean {
+            if (keycode == Input.Keys.ESCAPE && resetModal != null) {
+                hideResetModal()
+                return true
+            }
+            return false
+        }
+    }
+
     companion object {
         private const val SAVE_SLOT = "save_slot_0.json"
         private const val TOAST_DURATION = 2f
@@ -68,6 +96,9 @@ class SettingsScreen(
 
     init {
         Gdx.input.inputProcessor = stage
+        // T-143: stage-level ESC handler so the Reset modal can be dismissed
+        // via keyboard regardless of which actor has scene-graph focus.
+        stage.addListener(escKeyListener)
 
         val skin = VisUI.getSkin()
         val titleStyle   = Label.LabelStyle(titleFont,   Color(0.3f, 1f, 0.55f, 1f))
@@ -491,6 +522,23 @@ class SettingsScreen(
         saveRow.add(btnLoad).size(120f, 48f).padRight(12f)
         saveRow.add(btnDelete).size(120f, 48f)
         inner.add(saveRow).left().padBottom(8f).row()
+
+        // T-143: Reset-to-defaults button. Sits at the very bottom of the
+        // Settings scroll content, AFTER all category sections + the existing
+        // save/load/delete footer row. Tapping opens the confirmation modal
+        // (reusing the T-119 pattern); on confirm we call
+        // [SettingsManager.reset], then re-create the Screen so every widget
+        // re-binds against the fresh Settings — much cleaner than walking
+        // every actor to restore its state.
+        val btnResetAll = VisTextButton(Strings.get(StringKey.SETTINGS_RESET_ALL_BUTTON))
+        btnResetAll.name = "settings_reset_all_button"
+        btnResetAll.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                showResetModal()
+            }
+        })
+        inner.add(btnResetAll).left().padTop(8f).padBottom(8f).row()
+
         inner.add(toastLabel).left().padBottom(8f).row()
 
         // Scroll pane so the content isn't clipped on small windows
@@ -541,6 +589,110 @@ class SettingsScreen(
         DisplayScale.init()
         FontManager.clearSharedCache()
         showToast(Strings.get(StringKey.SETTINGS_TOAST_DISPLAY_UPDATED))
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // T-143 — Reset-to-defaults confirmation modal
+    //
+    // Mirrors the T-119 save-slot delete modal in MainMenuScreen
+    // (showDeleteModal / hideDeleteModal / buildDeleteModalGroup):
+    //  - Dim fill-parent backdrop that swallows clicks so widgets behind
+    //    stay inert. Tapping outside the card does NOT auto-dismiss — that
+    //    would reintroduce the very accidental-action class T-119 fixed.
+    //  - Centered "card" with title, body, Cancel + Reset buttons.
+    //  - Cancel is the default-focused actor (Enter/Space hits Cancel).
+    //  - ESC dismisses via [escKeyListener] regardless of scene-graph focus.
+    //  - On confirm we call [SettingsManager.reset] (which deliberately
+    //    bypasses update() to keep keybindsCustomized = false) and re-create
+    //    the SettingsScreen so every widget re-binds against the fresh state.
+    // ─────────────────────────────────────────────────────────────────────
+
+    private fun showResetModal() {
+        hideResetModal() // only one at a time
+        val modal = buildResetModalGroup(
+            onCancel  = { hideResetModal() },
+            onConfirm = { confirmReset() }
+        )
+        stage.addActor(modal)
+        resetModal = modal
+        // Default focus on Cancel so Enter/Space dismiss safely.
+        val cancelBtn = modal.findActor<Actor>("reset_modal_cancel")
+        if (cancelBtn != null) {
+            stage.keyboardFocus = cancelBtn
+        }
+    }
+
+    private fun hideResetModal() {
+        val modal = resetModal ?: return
+        modal.remove()
+        resetModal = null
+        stage.keyboardFocus = null
+    }
+
+    /**
+     * Perform the reset and re-init the screen so every widget re-renders
+     * with the defaults. [SettingsManager.reset] persists `Settings()` and
+     * leaves `save_slot_*.json` files untouched — Settings only.
+     */
+    private fun confirmReset() {
+        SettingsManager.reset()
+        hideResetModal()
+        // Re-create the screen so checkboxes/sliders/selectboxes all rebind
+        // from the fresh Settings instance. Cleaner than walking every actor.
+        game.screen = SettingsScreen(game, currentState)
+        dispose()
+    }
+
+    private fun buildResetModalGroup(
+        onCancel: () -> Unit,
+        onConfirm: () -> Unit
+    ): VisTable {
+        val modal = VisTable()
+        modal.name = "reset_modal_root"
+        modal.setFillParent(true)
+        modal.center()
+        modal.touchable = Touchable.enabled
+        // Swallow background clicks (no auto-dismiss on outside-tap).
+        modal.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) { /* swallow */ }
+        })
+
+        val card = VisTable()
+        card.background("window")
+        card.pad(24f)
+
+        card.add(Label(Strings.get(StringKey.SETTINGS_RESET_ALL_CONFIRM_TITLE),
+            Label.LabelStyle(sectionFont, Color(0.7f, 0.85f, 0.75f, 1f))))
+            .padBottom(8f).row()
+        card.add(Label(Strings.get(StringKey.SETTINGS_RESET_ALL_CONFIRM_BODY),
+            Label.LabelStyle(bodyFont, Color(0.82f, 0.88f, 0.82f, 1f))))
+            .padBottom(20f).row()
+
+        val buttonRow = VisTable()
+        buttonRow.defaults().width(120f).height(40f).padLeft(8f).padRight(8f)
+
+        // Cancel — default-focused (per T-119 convention / T-143 spec).
+        val cancelBtn = VisTextButton(Strings.get(StringKey.SETTINGS_RESET_ALL_CONFIRM_CANCEL))
+        cancelBtn.name = "reset_modal_cancel"
+        cancelBtn.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                onCancel()
+            }
+        })
+        buttonRow.add(cancelBtn)
+
+        val resetBtn = VisTextButton(Strings.get(StringKey.SETTINGS_RESET_ALL_CONFIRM_OK))
+        resetBtn.name = "reset_modal_confirm"
+        resetBtn.addListener(object : ClickListener() {
+            override fun clicked(event: InputEvent?, x: Float, y: Float) {
+                onConfirm()
+            }
+        })
+        buttonRow.add(resetBtn)
+
+        card.add(buttonRow).row()
+        modal.add(card)
+        return modal
     }
 
     private fun showToast(message: String) {

@@ -204,6 +204,28 @@ object SettingsManager {
         return next
     }
 
+    /**
+     * T-143: Restore ALL settings to factory defaults and persist.
+     *
+     * Bypasses [update] deliberately. If we routed the reset through
+     * `update { Settings() }`, the customization detector inside [update]
+     * would compare the prior keybinds to the default keybinds and — for
+     * any player who has ever rebound a key — flip
+     * [Settings.keybindsCustomized] back to `true` against the very thing
+     * a "reset to defaults" is supposed to clear. The factory state for
+     * that flag is `false`, so the reset path writes a vanilla
+     * [Settings()] instance directly via [save].
+     *
+     * Save data (per-slot `save_slot_N.json` files) is untouched — this
+     * method only writes `settings.json`. Returns the new state for
+     * convenience.
+     */
+    fun reset(): Settings {
+        val defaults = Settings()
+        save(defaults)
+        return defaults
+    }
+
     /** For tests. Resets the in-memory cache so the next load() reads fresh. */
     fun resetCacheForTest() { cached = null }
 }
