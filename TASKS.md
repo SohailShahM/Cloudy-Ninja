@@ -462,6 +462,90 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
      validate font rendering legibility). Pre-alpha gate.
 ═══════════════════════════════════════════════════════════════ -->
 
+<!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D wave 10 — architectural smells captured this session
+     T-169..T-171 spec'd 2026-05-13 by claude-code-opus while the
+     final per-bus-feature wave was landing. Each addresses a real
+     pragmatism-vs-cleanness call made earlier in the project.
+═══════════════════════════════════════════════════════════════ -->
+
+### T-169 — Consolidate dual screen-shake systems  [P2]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes-with-review  *(stacking semantic changes feel of overlapping events; eyeball pass recommended)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_  *(file-disjoint with T-142/T-143 in flight)*
+- **GDD ref:** HANDOFF.md source-side quirk #5 (2026-05-13) — two shake systems coexist post-T-116; offsets sum on overlapping frames.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/rendering/ScreenShake.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt` (combined-offset path), all call sites of `LevelRunState.triggerShake` (grep — currently land/death/lightning paths), `core/src/test/kotlin/com/sohai/platformer/rendering/ScreenShakeTest.kt`
+- **Goal:** Retire `LevelRunState.triggerShake` (per-state fields `shakeIntensity`/`shakeDuration` + max-stacking). Migrate all call sites to `ScreenShake.trigger`. The unified system uses ScreenShake's existing **replace-semantics** (fresh hit = fresh impact, not additive) plus its linear-decay sin/cos oscillator. The HANDOFF documented the symptom: "their offsets sum on overlapping frames" — meaning a stomp during a lightning strike currently produces a doubled shake. After this ticket, only one shake animation runs at a time.
+- **Architecture decision (recorded here so future agents have the rationale):**
+  - **Pick:** the `ScreenShake` singleton. It's already headless-testable, has a clean public API (`trigger / update / offset / isActive`), and lives in a dedicated package. `LevelRunState.triggerShake` is tangled with run-state ownership and goes away.
+  - **Stacking:** replace, not max. Player-feel intuition is "this hit just happened, shake from this hit," not "accumulate from the last few." Max-stacking was an artifact of the older system; not a designed-for choice.
+  - **Setting gates:** ScreenShake honors `reducedMotion`. Add `Settings.screenShake` (the toggle LevelRunState was respecting) as a second gate in `ScreenShake.trigger` — currently only reducedMotion gates. Existing toggle UI in SettingsScreen continues to work transparently.
+  - **Two-axis frequency:** keep ScreenShake's `X_FREQ=60, Y_FREQ=73`. LevelRunState's older shake had no such variation, so this is a minor upgrade in feel (no straight-line diagonal trace).
+- **Done when:**
+  1. `LevelRunState.triggerShake` is deleted; `shakeIntensity`/`shakeDuration` fields removed; LevelRenderer's combined-offset math no longer references LevelRunState shake.
+  2. All previous `triggerShake(...)` call sites now call `ScreenShake.trigger(...)`. Lightning hit + death + stomp-landing magnitudes preserved by translating the old `(intensity, duration)` values 1:1.
+  3. `Settings.screenShake` toggle still gates shake (regression-test by toggling off in SettingsScreen and verifying offset stays zero).
+  4. `ScreenShakeTest.kt` gets new cases asserting (a) the `Settings.screenShake = false` gate, (b) idempotence of double-trigger replacing rather than accumulating.
+  5. Smoke CI passes.
+- **Constraints:** **Don't change call-site magnitudes** (e.g. `triggerShake(0.18f, 0.25f)` → `ScreenShake.trigger(0.18f, 0.25f)` — same args). The author tuned those by feel; preserve. **Don't broaden scope** — no new shake triggers, no removing the camera look-ahead path (T-144), no rewriting LevelRenderer's `totalOffsetX/Y` aggregator beyond removing the LevelRunState component.
+
+### T-170 — Move high-contrast silhouette into entities (T-132 follow-up)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_  *(file-disjoint with T-142/T-143; conflicts with T-169 on `LevelRenderer.kt` — serialize)*
+- **GDD ref:** HANDOFF.md source-side quirk #9 (2026-05-13) — silhouette overlay hack at `LevelRenderer.kt:538-574, 658-668`.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/entities/Enemy.kt` (abstract base; add `drawHighContrast(shapeRenderer)` open method with sensible default), `core/src/main/kotlin/com/sohai/platformer/entities/SmogSprite.kt`, `core/src/main/kotlin/com/sohai/platformer/entities/DriftHusk.kt`, `core/src/main/kotlin/com/sohai/platformer/entities/StormSentinel.kt`, `core/src/main/kotlin/com/sohai/platformer/entities/Player.kt` (or its draw path), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt` (remove the overlay paint blocks)
+- **Goal:** Move per-entity high-contrast silhouette geometry from `LevelRenderer` into each entity. Entities own their own bounds, hit-flash composition, and high-contrast color choice.
+- **Architecture decision:**
+  - Add `open fun drawHighContrast(shapeRenderer: ShapeRenderer)` to `Enemy`. Default body: black rectangle sized to `body.position` ± half-extents (entity-specific via `protected` properties). SmogSprite, DriftHusk override with their actual bounds. StormSentinel overrides with a `circle(pos, 0.5f)` — preserving the "leave telegraph rings visible" intent currently in LevelRenderer.
+  - **Hit-flash composition:** the existing `Enemy.applyHitFlash` (T-098) lerps base color toward white. In high-contrast mode the base is black; the lerp toward white still reads as a flash. Currently broken (overlay overwrites flash) — fixing it is a positive side-effect, mention in PR.
+  - **Player:** sprite atlas can't be recolored, so player's `drawHighContrast(shapeRenderer)` paints the white silhouette rectangle over its own bounds. The geometry knowledge moves from `LevelRenderer:665-668` into `Player.kt`. The death-fade `playerAlpha` continues to multiply.
+  - **LevelRenderer:** in the high-contrast-on branch, just call `enemy.drawHighContrast(shapeRenderer)` after `enemy.draw(shapeRenderer)`. No more hardcoded rect dimensions in the renderer.
+- **Done when:**
+  1. `Enemy.drawHighContrast` open method exists with sensible default; SmogSprite/DriftHusk/StormSentinel override appropriately.
+  2. `Player.drawHighContrast` (or equivalent) exists and paints the white silhouette.
+  3. LevelRenderer's silhouette overlay blocks (currently lines 538-547, 553-562, 567-574, 658-668) are deleted and replaced with `entity.drawHighContrast(shapeRenderer)` dispatches.
+  4. Visual parity: high-contrast mode still produces black enemies + white player. Verify by booting locally; if not feasible, document in PR.
+  5. **Bonus:** hit-flash now visible in high-contrast mode (the silhouette color lerps toward white on hit, then back to black). Mention in PR description.
+  6. Tests: extend existing entity tests with one `drawHighContrast` no-crash case each. No need for golden-pixel diffs.
+  7. Smoke CI passes.
+- **Constraints:** **Don't change visible behavior in non-high-contrast mode.** That path stays byte-identical. **Don't move the `ColorRole.ENEMY` palette mapping** out of `LevelRenderer.hc()` — that helper stays where it is; entities can call it via `LevelRenderer.hc(...)` if needed, or LevelRenderer can pre-resolve the color and pass it in. Pick whichever causes fewer cross-file refs (likely: pre-resolve + pass).
+
+### T-171 — `GlobalInputProcessor` — stop screens clobbering input  [P3]
+- **Status:** Todo
+- **Tool:** `human-then-claude-code-sonnet`  *(architecture decision is human; implementation is mechanical)*
+- **Tier:** L
+- **Autonomous-eligible:** **no**  *(touches every Screen file; input regressions cascade; needs deliberate review)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_  *(but conflicts widely — schedule when other Screen work is quiet)*
+- **GDD ref:** LEARNINGS.md 2026-05-13 "Every Screen resets Gdx.input.inputProcessor"; surfaced by T-147.
+- **Files:** new `core/src/main/kotlin/com/sohai/platformer/input/GlobalInputRouter.kt`, `core/src/main/kotlin/com/sohai/platformer/Main.kt` (install at app create, intercept global hotkeys), every Screen file that currently sets `Gdx.input.inputProcessor` (grep — likely ~15 files): MainMenu, Settings, Achievements, Credits, Stats, Victory, GameScreen, CloudAtlas, SplashScreen, LevelSelect, plus any overlays that take input.
+- **Goal:** Introduce a single `InputMultiplexer` owned by `GlobalInputRouter` and installed once at `Main.create()`. Screens **push** their Stage in `show()` and **pop** it in `hide()` rather than overwriting `Gdx.input.inputProcessor` outright. Global hotkeys (F12 from T-147, M-mute from T-118, future debug toggles) live at the top of the multiplexer permanently — no more polling in `Main.render()`.
+- **Architecture decision (proposed; awaiting user sign-off):**
+  - Singleton `object GlobalInputRouter` wraps a private `InputMultiplexer`.
+  - `register(global: InputProcessor)` adds at the END (highest priority — global hotkeys outrank screen input).
+  - `pushScreen(stage: InputProcessor)` and `popScreen(stage: InputProcessor)` add/remove BEFORE the global block. Screens call these in `show`/`hide`.
+  - `Main.create()` installs the router as `Gdx.input.inputProcessor` ONCE. After that, `Gdx.input.inputProcessor` is never reassigned anywhere.
+  - T-147's per-frame F12 polling in `Main.render()` migrates back to a real `InputAdapter.keyDown(F12)` once the router is in place. T-118's M-key similarly migrates from InputManager to a global adapter (cleaner).
+- **Done when:**
+  1. `GlobalInputRouter` exists with the API above + Kotest spec covering register/push/pop ordering.
+  2. Every Screen's `show()` calls `pushScreen(stage)`; `hide()` calls `popScreen(stage)`. **Zero remaining `Gdx.input.inputProcessor = ...` assignments** outside `Main.create()`.
+  3. F12 + M-mute migrate from polling to real adapters; `Main.render()` is no longer responsible for input polling.
+  4. All existing screen interactions still work (click buttons, type in rebind, etc.).
+  5. Smoke CI passes (autopilot is a fake InputProcessor injected via the router, not a clobber — verify).
+- **Constraints:** **DO NOT START** until user signs off on the design above. The risk concentrates on (a) overlay screens that may not always have a `hide()` pair, (b) Stage focus/keyboardFocus interactions, (c) smoke autopilot's input injection pathway. Each is solvable but needs deliberation. Surface to QUESTIONS.md once a sub-agent's review of the codebase reveals the actual overlay-and-focus situation.
+
+
+
 ### T-168 — Visual font-regression smoke pass (T-126 follow-up)  [P2]
 - **Status:** Todo
 - **Tool:** `human`  *(visual judgement — smoke CI cannot validate font legibility)*
