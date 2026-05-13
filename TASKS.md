@@ -488,6 +488,99 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Pause overlay shows the 3-character ability summary; current character highlighted; keys reflect current bindings; smoke CI passes.
 - **Constraints:** Pause-overlay only. Don't add a new screen. New StringKey entries via `Strings.kt`.
 
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D wave 8 — streamer-friendly + alpha-safety + meta
+     T-142..T-147 batch (planned 2026-05-13 by claude-code-opus,
+     deep into the autonomous-run).
+═══════════════════════════════════════════════════════════════ -->
+
+### T-142 — Speedrun timer overlay toggle  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (streamer/runner engagement — high-precision timer is the speedrun-community baseline)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt` (Accessibility or new Display section), `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt` (HUD render), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Add `speedrunTimer: Boolean = false` to `Settings`. When on, render a high-precision timer in the top-left of the HUD: `MM:SS.mmm` updating every frame. Reads from existing `LevelRunState.levelTimer` — no new clock. Toggle in Settings. Don't replace the existing best-time display.
+- **Done when:** Toggle visible; ON: HUD shows millisecond timer; OFF: HUD unchanged from current state; persists; smoke CI passes.
+- **Constraints:** HUD-only. Don't add elapsed-time math — read from existing `levelTimer`. Use `FontManager.getShared(14)` monospace if available, else default. New StringKey for the toggle label.
+
+### T-143 — Settings "Reset to defaults" button  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-119  *(modal pattern from slot-delete confirm)*
+- **GDD ref:** GAME_PLAN.md (alpha safety — players who mis-rebind a key currently can't easily recover)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Add a "Reset to defaults" button at the bottom of SettingsScreen. Tapping opens a confirmation modal (reuse the T-119 pattern): `Reset all settings to defaults? Your save data is not affected.` with Cancel/Reset buttons. Default-focus is Cancel. On Reset: instantiate fresh `Settings()`, call `SettingsManager.save()`, re-render the SettingsScreen so all controls reflect the defaults.
+- **Done when:** Button visible at bottom of Settings; modal opens and dismisses correctly; Reset restores ALL settings (audio, controls, accessibility, display) to defaults; save data untouched; persists; smoke CI passes (modal doesn't open in autopilot).
+- **Constraints:** **Don't touch save data.** Settings only. Reuse T-119's modal pattern (Cancel default-focus, ESC cancels).
+
+### T-144 — Camera look-ahead in motion direction  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-116  *(LevelRenderer camera-offset infrastructure)*
+- **GDD ref:** GAME_PLAN.md (feel polish — fixed camera reveals less ahead of motion than feel-good platformers do)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt` (new `cameraLookAhead: Boolean = true`), `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt` (Display section toggle)
+- **Goal:** When player is moving horizontally, smoothly offset the camera up to ±48px in the direction of motion (lerp 0.15/frame). Resets to centered when player stops. Adds to the T-116 screen-shake camera offset (both sum). Toggle in Settings → Display (default ON; off for static-camera preference).
+- **Done when:** Walking right shifts camera ~48px right; walking left shifts ~48px left; standing still centers; shake still works; toggle disables look-ahead but leaves shake; smoke CI passes.
+- **Constraints:** Don't break level boundaries — clamp camera target to level extents. Don't introduce camera oscillation (smooth lerp).
+
+### T-145 — Sound test in Settings  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-035, T-138  *(audio bus + achievement chime contention)*
+- **GDD ref:** GAME_PLAN.md (audio QA — current SettingsScreen has volume sliders but no preview)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** In the Audio section of SettingsScreen, add a small "Sound Test" subsection with three buttons: `Play UI Click`, `Play SFX (jump)`, `Play Music (ambient_arid 3s)`. Each button calls into the corresponding manager and plays a single sample. Helps players verify volume settings without entering gameplay.
+- **Done when:** Three test buttons visible in Audio section; each plays the expected sample at current slider volumes; smoke CI passes.
+- **Constraints:** SettingsScreen-only. Don't add new assets. Music test plays for 3s then stops (don't leave music looping behind the player after test).
+
+### T-146 — Achievement notification log in AchievementsScreen  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-128, T-113  *(unlocker pipeline + save migration scaffold for new timestamp field)*
+- **GDD ref:** GAME_PLAN.md (completionist engagement — players want a timeline of when they unlocked each achievement)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/GameState.kt` (add `achievementTimestamps: Map<String, Long> = emptyMap()` additive field; ISO date or epoch ms), `core/src/main/kotlin/com/sohai/platformer/progression/AchievementUnlocker.kt` (record timestamp on unlock), `core/src/main/kotlin/com/sohai/platformer/screens/AchievementsScreen.kt` (show "Unlocked: YYYY-MM-DD" under each row), `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Persist a per-achievement unlock timestamp at the moment `AchievementUnlocker.tryUnlock()` fires (epoch ms). In AchievementsScreen, show "Unlocked: YYYY-MM-DD" under each unlocked achievement (locked ones show no timestamp). Legacy unlocks without a timestamp display "Unlocked: ?".
+- **Done when:** New unlocks record timestamps; AchievementsScreen shows dates; legacy unlocks render gracefully; smoke CI passes.
+- **Constraints:** Save-data-adjacent. Use T-113's migration scaffold. Don't break existing saves. Format dates in user's local timezone, ISO format (YYYY-MM-DD) for stability.
+
+### T-147 — F12 screenshot hotkey (anytime)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-139  *(ScreenshotWriter utility from victory-screen ticket)*
+- **GDD ref:** GAME_PLAN.md (player sharing — players love F12-style screenshot hotkeys; Steam set the convention)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/Main.kt` (global input handler), `core/src/main/kotlin/com/sohai/platformer/util/ScreenshotWriter.kt` (extend from T-139)
+- **Goal:** Pressing F12 anytime (in MainMenu, gameplay, Settings, Atlas, anywhere) captures the current framebuffer to `<userHome>/.cloudy-ninja/screenshots/manual-{screenName}-{ts}.png`. Small toast: "Screenshot saved". Skip in SMOKE_MODE. Tolerate file-write failure.
+- **Done when:** F12 anywhere produces a PNG with the right filename pattern; toast confirms; smoke CI does not write screenshots; smoke CI passes.
+- **Constraints:** Don't read user's filesystem outside the documented dir. Don't rebind F12 — it's hardcoded (not in Settings → Controls). Reuse T-139's `ScreenshotWriter.write(pixmap, path)` API.
+
+
+
 ---
 
 ## Backlog — AI testing v2 (planned, after MVP T-A1/T-A2 lands)
