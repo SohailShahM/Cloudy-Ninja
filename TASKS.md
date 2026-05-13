@@ -463,6 +463,77 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 ═══════════════════════════════════════════════════════════════ -->
 
 <!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D wave 12 — Claude Design ticket batch (2026-05-14)
+     User has access to Claude Design (claude.ai/design, included with
+     Claude Pro). Right tool for UI/marketing design work; WRONG tool
+     for sprite/tile generation. T-182..T-185 carve out the legitimate
+     fits: Settings/MainMenu polish, itch.io landing page, pitch deck.
+     User-driven; I write prompts + integrate outputs.
+═══════════════════════════════════════════════════════════════ -->
+
+### T-182 — MainMenu + Settings visual polish via Claude Design  [P2]
+- **Status:** Todo
+- **Tool:** `human-then-claude-code-sonnet`  *(user generates layouts in Claude Design; sub-agent ports them to Scene2D)*
+- **Tier:** M
+- **Autonomous-eligible:** **no**  *(visual design is judgment-driven; Claude Design is a user-driven web tool)*
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_  *(but pairs naturally with T-046 art direction)*
+- **GDD ref:** demo-readiness feedback 2026-05-13 — "the visuals are completely trash"; T-173 addressed title contrast as a tactical fix, T-182 is the strategic polish pass
+- **Files:** new `research/design-mockups/main-menu-v2/` (HTML export from Claude Design), new `research/design-mockups/settings-v2/`; eventually `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt` + `SettingsScreen.kt` ports
+- **Goal — two-phase:**
+  - **Phase A (user, Claude Design):** open claude.ai/design and produce two prototype designs:
+    1. **MainMenu** — Cloudy-Ninja title (anime-pixel feel matching CC0 stack), play/settings/achievements/credits/atlas buttons, build label, achievement progress counter, save-slot picker preview. Reference the existing layout but elevate the typography hierarchy + add visual flourishes (parallax hint, ambient particles, subtle gradient backdrops). Export HTML.
+    2. **Settings** — Audio/Display/Controls/Accessibility sections with clear visual grouping. Existing 8+ sliders are clutter-heavy; group them with section cards. Export HTML.
+  - **Phase B (sub-agent):** read the exported HTML, identify the Scene2D-portable design tokens (colors, padding, font sizes, panel backgrounds), rebuild the two screens in Kotlin matching the design spirit. Won't be pixel-perfect — Scene2D isn't CSS — but the structural improvement should be visible.
+- **Done when:** Both HTML mockups exist under `research/design-mockups/`; both screens re-ported in Kotlin; user confirms via a play-through that "looks meaningfully better than before"; smoke CI passes (autopilot doesn't care about visual changes).
+- **Constraints:** **Don't touch gameplay screens** (GameScreen HUD, level rendering) — T-046 art-pack integration handles that. Settings + MainMenu are isolated and high-impact. **Don't break existing functionality** — Reset to defaults modal (T-143), sound test buttons (T-145), M-mute (T-118), Speedrun toggle (T-142), all sliders must still work after the port.
+
+### T-183 — itch.io landing page via Claude Design  [P2]
+- **Status:** Todo
+- **Tool:** `human`  *(user-driven; outputs paste into itch.io page editor)*
+- **Tier:** S
+- **Autonomous-eligible:** **no**
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-124  *(itch page draft content exists at `marketing/itch-page-draft.md`)*
+- **GDD ref:** GAME_PLAN.md alpha launch — itch.io is the launch channel; T-124 produced the content, T-183 produces the visual layout
+- **Files:** new `research/design-mockups/itch-landing-page/` (HTML export from Claude Design + screenshot for itch.io upload)
+- **Goal:** Use Claude Design with `marketing/itch-page-draft.md` as the content input. Produce a polished itch.io storefront page mockup — hero image area (placeholder until art is final), tagline, feature bullets, screenshot grid placeholders, system requirements, tags-wizard hints. Export HTML. The exported design is reference for the itch.io upload — itch's storefront editor accepts HTML in description fields and individual asset uploads for cover image / screenshots.
+- **Done when:** HTML mockup under `research/design-mockups/itch-landing-page/`; user has copy-paste assets ready for itch.io storefront editor; tagline + feature copy committed in the mockup (not just placeholder lorem ipsum); smoke CI passes (docs-only change).
+- **Constraints:** **Don't generate game screenshots** — those need real polished gameplay, blocked on T-046. Use clear placeholder boxes labeled "[Gameplay screenshot — X]" so the user knows exactly what to capture later. **Don't promise unshipped features** — alpha-honest copy only.
+
+### T-184 — Cloud Atlas card layout redesign via Claude Design  [P3]
+- **Status:** Todo
+- **Tool:** `human-then-claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** **no**
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md educational goals — Cloud Atlas is a player-facing artifact; current cards are functional but not delightful
+- **Files:** new `research/design-mockups/cloud-atlas-card/`, eventually `core/src/main/kotlin/com/sohai/platformer/screens/CloudAtlasScreen.kt` + `CloudAtlasOverlay.kt`
+- **Goal:** Claude Design produces ONE master Cloud Atlas card layout — title, snapshot illustration area (placeholder), 2-3 paragraph educational body, "discovered in" footer. The 12 entries (per T-045 spec; currently 6 shipped) reuse the same layout. Phase B sub-agent ports the card design to Scene2D as a reusable `CloudAtlasCard` widget used by both the screen and the in-game overlay.
+- **Done when:** Card layout HTML mockup exists; reusable `CloudAtlasCard` Scene2D widget in code; both `CloudAtlasScreen` and `CloudAtlasOverlay` use the new widget; smoke CI passes.
+- **Constraints:** **One card design, used by both screens** — don't fork. **Don't change card content** (educational text is owned by T-045 / NotebookLM pipeline).
+
+### T-185 — Pitch deck via Claude Design  [P3 / on-demand]
+- **Status:** Todo
+- **Tool:** `human`
+- **Tier:** S
+- **Autonomous-eligible:** **no**
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-183  *(landing page copy + tagline locked first)*
+- **GDD ref:** GAME_PLAN.md — publisher / festival / investor pitches; not alpha-blocking, but inevitable if game gains traction
+- **Files:** new `research/design-mockups/pitch-deck/` (PPTX export from Claude Design + a PDF mirror)
+- **Goal:** When the user has a pitch event lined up (publisher meeting, festival submission, investor intro), use Claude Design to produce a tight 8-12 slide deck: title slide, the elevator pitch, the problem (eco-anxiety + climate-curiosity gap in games), the product (Cloudy-Ninja USP), gameplay GIF placeholders, target market + competitor positioning (T-053 / T-156 already produced research), business model, team, ask. Export PPTX.
+- **Done when:** PPTX exported + checked into `research/design-mockups/pitch-deck/`; PDF mirror for previewers; user can present without further editing. **Only build when there's an actual pitch event** — don't build on spec.
+- **Constraints:** **Reuse copy from T-124 / T-156** for consistency. **Don't fabricate metrics** — pre-launch decks should focus on vision + research-backed market sizing, not invented traction numbers.
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════
      SPRINT D wave 11 — demo-readiness feedback (2026-05-13 very late)
      User ran DEMO_PREFLIGHT_CHECKLIST.md and reported issues from a
      ~6-minute play session. T-173..T-178 spec'd in response.
