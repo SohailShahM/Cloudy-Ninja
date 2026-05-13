@@ -20,7 +20,25 @@ object SoundManager : Disposable {
     private var enabled = true
     private var volume = 0.8f
     private var uiVolume = 1f
+
+    // ── Master audio bus (T-105) ────────────────────────────────────────────
+    //
+    // [masterVolume] is the user-controllable global scalar that multiplies
+    // both the SFX and the UI buses. [muted] is a separate flag (NOT a zero
+    // clamp on [masterVolume]) so the master slider value is preserved
+    // across mute/unmute. T-118 reuses the same flag for its M-keybind.
+    private var masterVolume = 1f
+    private var muted = false
+
     private val sounds = mutableMapOf<String, Sound>()
+
+    /**
+     * Effective output scalar for the given per-bus volume.
+     *
+     * Composition (T-105): `masterVolume * busVolume * (muted ? 0 : 1)`.
+     */
+    private fun effective(bus: Float): Float =
+        masterVolume * bus * (if (muted) 0f else 1f)
 
     /**
      * T-013 canonical SFX: key → path relative to the assets root.
@@ -85,14 +103,14 @@ object SoundManager : Disposable {
      */
     fun play(name: String, pitch: Float = 1f) {
         if (!enabled) return
-        sounds[name]?.play(volume, pitch, 0f)
+        sounds[name]?.play(effective(volume), pitch, 0f)
             ?: Gdx.app.error("SoundManager", "play() called for unknown sound: $name")
     }
 
     /** Play a UI sound using the UI bus volume configured via [setUiVolume]. */
     fun playUi(name: String, pitch: Float = 1f) {
         if (!enabled) return
-        sounds[name]?.play(uiVolume, pitch, 0f)
+        sounds[name]?.play(effective(uiVolume), pitch, 0f)
             ?: Gdx.app.log("SoundManager", "playUi() called for unknown sound: $name")
     }
 
@@ -101,6 +119,23 @@ object SoundManager : Disposable {
 
     fun setVolume(v: Float) { volume = v.coerceIn(0f, 1f) }
     fun setUiVolume(v: Float) { uiVolume = v.coerceIn(0f, 1f) }
+
+    /**
+     * Set the global master volume (T-105). Multiplies on top of both
+     * [setVolume] (SFX) and [setUiVolume] (UI) via [effective]. Clamped
+     * to 0..1. Does NOT change [muted] — mute is a separate output gate
+     * so the slider value is preserved across mute/unmute.
+     */
+    fun setMasterVolume(v: Float) { masterVolume = v.coerceIn(0f, 1f) }
+
+    /**
+     * Set the global mute flag (T-105). When true, [effective] returns 0
+     * regardless of master/bus sliders. The slider values are preserved —
+     * unmuting restores the prior level. T-118 reuses this flag for the
+     * M-keybind toggle.
+     */
+    fun setMuted(m: Boolean) { muted = m }
+
     fun setEnabled(e: Boolean) { enabled = e }
 
     override fun dispose() {

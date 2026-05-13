@@ -157,6 +157,36 @@ class SettingsScreen(
         // ══════════════════════════════════════════════════════════════════
         sectionHeader(Strings.get(StringKey.SETTINGS_AUDIO), topPad = 12f)
 
+        // T-105: Master volume slider + mute toggle. Sits ABOVE the existing
+        // Music/SFX/UI sliders. Effective volume for each bus becomes
+        // `volMaster * volBus` and is gated to 0 by [muted] without altering
+        // the slider position so unmute restores. T-118 reuses the same flag
+        // for the M-keybind transient mute.
+        inner.add(Label(Strings.get(StringKey.SETTINGS_MASTER), bodyStyle)).left().padRight(16f)
+        val masterRow = VisTable()
+        val sliderMaster = Slider(0f, 1f, 0.05f, false, skin)
+        sliderMaster.value = settings.volMaster
+        val chkMute = CheckBox(Strings.get(StringKey.SETTINGS_MUTE), skin)
+        chkMute.isChecked = settings.muted
+        sliderMaster.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                settings = SettingsManager.update { it.copy(volMaster = sliderMaster.value) }
+                MusicManager.setMasterVolume(sliderMaster.value)
+                SoundManager.setMasterVolume(sliderMaster.value)
+            }
+        })
+        chkMute.addListener(object : ChangeListener() {
+            override fun changed(event: ChangeEvent?, actor: Actor?) {
+                val m = chkMute.isChecked
+                settings = SettingsManager.update { it.copy(muted = m) }
+                MusicManager.setMuted(m)
+                SoundManager.setMuted(m)
+            }
+        })
+        masterRow.add(sliderMaster).width(260f).padRight(16f)
+        masterRow.add(chkMute).left()
+        inner.add(masterRow).left().row()
+
         inner.add(Label(Strings.get(StringKey.SETTINGS_MUSIC), bodyStyle)).left().padRight(16f)
         val sliderMusic = Slider(0f, 1f, 0.05f, false, skin)
         sliderMusic.value = settings.volMusic

@@ -34,6 +34,14 @@ fun defaultKeybinds(): Map<String, Int> = mapOf(
 @Serializable
 data class Settings(
     // Audio (0..1)
+    //
+    // T-105: master volume sits above the per-bus sliders. Effective volume
+    // for any bus is `volMaster * volBus * (if (muted) 0f else 1f) * <duck>`.
+    // Mute is intentionally a separate flag so the slider value is preserved
+    // across mute/unmute — unmuting restores the user's previous master level.
+    // T-118 reuses the [muted] flag for the M-keybind transient mute.
+    val volMaster: Float = 1.0f,
+    val muted: Boolean = false,
     val volMusic: Float = 0.7f,
     val volSfx: Float = 0.9f,
     val volAmbient: Float = 0.6f,

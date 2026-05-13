@@ -101,6 +101,17 @@ object MusicManager {
     /** Master music volume (0..1). Initialised from [SettingsManager]. */
     private var volMusic = 0.7f
 
+    // ── Master audio bus (T-105) ────────────────────────────────────────────
+    //
+    // [masterVolume] is the user-controllable global scalar that sits above
+    // the per-bus music volume. [muted] is a separate flag (NOT a zero
+    // clamp on [masterVolume]) so the slider value is preserved across
+    // mute/unmute. T-118 reuses the same flag for its M-keybind toggle.
+    /** Global master volume (0..1). Multiplies on top of [volMusic]. */
+    private var masterVolume = 1f
+    /** Global mute flag. When true, effective volume is 0 regardless of sliders. */
+    private var muted = false
+
     /** Whether we are currently fading in (no outgoing track). */
     private var isFadingIn = false
 
@@ -128,8 +139,20 @@ object MusicManager {
     /** True for one frame after a zero-fade duck/unduck so [update] pushes the snap to the live track. */
     private var duckPendingSnap = false
 
-    /** Effective volume scalar applied to a track at full fade-in weight. */
-    private fun effectiveVolume(): Float = volMusic * duckMultiplier
+    /**
+     * Effective volume scalar applied to a track at full fade-in weight.
+     *
+     * Composition (T-105 + T-117):
+     *   `masterVolume * volMusic * duckMultiplier * (muted ? 0 : 1)`
+     *
+     * Order is logically:
+     *   - [masterVolume]   — global master slider (T-105)
+     *   - [volMusic]       — music bus slider
+     *   - [duckMultiplier] — pause-overlay ducking tween (T-117), unchanged
+     *   - [muted]          — mute toggle (T-105) / M-keybind (T-118), gates output
+     */
+    private fun effectiveVolume(): Float =
+        masterVolume * volMusic * duckMultiplier * (if (muted) 0f else 1f)
 
     /**
      * Start playing a track. If a different track is already playing,
@@ -146,7 +169,10 @@ object MusicManager {
         if (!audioGateOpen) return
 
         // Pull volume from settings each time we start a track
-        volMusic = SettingsManager.load().volMusic
+        val s = SettingsManager.load()
+        volMusic = s.volMusic
+        masterVolume = s.volMaster
+        muted = s.muted
 
         // Already playing this track — nothing to do
         if (trackName == currentTrackName && current?.isPlaying == true) return
@@ -265,6 +291,41 @@ object MusicManager {
      */
     fun setMusicVolume(vol: Float) {
         volMusic = vol.coerceIn(0f, 1f)
+        applyEffectiveVolume()
+    }
+
+    /**
+     * Set the global master volume (T-105). Multiplies on top of [volMusic]
+     * via [effectiveVolume]. Takes effect immediately, scaled by current
+     * fade weights so a slider drag is heard right away — mirrors
+     * [setMusicVolume]'s mid-crossfade/mid-fade-in behaviour.
+     *
+     * Clamped to 0..1. Does NOT change the [muted] flag — mute is a separate
+     * output gate so the slider value is preserved across mute/unmute.
+     */
+    fun setMasterVolume(vol: Float) {
+        masterVolume = vol.coerceIn(0f, 1f)
+        applyEffectiveVolume()
+    }
+
+    /**
+     * Set the global mute flag (T-105). When true, [effectiveVolume] returns
+     * 0 regardless of master/bus sliders. The slider values are preserved —
+     * unmuting restores the prior level. T-118 reuses this flag for its
+     * M-keybind toggle.
+     */
+    fun setMuted(m: Boolean) {
+        muted = m
+        applyEffectiveVolume()
+    }
+
+    /**
+     * Re-apply [effectiveVolume] to the currently-live track(s), scaled by
+     * the current fade weight. Shared by [setMusicVolume], [setMasterVolume]
+     * and [setMuted] so a slider drag / mute toggle is heard right away
+     * mid-crossfade or mid-fade-in.
+     */
+    private fun applyEffectiveVolume() {
         val t = (fadeTimer / FADE_DURATION).coerceIn(0f, 1f)
         when {
             next != null -> {
