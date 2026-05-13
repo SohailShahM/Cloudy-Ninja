@@ -395,6 +395,127 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Constraints:** Verify twice before removing. If Copilot picks this up, the grep step must be the first commit on the branch — don't bundle with the removal.
 
 
+<!-- ═══════════════════════════════════════════════════════════════
+     SPRINT D wave 5 — alpha polish + code health + a11y
+     T-128..T-135 batch (planned 2026-05-13 by claude-code-opus,
+     mid-autonomous-run).
+     T-128 is the re-spec of the predicates-refactor spawn-task chip
+     whose initial agent died silently.
+═══════════════════════════════════════════════════════════════ -->
+
+### T-128 — Refactor achievement unlock predicates to pure functions  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(re-spec from a 2026-05-13 spawn-task chip whose dispatched agent died silently)*
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-107  *(AchievementRegistry + LevelRunState contention — wait for T-107 to land first)*
+- **GDD ref:** HANDOFF.md source-side quirk #4 — predicate-firing tests need a source refactor
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt` (12+ inline `tryUnlock` sites), `core/src/main/kotlin/com/sohai/platformer/screens/LevelTransitionController.kt` (3 sites + duplicate `tryUnlock` helper), `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt` (1 site at L305 for `boss_defeated`), `core/src/main/kotlin/com/sohai/platformer/progression/AchievementRegistry.kt` (or new `AchievementPredicates.kt`), new test file
+- **Goal:** Extract each achievement's unlock condition into a pure function `(AchievementInputs) -> Boolean`. `AchievementInputs` data class carries `totalStomps`, `atlasSize`, `completedLevels`, `levelTimer`, `levelId`, `noDeathRun`, `unlockedAchievements: Set<String>`, `collectedHiddenTokens: Set<String>` (from T-107), etc. Add `evaluate(inputs, currentlyUnlocked): List<String>` orchestrator returning newly-firing achievement IDs. Rewrite call sites to build inputs and loop; keep `tryUnlock` itself (it's the impure toast+save side). Consolidate the two duplicate `tryUnlock` helpers.
+- **Done when:** Each predicate is testable headless without `Gdx.*`; behavior identical (no achievement fires earlier or later than before); test file covers each predicate with met/unmet/already-unlocked cases.
+- **Constraints:** **BEHAVIOR MUST STAY IDENTICAL.** Don't fix bugs as part of the refactor — surface them in LEARNINGS.md and QUESTIONS.md instead. Don't refactor T-107's `collector` predicate beyond what fits this pattern.
+
+### T-129 — Audio gate on first user input  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-104  *(splash now precedes MainMenu)*
+- **GDD ref:** GAME_PLAN.md — desktop usually doesn't need this, but **future HTML5 web demo (T-123 Option 2)** will hard-require a user-gesture before audio can play. Pre-bake the gate now so the web port doesn't need a runtime fork.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/SplashScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`
+- **Goal:** Splash screen waits for first keypress OR mouse-click before transitioning to MainMenu (in addition to the existing 1s minimum + preload gate). When the gate fires, MusicManager.play() is allowed to start. Smoke mode bypasses this gate (already configured in T-104).
+- **Done when:** On desktop, splash shows a small "Press any key to continue" hint after the 1s minimum + preload complete. Key/click advances to MainMenu. Smoke CI passes unchanged.
+- **Constraints:** Don't break smoke. Don't add network calls. Hint text via Strings.kt new key `SPLASH_PRESS_ANY_KEY`.
+
+### T-130 — Death recap overlay  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-097, T-128  *(LevelRunState contention with predicates refactor)*
+- **GDD ref:** GAME_PLAN.md (player engagement — "what just happened" feedback after death)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/DeathRecapOverlay.kt` (new), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRunState.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** When the player dies (after T-097 death animation completes), show a small overlay with: cause-of-death (enemy contact / lethal hazard / fall / boss attack), time-into-level, stomps-this-run, tokens-this-run, "Retry?" button + "Quit to menu" button. Auto-fade after 3s or on Retry/Quit input.
+- **Done when:** Death triggers overlay; stats are accurate per-run; Retry restarts level; Quit returns to MainMenu; smoke CI passes (autopilot dies sometimes — verify it doesn't lock up on the overlay).
+- **Constraints:** Read cause-of-death from existing LevelRunState death-cause field if one exists; otherwise add a `DeathCause` enum. Don't broaden scope — no leaderboards, no telemetry.
+
+### T-131 — README badges (build status + license + Kotlin version)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`  *(or copilot-agent — single-file README edit)*
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** _none_
+- **GDD ref:** GAME_PLAN.md (community readiness — alpha launch presentation polish)
+- **Files:** `README.md`
+- **Goal:** Add badges to top of README: (1) CI build status — `github.com/SohailShahM/Cloudy-Ninja/actions/workflows/ci.yml/badge.svg`, (2) AI smoke status — same path with `ai-smoke.yml`, (3) license — proprietary badge linked to `LICENSE`, (4) Kotlin version — derived from gradle, (5) libGDX version. Use shields.io for static text badges; native GH badges for workflow status. Group above first heading.
+- **Done when:** Badges render; all link targets correct; no broken images; CI passes.
+- **Constraints:** README-only. Don't restructure existing sections; just add the badge block at the very top.
+
+### T-132 — High-contrast mode toggle (a11y)  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** M
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-057  *(builds on existing color-blind palette infrastructure)*
+- **GDD ref:** GAME_PLAN.md (a11y completeness — beyond color-blind palette)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/SettingsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/rendering/HighContrastPalette.kt` (new), `core/src/main/kotlin/com/sohai/platformer/screens/LevelRenderer.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Add `highContrast: Boolean = false` to `Settings`. Toggle in Accessibility section. When on, all gameplay colors flip to maximum-contrast variants (player = pure white, enemies = pure black, platforms = inverted grey, hazards = saturated red). Separate from color-blind palette (player can have both on). Renders via a thin `HighContrastPalette` wrapper that intercepts color lookups in `LevelRenderer`.
+- **Done when:** Toggle visible in Settings → Accessibility; ON: all rendered colors map through high-contrast palette; OFF: rendering identical to pre-T-132; persists; smoke CI passes.
+- **Constraints:** Don't touch UI screens (MainMenu/Settings rendering) — only gameplay rendering. Don't replace the existing T-057 color-blind palette path; coexist.
+
+### T-133 — Quick-restart hotkey (R) in-game  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-036  *(adds new keybind to existing system)*
+- **GDD ref:** GAME_PLAN.md (player flow — speedrunners + casual retry experience)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/persist/Settings.kt`, `core/src/main/kotlin/com/sohai/platformer/input/InputManager.kt`, `core/src/main/kotlin/com/sohai/platformer/screens/GameScreen.kt`
+- **Goal:** Add `keybind("restart")` default `Input.Keys.R`. Holding R for 0.5s (NOT a tap — prevent accidental restarts) triggers level restart. Visual feedback: small radial progress indicator near HUD while held. Releasing before 0.5s cancels. Rebindable in Settings → Controls.
+- **Done when:** Hold-R-to-restart works at 0.5s; tap-R is a no-op; rebindable; persists; smoke CI passes (autopilot won't hold R — confirmed safe).
+- **Constraints:** Hold-not-tap is deliberate — accidental R presses are common. The 0.5s threshold is the standard for "are you sure?" patterns in indie games.
+
+### T-134 — MainMenu background music  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-030, T-129  *(audio gate must be in place before MainMenu plays music)*
+- **GDD ref:** GAME_PLAN.md (atmosphere — silent MainMenu undersells the game)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/MainMenuScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/ProceduralMusicGenerator.kt`
+- **Goal:** Add a 4th procedural track `ambient_menu` — softer than `ambient_arid`, more harmonic. Generate via existing `ProceduralMusicGenerator` pattern (60s loop). `MainMenuScreen` plays it on enter; transitions to level-specific track on Play. Crossfade pattern from T-030 applies.
+- **Done when:** MainMenu has background music; volume responds to Music slider; ducks correctly on Settings open (per T-117 pattern if applicable); smoke CI passes.
+- **Constraints:** Procedural only (no new audio file assets). Keep under 30 lines added to the generator.
+
+### T-135 — Per-level eco-token completion % in StatsScreen  [P3]
+- **Status:** Todo
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** _unclaimed_
+- **Branch:** _none_
+- **Depends on:** T-107  *(uses hidden eco-token state)*
+- **GDD ref:** GAME_PLAN.md (completionist engagement — visible progress per level)
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/StatsScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/i18n/Strings.kt`
+- **Goal:** Add a per-level row to StatsScreen showing eco-token collection % (regular + hidden combined). Format: `Level 1: 8/10 tokens (80%)`. Show all 3 campaign levels. Hidden token discovery rate also appears as a small bonus row: `Hidden: 2/3 found`.
+- **Done when:** StatsScreen displays per-level completion; numbers reflect actual save data; smoke CI passes.
+- **Constraints:** StatsScreen-only. Don't add any new save fields — read from existing T-107 + per-level token state.
+
+
 
 ---
 
