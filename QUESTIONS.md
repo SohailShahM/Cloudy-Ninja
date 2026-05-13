@@ -28,3 +28,27 @@ _(no questions yet — autonomous agents append here as they encounter ambiguity
   **Ask:** Should I spawn ONE `copilot-agent` follow-up ticket covering just the three high-confidence cases (#1–3), defer the numeric format templates until a real second locale lands, or wire all ten in a single sweep?
 - **Status:** `open`
 - **Answer:** _(pending)_
+
+### 2026-05-13 — claude-code-sub-agent — T-125 (T-125-Q1) — 🚨 HIGH PRIORITY · ALPHA-BLOCKING
+- **Question:** The T-125 asset attribution audit (full report at `research/asset-attribution-audit.md`) found one HIGH-severity legal blocker:
+
+  **`assets/fonts/main.ttf` is Calibri Regular (Microsoft proprietary font).** Identified by extracting the TTF name-table strings directly from the binary — confirms family=Calibri, manufacturer=Microsoft, version 6.27, designer Luc(as) de Groot. The font's embedded license string reads verbatim: *"Microsoft supplied font… You may only (i) embed this font in content as permitted by the embedding restrictions included in this font, and (ii) temporarily download this font to a printer or other output device to help print content. **Any other use is prohibited.**"*
+
+  Cloudy Ninja is not a Microsoft product, so the conditional license does not grant us redistribution rights. The repo is **public on GitHub** (bundling = redistribution), and the file is **actively loaded** by `FontManager.kt:38` (`FONT_PATH = "fonts/main.ttf"`) across every screen. Shipping the alpha with this font is a clear license violation and a takedown/legal-claim risk.
+
+  Git provenance confirms: commit `c056d40` (2026-05-09) added the file under the commit title *"Add Calibri font asset and fix unnecessary lateinit warning."* — the proprietary identity was acknowledged at commit time but not surfaced for licensing review.
+
+  **Recommended replacement candidates** (all SIL OFL 1.1, libGDX-FreeType compatible, drop-in via existing `FontManager` since the path is a single constant):
+
+  1. **Inter** (Rasmus Andersson) — closest visual match to Calibri among permissively-licensed sans-serifs; excellent screen rendering at small sizes; widely battle-tested in indie games. **My recommendation if no other constraint.**
+  2. **Atkinson Hyperlegible** (Braille Institute) — accessibility-optimized; would strengthen the already-shipped color-blind / reduced-motion accessibility story (T-057, T-058).
+  3. **Source Sans 3** (Adobe) — strong open-source pedigree.
+  4. **Open Sans** (Steve Matteson) — the conservative default.
+
+  All four are SIL OFL 1.1 → require bundling the OFL license text + a NOTICE.md entry. No in-game visible credit required. No reserved-font-name issue if the file is kept named `main.ttf` rather than the font's canonical name (or rename to match — either is fine).
+
+  **Ask:** Which font do you want shipped in the alpha? (Default recommendation: **Inter**, for visual continuity with the current Calibri-shaped UI.) After you pick, the swap itself is a small ticket: replace the .ttf file at `assets/fonts/main.ttf`, drop the OFL license text alongside as `assets/fonts/LICENSE-OFL.txt`, append a NOTICE.md "Bundled visual assets" entry. **None of that work was done by this PR (research-only constraint).**
+
+  **Severity:** alpha cannot ship until this is resolved.
+- **Status:** `open`
+- **Answer:** _(pending — needs user decision before alpha branch is cut)_
