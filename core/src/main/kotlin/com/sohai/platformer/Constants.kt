@@ -99,4 +99,13 @@ object Constants {
     // and remain unconditional. The smoke autopilot's `[smoke]` summary line
     // is also unconditional — CI greps it to detect a crashed JVM.
     @JvmField val DEV_LOGS: Boolean = java.lang.Boolean.getBoolean("cloudy.devLogs")
+
+    // T-A10: visual checkpoint capture gate. When true (pass
+    // `-Dcloudy.captureCheckpoints=true`) the smoke autopilot writes named PNGs
+    // to `build/visual-checkpoints/` at known game states (main-menu loaded,
+    // level1 start, mid-jump, after-death, etc.) so Claude can read them via
+    // the Read tool and visually verify the game looks right end-to-end. Pure
+    // no-op when false: a single boolean check at the top of
+    // `CheckpointCapture.capture()` short-circuits before any GL / disk work.
+    @JvmField val CAPTURE_CHECKPOINTS: Boolean = java.lang.Boolean.getBoolean("cloudy.captureCheckpoints")
 }

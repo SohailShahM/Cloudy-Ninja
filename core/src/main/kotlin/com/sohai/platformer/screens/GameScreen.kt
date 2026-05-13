@@ -150,6 +150,23 @@ class GameScreen(
 
     private var isDisposed = false
 
+    // ── T-A10: visual checkpoint capture (deferred-to-end-of-render) ──────────
+    // Capture must happen AFTER the rendered frame is on the back buffer.
+    // Each [pendingCheckpointCapture] is consumed at the very end of [render]
+    // (after every overlay layer has been drawn) and the underlying gate
+    // ([Constants.CAPTURE_CHECKPOINTS]) is checked inside the utility so this
+    // code stays unconditional. Each fire-once flag below ensures a given
+    // checkpoint writes AT MOST ONCE per GameScreen lifetime.
+    private var pendingCheckpointCapture: String? = null
+    private var checkpointStartFired       = false
+    private var checkpointMidJumpFired     = false
+    private var checkpointPauseFired       = false
+    private var checkpointAfterDeathFired  = false
+    /** Tracks last-frame spirit-health so we can detect a single death edge. */
+    private var prevSpiritHealthForCapture = Int.MIN_VALUE
+    /** Tracks last-frame death-respawn epoch via the player.y < spawn rule. */
+    private var prevPlayerYForCapture      = Float.NaN
+
     /**
      * T-172 (Phase B): tracks which stage is currently pushed onto the
      * [GlobalInputRouter] so [setActiveInputStage] can pop the previous one
@@ -454,6 +471,12 @@ class GameScreen(
 
     private fun setPaused(paused: Boolean) {
         isPaused = paused
+        // T-A10: capture the first time the pause overlay goes up so Claude
+        // can visually verify the overlay layout. One-shot per GameScreen.
+        if (paused && !checkpointPauseFired) {
+            checkpointPauseFired = true
+            pendingCheckpointCapture = "pause-overlay-active"
+        }
         // T-063: replay the 0.2s fade-in each time the overlay is shown.
         if (paused) pauseOverlay.resetFade()
         // T-117: dip music while the pause overlay is up so the menu reads cleanly,
@@ -490,6 +513,17 @@ class GameScreen(
     override fun show() {
         val initial = activeInputStage ?: hud.stage
         setActiveInputStage(initial)
+        // T-A10: queue an initial start-of-level capture for any campaign
+        // level. The actual capture fires at end-of-render for the first
+        // frame so the painted scene is on the back buffer. Filename is
+        // `<levelId>-start.png` (e.g. `level1-start.png`) — the autopilot
+        // typically launches level1 in CI, but capturing whichever level
+        // we actually entered keeps the artifact diagnostic for any smoke
+        // matrix entry. One-shot per GameScreen lifetime.
+        if (!checkpointStartFired) {
+            checkpointStartFired = true
+            pendingCheckpointCapture = "${level.id}-start"
+        }
     }
 
     override fun render(delta: Float) {
@@ -624,6 +658,54 @@ class GameScreen(
         deathRecapOverlay?.let { overlay ->
             overlay.tick(clampedDelta)
             overlay.render()
+        }
+
+        // T-A10: detect mid-jump and after-death edges, then consume the
+        // pending capture (if any) at the very end of render so the PNG
+        // reflects the painted frame including HUD + overlays. The state
+        // probes here are gated implicitly because CheckpointCapture.capture()
+        // short-circuits unless cloudy.captureCheckpoints=true; the fire-once
+        // flags below still ensure deterministic behaviour even when the
+        // capture flag is on. Hooking up here (not inside renderer or
+        // PlayerController) keeps PR #161's territory untouched.
+        run {
+            // Mid-jump: rising player above a clear threshold. vy>5 m/s
+            // (well above the half-gravity float window) catches a fresh
+            // PLAYER_JUMP_IMPULSE=13 launch but not normal walking. One-shot.
+            if (!checkpointMidJumpFired) {
+                val vy = player.body.linearVelocity.y
+                if (vy > 5f) {
+                    checkpointMidJumpFired = true
+                    pendingCheckpointCapture = "${level.id}-mid-jump"
+                }
+            }
+            // After-death: detect the respawn edge. PlayerController.respawn()
+            // teleports the player back to its spawn / checkpoint position
+            // with zero velocity; we detect by watching spiritHealth drop OR
+            // (for the assist-invincible path that doesn't decrement health)
+            // the player.y stepping back up from a sub-spawn position. Either
+            // edge is enough — we want a PNG of the level *after* a respawn
+            // event landed. One-shot.
+            if (!checkpointAfterDeathFired) {
+                val curHp = runState.spiritHealth
+                val curY  = player.body.position.y
+                val hpDropped = prevSpiritHealthForCapture != Int.MIN_VALUE &&
+                                curHp < prevSpiritHealthForCapture
+                val ySnapUp   = !prevPlayerYForCapture.isNaN() &&
+                                curY - prevPlayerYForCapture > 2.0f
+                if (hpDropped || ySnapUp) {
+                    checkpointAfterDeathFired = true
+                    pendingCheckpointCapture = "${level.id}-after-death"
+                }
+                prevSpiritHealthForCapture = curHp
+                prevPlayerYForCapture      = curY
+            }
+            // Fire whatever's pending. CheckpointCapture.capture() is a no-op
+            // unless cloudy.captureCheckpoints=true.
+            pendingCheckpointCapture?.let { name ->
+                pendingCheckpointCapture = null
+                com.sohai.platformer.visual.CheckpointCapture.capture(name)
+            }
         }
 
         // Transitions (end of render so dispose is never called mid-frame).
