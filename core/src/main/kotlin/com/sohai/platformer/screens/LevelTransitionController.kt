@@ -1,15 +1,15 @@
 package com.sohai.platformer.screens
 
 import com.badlogic.gdx.Game
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.sohai.platformer.audio.SoundManager
 import com.sohai.platformer.entities.EcoToken
 import com.sohai.platformer.levels.Level
 import com.sohai.platformer.levels.LevelManager
-import com.sohai.platformer.persist.Checkpoint
 import com.sohai.platformer.persist.SaveManager
-import com.sohai.platformer.progression.AchievementRegistry
+import com.sohai.platformer.progression.AchievementInputs
+import com.sohai.platformer.progression.AchievementPredicates
+import com.sohai.platformer.progression.AchievementUnlocker
 import com.sohai.platformer.rendering.ScreenFade
 
 /**
@@ -36,19 +36,33 @@ class LevelTransitionController(
     private var lastPrevTime: Float? = null
 
     /**
-     * Unlock an achievement by ID.  No-ops if already unlocked.
-     * Shows the toast if [achievementToast] is wired.
+     * T-128: fire any newly-met level-completion achievements via the shared
+     * [AchievementPredicates] orchestrator + [AchievementUnlocker] impure
+     * helper. Previously this controller had its own private `tryUnlock`
+     * duplicating [LevelRunState.tryUnlock]; the consolidation removes that
+     * duplication.
      */
-    private fun tryUnlock(achievementId: String) {
+    private fun fireCompletionAchievements(
+        completedLevels: Set<String>,
+        levelId: String,
+        levelTimer: Float,
+        timeTrialCompleted: Boolean,
+    ) {
         val state = SaveManager.loadGame(saveSlotFile)
-        if (achievementId in state.unlockedAchievements) return
-        val newState = state.copy(
-            unlockedAchievements = state.unlockedAchievements + achievementId
+        val inputs = AchievementInputs(
+            atlasSize = state.collectedAtlasIds.size,
+            completedLevels = completedLevels,
+            collectedHiddenTokens = state.collectedHiddenTokens,
+            totalStomps = state.totalStomps,
+            unlockedAchievements = state.unlockedAchievements,
+            timeTrialCompletedThisFrame = timeTrialCompleted,
+            levelCompletedThisFrame = true,
+            levelTimer = levelTimer,
+            levelId = levelId,
         )
-        SaveManager.saveGame(newState, saveSlotFile)
-        val achievement = AchievementRegistry.get(achievementId) ?: return
-        achievementToast?.show(achievement)
-        Gdx.app.log("Achievement", "Unlocked: $achievementId — ${achievement.title}")
+        for (id in AchievementPredicates.evaluate(inputs)) {
+            AchievementUnlocker.tryUnlock(id, saveSlotFile, achievementToast)
+        }
     }
 
     /** Shows the level-complete UI and persists the score. Returns the overlay. */
@@ -96,9 +110,6 @@ class LevelTransitionController(
             ))
             onBestTime?.invoke(lastTrialTime, trialIsNewBest)
             // no autosave to delete — time trial never writes checkpoints
-
-            // Achievement: speed_demon — time trial completed under 2 minutes
-            if (levelTimer < 120f) tryUnlock("speed_demon")
         } else {
             SaveManager.saveGame(existing.copy(
                 completedLevels = newCompleted,
@@ -107,10 +118,16 @@ class LevelTransitionController(
             SaveManager.deleteSave(checkpointAutosaveFile)
         }
 
-        // World/campaign clear achievements (checked after save so newCompleted is persisted)
-        if (level.id == "level1") tryUnlock("world_1_clear")
-        val allCampaignLevels = setOf("level1", "level2", "level3")
-        if (allCampaignLevels.all { it in newCompleted }) tryUnlock("all_clear")
+        // T-128: world_1_clear + all_clear + speed_demon evaluated via pure
+        // predicates. The orchestrator runs every level-completion predicate
+        // in one pass; speed_demon's `levelTimer < 120f` threshold lives in
+        // [AchievementPredicates.speedDemon].
+        fireCompletionAchievements(
+            completedLevels = newCompleted,
+            levelId = level.id,
+            levelTimer = levelTimer,
+            timeTrialCompleted = isTimeTrial,
+        )
 
         return overlay
     }

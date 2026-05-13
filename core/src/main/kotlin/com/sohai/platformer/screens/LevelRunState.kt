@@ -30,7 +30,9 @@ import com.sohai.platformer.levels.Level0_0
 import com.sohai.platformer.persist.Checkpoint
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.persist.SettingsManager
-import com.sohai.platformer.progression.AchievementRegistry
+import com.sohai.platformer.progression.AchievementInputs
+import com.sohai.platformer.progression.AchievementPredicates
+import com.sohai.platformer.progression.AchievementUnlocker
 import com.sohai.platformer.physics.CleanseEventQueue
 import com.sohai.platformer.rendering.CharacterAnimator
 import com.sohai.platformer.rendering.ParticleSystem
@@ -254,19 +256,71 @@ class LevelRunState(
     }
 
     /**
-     * Attempt to unlock an achievement by ID.  No-ops if already unlocked.
+     * Attempt to unlock an achievement by ID. No-ops if already unlocked.
      * Persists to [saveSlotFile] and shows the toast if [achievementToast] is set.
+     *
+     * T-128: thin facade over [AchievementUnlocker]. Retained as a public entry
+     * point for [GameScreen.boss_defeated] callback only — other sites should
+     * use [fireAchievements] so their predicate stays testable headless.
      */
     fun tryUnlock(achievementId: String) {
+        AchievementUnlocker.tryUnlock(achievementId, saveSlotFile, achievementToast)
+    }
+
+    /**
+     * T-128: evaluate-and-fire entry point used by callers outside this class
+     * (currently [GameScreen]'s `boss_defeated` callback). Builds an
+     * [AchievementInputs] with only the boss-defeated trigger set and runs
+     * the same orchestrator as the private per-frame call sites.
+     */
+    fun fireBossDefeatedAchievements() {
         val state = SaveManager.loadGame(saveSlotFile)
-        if (achievementId in state.unlockedAchievements) return
-        val newState = state.copy(
-            unlockedAchievements = state.unlockedAchievements + achievementId
+        val inputs = AchievementInputs(
+            totalStomps = state.totalStomps,
+            atlasSize = state.collectedAtlasIds.size,
+            completedLevels = state.completedLevels,
+            collectedHiddenTokens = state.collectedHiddenTokens,
+            unlockedAchievements = state.unlockedAchievements,
+            bossDefeatedThisFrame = true,
         )
-        SaveManager.saveGame(newState, saveSlotFile)
-        val achievement = AchievementRegistry.get(achievementId) ?: return
-        achievementToast?.show(achievement)
-        Gdx.app.log("Achievement", "Unlocked: $achievementId — ${achievement.title}")
+        for (id in AchievementPredicates.evaluate(inputs)) {
+            AchievementUnlocker.tryUnlock(id, saveSlotFile, achievementToast)
+        }
+    }
+
+    /**
+     * T-128: pure-predicate evaluation helper. Builds [AchievementInputs] from
+     * the current save state plus the supplied per-frame trigger overrides,
+     * then fires every newly-met predicate via [AchievementUnlocker]. Keeps
+     * call sites declarative ("here's what just happened") and the unlock
+     * logic itself testable headless via [AchievementPredicates.evaluate].
+     */
+    private fun fireAchievements(
+        jumpFiredThisFrame: Boolean = false,
+        enemyDefeatedThisFrame: Boolean = false,
+        cleanseEventThisFrame: Boolean = false,
+        ecoSweepReachedThisFrame: Boolean = false,
+        noDeathExitThisFrame: Boolean = false,
+        totalStompsOverride: Int? = null,
+        atlasSizeOverride: Int? = null,
+        collectedHiddenTokensOverride: Set<String>? = null,
+    ) {
+        val state = SaveManager.loadGame(saveSlotFile)
+        val inputs = AchievementInputs(
+            totalStomps = totalStompsOverride ?: state.totalStomps,
+            atlasSize = atlasSizeOverride ?: state.collectedAtlasIds.size,
+            completedLevels = state.completedLevels,
+            collectedHiddenTokens = collectedHiddenTokensOverride ?: state.collectedHiddenTokens,
+            unlockedAchievements = state.unlockedAchievements,
+            jumpFiredThisFrame = jumpFiredThisFrame,
+            enemyDefeatedThisFrame = enemyDefeatedThisFrame,
+            cleanseEventThisFrame = cleanseEventThisFrame,
+            ecoSweepReachedThisFrame = ecoSweepReachedThisFrame,
+            noDeathExitThisFrame = noDeathExitThisFrame,
+        )
+        for (id in AchievementPredicates.evaluate(inputs)) {
+            AchievementUnlocker.tryUnlock(id, saveSlotFile, achievementToast)
+        }
     }
 
     // ── Main update loop ──────────────────────────────────────────────────────
@@ -353,10 +407,13 @@ class LevelRunState(
             player.update(delta)
         }
 
-        // Achievement: first_jump — fires once when any jump is performed
+        // Achievement: first_jump — fires once when any jump is performed.
+        // T-128: per-run flag preserved as a perf gate (avoid per-frame
+        // SaveManager.loadGame). Predicate now lives in
+        // [AchievementPredicates.firstJump].
         if (!achievFirstJumpFired && player.jumpFiredThisFrame) {
             achievFirstJumpFired = true
-            tryUnlock("first_jump")
+            fireAchievements(jumpFiredThisFrame = true)
         }
 
         val vel    = player.body.linearVelocity
@@ -397,22 +454,33 @@ class LevelRunState(
             if (enemy.isDead) deadEnemies.add(enemy)
         }
         for (dead in deadEnemies) {
+            var stompTriggered = false
+            var newTotalStomps = 0
             if (dead.wasStomped) {
                 val pos = dead.body.position
                 renderer.spawnStompSmokeBurst(pos.x, pos.y)
                 SoundManager.play("land")
 
-                // Achievement: stomp_10 — track cumulative stomps across runs
+                // T-128: cumulative stomps still persists here (state mutation
+                // is impure — pure predicates only consume the post-update
+                // value). Predicate: AchievementPredicates.stomp10.
                 val stompState = SaveManager.loadGame(saveSlotFile)
-                val newTotalStomps = stompState.totalStomps + 1
+                newTotalStomps = stompState.totalStomps + 1
                 SaveManager.saveGame(stompState.copy(totalStomps = newTotalStomps), saveSlotFile)
-                if (newTotalStomps >= 10) tryUnlock("stomp_10")
+                stompTriggered = true
             }
 
-            // Achievement: first_enemy — first enemy defeated by any means
-            if (!achievFirstEnemyFired) {
-                achievFirstEnemyFired = true
-                tryUnlock("first_enemy")
+            // Fire first_enemy + stomp_10 in a single evaluate pass.
+            // T-128: per-run flag preserved as the perf gate (mirrors the
+            // pre-refactor behavior — first_enemy only triggers an evaluate
+            // call once per run).
+            val fireFirstEnemy = !achievFirstEnemyFired
+            if (fireFirstEnemy) achievFirstEnemyFired = true
+            if (stompTriggered || fireFirstEnemy) {
+                fireAchievements(
+                    enemyDefeatedThisFrame = fireFirstEnemy || stompTriggered,
+                    totalStompsOverride = if (stompTriggered) newTotalStomps else null,
+                )
             }
 
             pendingBodyDestroy.add(dead.body)
@@ -431,19 +499,25 @@ class LevelRunState(
                 if (husk.isDead) deadHusks.add(husk)
             }
             for (dead in deadHusks) {
+                var stompTriggered = false
+                var newTotalStomps = 0
                 if (dead.wasStomped) {
                     val pos = dead.body.position
                     renderer.spawnStompSmokeBurst(pos.x, pos.y)
                     SoundManager.play("land")
 
                     val stompState = SaveManager.loadGame(saveSlotFile)
-                    val newTotalStomps = stompState.totalStomps + 1
+                    newTotalStomps = stompState.totalStomps + 1
                     SaveManager.saveGame(stompState.copy(totalStomps = newTotalStomps), saveSlotFile)
-                    if (newTotalStomps >= 10) tryUnlock("stomp_10")
+                    stompTriggered = true
                 }
-                if (!achievFirstEnemyFired) {
-                    achievFirstEnemyFired = true
-                    tryUnlock("first_enemy")
+                val fireFirstEnemy = !achievFirstEnemyFired
+                if (fireFirstEnemy) achievFirstEnemyFired = true
+                if (stompTriggered || fireFirstEnemy) {
+                    fireAchievements(
+                        enemyDefeatedThisFrame = fireFirstEnemy || stompTriggered,
+                        totalStompsOverride = if (stompTriggered) newTotalStomps else null,
+                    )
                 }
                 pendingBodyDestroy.add(dead.body)
                 driftHusks.remove(dead)
@@ -602,14 +676,14 @@ class LevelRunState(
             // 3 are collected (across runs — Set add is idempotent and
             // tryUnlock guards against double-firing).
             val collectedHidden = collected.filter { it.isHidden }
+            var hiddenIdsAfterPickup: Set<String>? = null
             if (collectedHidden.isNotEmpty()) {
                 val state = SaveManager.loadGame(saveSlotFile)
                 val newIds = state.collectedHiddenTokens + level.id
                 if (newIds != state.collectedHiddenTokens) {
                     SaveManager.saveGame(state.copy(collectedHiddenTokens = newIds), saveSlotFile)
                 }
-                // 3 = level1 + level2 + level3.
-                if (newIds.size >= 3) tryUnlock("collector")
+                hiddenIdsAfterPickup = newIds
             }
 
             ecoTokens.removeAll(collected.toSet())
@@ -618,10 +692,17 @@ class LevelRunState(
             // for the first time this run. Hidden tokens are tracked separately
             // (T-107) and excluded from eco_sweep + HUD progress so finding the
             // hidden token isn't required for the "all eco-tokens" milestone.
+            // T-128: collector + eco_sweep fired together via evaluate(); each
+            // predicate gates on the appropriate post-update threshold.
             val regularRemaining = ecoTokens.any { !it.isHidden }
-            if (!achievEcoSweepFired && !regularRemaining && level.getEcoTokenPositions().isNotEmpty()) {
-                achievEcoSweepFired = true
-                tryUnlock("eco_sweep")
+            val ecoSweepFires =
+                !achievEcoSweepFired && !regularRemaining && level.getEcoTokenPositions().isNotEmpty()
+            if (ecoSweepFires) achievEcoSweepFired = true
+            if (hiddenIdsAfterPickup != null || ecoSweepFires) {
+                fireAchievements(
+                    ecoSweepReachedThisFrame = ecoSweepFires,
+                    collectedHiddenTokensOverride = hiddenIdsAfterPickup,
+                )
             }
         }
         for (token in ecoTokens) { if (!token.isCollected) token.update(delta) }
@@ -639,9 +720,9 @@ class LevelRunState(
             if (collectedSnap.entry.id !in existing.collectedAtlasIds) {
                 val updatedAtlas = existing.collectedAtlasIds + collectedSnap.entry.id
                 SaveManager.saveGame(existing.copy(collectedAtlasIds = updatedAtlas), saveSlotFile)
-                // Achievements: atlas milestones
-                if (updatedAtlas.size >= 6)  tryUnlock("atlas_half")
-                if (updatedAtlas.size >= 12) tryUnlock("atlas_full")
+                // T-128: atlas_half + atlas_full evaluated via pure predicates
+                // (threshold checks live in AchievementPredicates).
+                fireAchievements(atlasSizeOverride = updatedAtlas.size)
             }
             onAtlasCollected?.invoke(collectedSnap)
         }
@@ -653,10 +734,12 @@ class LevelRunState(
             renderer.spawnCleanseBurst(pos.x, pos.y)
             SoundManager.play("hazard_cleansed", pitch = MathUtils.random(0.9f, 1.1f))
 
-            // Achievement: first_cleanse — first hazard cleansed with Seed Slam
+            // Achievement: first_cleanse — first hazard cleansed with Seed Slam.
+            // T-128: per-run flag preserved as perf gate; predicate lives in
+            // [AchievementPredicates.firstCleanse].
             if (!achievFirstCleanseFired) {
                 achievFirstCleanseFired = true
-                tryUnlock("first_cleanse")
+                fireAchievements(cleanseEventThisFrame = true)
             }
         }
 
@@ -704,10 +787,14 @@ class LevelRunState(
             levelCompleted         = true
             levelCompletionTimer   = 4f
 
-            // Achievement: no_death_run — completed level with full spirit health (never took damage)
+            // Achievement: no_death_run — completed level with full spirit
+            // health (never took damage). T-128: per-run flag preserved; the
+            // condition `spiritHealth == 3` is the trigger gate (computed
+            // here, not inside the predicate, because spiritHealth is a
+            // per-frame state field, not a save-state field).
             if (!achievNoDeathFired && spiritHealth == 3) {
                 achievNoDeathFired = true
-                tryUnlock("no_death_run")
+                fireAchievements(noDeathExitThisFrame = true)
             }
         }
 
