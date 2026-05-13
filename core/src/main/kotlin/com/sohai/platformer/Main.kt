@@ -64,6 +64,30 @@ class Main : Game() {
     }
 
     /**
+     * T-112: libGDX fires [pause] when the desktop window loses focus (alt-tab,
+     * minimise, another window stealing focus). Forward to the active screen so
+     * a [GameScreen] can raise its pause overlay (see [GameScreen.pause]).
+     *
+     * Smoke mode (`Constants.SMOKE_MODE`) skips auto-pause entirely — the smoke
+     * autopilot must never lose its render tick to an unexpected overlay.
+     */
+    override fun pause() {
+        if (Constants.SMOKE_MODE) return
+        // Default Game.pause() forwards to the current screen's pause().
+        super.pause()
+    }
+
+    /**
+     * T-112: libGDX fires [resume] when the window regains focus. We
+     * intentionally do **not** call `super.resume()` — the pause overlay must
+     * stay up until the player explicitly dismisses it, even if the OS thinks
+     * the window came back. The overlay's own input handlers drive un-pause.
+     */
+    override fun resume() {
+        // Intentionally no super.resume() — overlay persists across focus regain.
+    }
+
+    /**
      * T-115: Wire `Thread.setDefaultUncaughtExceptionHandler` to dump a crash report
      * to `<userHome>/.cloudy-ninja/crashes/crash-{yyyyMMdd-HHmmss}.log`.
      *
