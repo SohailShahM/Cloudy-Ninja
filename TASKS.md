@@ -478,20 +478,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Memo exists with the 4 questions answered, a clear recommendation (one of the 3 options), and a rough effort estimate.
 - **Constraints:** **Research-only.** Do NOT add a Teavm/GWT module, do NOT touch gradle build files, do NOT modify any deps. Read-only investigation. Use `WebSearch` for libGDX-Teavm / libGDX-html status circa 2025.
 
-### T-124 — itch.io page draft + Tag Wizard order (T-075 follow-up)  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`  *(or human if the user wants to author)*
-- **Tier:** S
-- **Autonomous-eligible:** yes-with-review  *(marketing copy benefits from user voice — surface the draft for editing)*
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-075, T-077  *(uses Steam-tag research + presskit scaffold)*
-- **GDD ref:** `marketing/steam-tags-research.md` + `marketing/presskit/` — Sprint D launch needs an itch.io page
-- **Files:** `marketing/itch-page-draft.md` (new)
-- **Goal:** Draft the full itch.io page content: short description (160 chars), long description (~500 words, plain markdown, no autolinks), feature list (5-8 bullets), system requirements, controls reference (refer to T-073 default mapping), genre + tag list (primary tags first per T-075 — `Pixel Graphics`, `Platformer`, `2D`, `Nature`, then stretch). Also draft the Tag Wizard order (Steam-style — itch uses a similar discovery mechanism). Embed placeholders for screenshots + a future trailer.
-- **Done when:** Markdown draft exists; tag order matches T-075's primary→stretch recommendation; no accidental Steam-specific terminology bleed-through; ready for the user to copy-paste into itch.io's CMS.
-- **Constraints:** Marketing copy — do not invent feature claims. Every bullet must reflect what's actually shipped (cross-check with TASKS.md `## Done`). No promised features in "coming soon" section.
-
 ### T-125 — Asset attribution audit (alpha-blocking legal)  [P2]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`  *(research-only; auditor reads NOTICE.md + every asset license)*
@@ -563,6 +549,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Files:** `screens/MainMenuScreen.kt`, `i18n/Strings.kt`
 - **Goal:** Below the slot cards on MainMenu, render `Achievements: {0}/12 unlocked` showing the **max** count across the 3 save slots. Style: `FontManager.getShared(14)`, light grey, 12px padded. Use `Strings.format(StringKey.MENU_ACHIEVEMENT_PROGRESS, count, total)` — new key. If all 12 unlocked: `MENU_ACHIEVEMENT_PROGRESS_COMPLETE` rendered in gold `(1f, 0.85f, 0.1f, 1f)`.
 - **Done when:** Counter visible reflecting save data; both states verified; smoke CI passes.
+
+### T-124 — itch.io page draft + Tag Wizard order (T-075 follow-up)  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sub-agent`  *(re-routed 2026-05-13 from claude-code-sonnet — parent dispatched as sub-agent)*
+- **Tier:** S
+- **Autonomous-eligible:** yes-with-review  *(marketing copy benefits from user voice — surface the draft for editing)*
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-124-itch-page-draft
+- **Started:** 2026-05-13
+- **Depends on:** T-075, T-077  *(uses Steam-tag research + presskit scaffold)*
+- **GDD ref:** `marketing/steam-tags-research.md` + `marketing/presskit/` — Sprint D launch needs an itch.io page
+- **Files:** `marketing/itch-page-draft.md` (new)
+- **Goal:** Draft the full itch.io page content: short description (160 chars), long description (~500 words, plain markdown, no autolinks), feature list (5-8 bullets), system requirements, controls reference (refer to T-073 default mapping), genre + tag list (primary tags first per T-075 — `Pixel Graphics`, `Platformer`, `2D`, `Nature`, then stretch). Also draft the Tag Wizard order (Steam-style — itch uses a similar discovery mechanism). Embed placeholders for screenshots + a future trailer.
+- **Done when:** Markdown draft exists; tag order matches T-075's primary→stretch recommendation; no accidental Steam-specific terminology bleed-through; ready for the user to copy-paste into itch.io's CMS.
+- **Constraints:** Marketing copy — do not invent feature claims. Every bullet must reflect what's actually shipped (cross-check with TASKS.md `## Done`). No promised features in "coming soon" section.
 
 ### T-073 — User research: pixel-platformer default keyboard layouts  [P3]
 - **Status:** In Progress
