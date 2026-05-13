@@ -29,6 +29,7 @@ import com.sohai.platformer.rendering.CharacterAnimator
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.rendering.CameraLookAhead
 import com.sohai.platformer.rendering.ColorRole
+import com.sohai.platformer.rendering.DynamicZoom
 import com.sohai.platformer.rendering.HighContrastPalette
 import com.sohai.platformer.rendering.ParallaxBackground
 import com.sohai.platformer.rendering.ParallaxTheme
@@ -267,6 +268,26 @@ class LevelRenderer(
      */
     private val cameraLookAhead = CameraLookAhead()
 
+    /**
+     * T-176: current camera zoom multiplier driving dynamic zoom-out when
+     * the player launches near or above the top of the viewport (e.g. Laya's
+     * Wind Dash, Ebo's air double-jump). 1.0 = baseline viewport; lerps up
+     * to [ZOOM_MAX] when the player approaches the top edge so the landing
+     * point stays visible. The lerp matches T-144's 0.15/frame factor so the
+     * three camera composers (shake / look-ahead / zoom) feel consistent.
+     *
+     * Character-agnostic: any character who clears the upper viewport gets
+     * the zoom-out, not just Laya. This is by design — Ebo's double-jump
+     * could also clear the top of small rooms.
+     *
+     * Like the shake + look-ahead offsets, the zoom is applied at the top of
+     * [renderWorld] and reverted at the bottom so [camera.viewportHeight] is
+     * byte-identical to its caller-set value between frames (matters for
+     * [LevelRunState.update]'s position clamping which reads
+     * `camera.viewportHeight`).
+     */
+    private var currentZoomMultiplier: Float = 1f
+
     private fun refreshPalette() {
         val s = SettingsManager.load()
         val m = s.colorBlindMode
@@ -327,6 +348,34 @@ class LevelRenderer(
         if (hasOffset) {
             camera.position.x += totalOffsetX
             camera.position.y += totalOffsetY
+        }
+
+        // T-176: dynamic viewport zoom-out. Snapshot the baseline viewport
+        // BEFORE we touch it so we can lerp against a stable target and
+        // restore exactly the right value afterwards. Note we use the
+        // pre-shake camera Y as the reference centre — the shake offset is
+        // sub-meter and would otherwise force a tiny zoom oscillation every
+        // frame the shake fires.
+        val baseViewportHeight = camera.viewportHeight
+        val cameraCentreY      = camera.position.y - totalOffsetY  // pre-shake centre
+        val viewportTopY       = cameraCentreY + baseViewportHeight / 2f
+        val playerY            = player.body.position.y
+        val zoomTarget         = DynamicZoom.computeZoomTarget(playerY, viewportTopY, baseViewportHeight)
+        currentZoomMultiplier = DynamicZoom.lerpStep(currentZoomMultiplier, zoomTarget)
+        // Snap to 1.0 once we're effectively there — avoids carrying tiny
+        // residuals across frames that would force a viewport write every
+        // frame even when nothing is happening.
+        if (kotlin.math.abs(currentZoomMultiplier - 1f) < DynamicZoom.ZOOM_SNAP_EPSILON &&
+            kotlin.math.abs(zoomTarget - 1f) < DynamicZoom.ZOOM_SNAP_EPSILON) {
+            currentZoomMultiplier = 1f
+        }
+        val hasZoom = currentZoomMultiplier != 1f
+        if (hasZoom) {
+            camera.viewportWidth  *= currentZoomMultiplier
+            camera.viewportHeight *= currentZoomMultiplier
+        }
+
+        if (hasOffset || hasZoom) {
             camera.update()
         }
 
@@ -578,12 +627,22 @@ class LevelRenderer(
         shapeRenderer.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
-        // T-116 + T-144: revert the combined (look-ahead + shake) offset so
-        // camera.position never drifts across frames. Pair with the apply at
+        // T-116 + T-144 + T-176: revert the combined (look-ahead + shake)
+        // offset AND the dynamic zoom-out so camera.position and
+        // camera.viewport* never drift across frames. Pair with the apply at
         // the top of renderWorld.
         if (hasOffset) {
             camera.position.x -= totalOffsetX
             camera.position.y -= totalOffsetY
+        }
+        if (hasZoom) {
+            // Divide by the same multiplier we multiplied by — exactly
+            // reverses the operation so the next frame's snapshot reads the
+            // original baseline.
+            camera.viewportWidth  /= currentZoomMultiplier
+            camera.viewportHeight /= currentZoomMultiplier
+        }
+        if (hasOffset || hasZoom) {
             camera.update()
         }
     }

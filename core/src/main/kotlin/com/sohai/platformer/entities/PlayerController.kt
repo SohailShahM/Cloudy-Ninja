@@ -45,6 +45,16 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
     /** Set to true for one frame whenever a jump fires (any type). Read by LevelRunState for achievement checks. Reset at the start of each update(). */
     var jumpFiredThisFrame: Boolean = false
     /**
+     * T-176: when true, [LayaAbility]'s slow-descent glide is owning the
+     * gravity scale for this frame. The standard asymmetric-gravity `when`
+     * block in [update] short-circuits when this is set so it doesn't
+     * overwrite the glide's gravity multiplier mid-frame. Set/cleared
+     * exclusively by LayaAbility's update loop; PlayerController only reads
+     * it. Other characters' abilities (EboAbility, ZephyrAbility) never
+     * touch this flag, so their gravity paths are unchanged.
+     */
+    var isWindDashGliding: Boolean = false
+    /**
      * Invoked when a footstep should spawn a particle.
      * Args: (x, y, isLeftFoot). Coordinates are world meters at the foot position,
      * already offset slightly to the appropriate side of the player.
@@ -276,6 +286,11 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
         wallRightContactCount = 0
         wallLeftContactCount = 0
         movingPlatformContactCount = 0
+        // T-176: clear any in-flight glide state. The LayaAbility-side timer
+        // and FSM also self-resets when isGrounded flips true after respawn,
+        // but clearing the flag here keeps the next frame's gravity correct
+        // even if the ability hasn't ticked yet.
+        isWindDashGliding = false
         // (No platformContacts to clear — friction-based carry has no Java state.)
     }
     fun update(deltaTime: Float) {
@@ -290,12 +305,21 @@ class PlayerController(world: World, x: Float, y: Float, var ability: CharacterA
         //   - otherwise (rising, jump released): normal gravity (variable jump)
         val vy = body.linearVelocity.y
         val fastFalling = !isGrounded && InputManager.isDownPressed()
-        when {
-            fastFalling -> body.gravityScale = 2.5f
-            vy > 0 && InputManager.isJumpHeld() && Math.abs(vy) < Constants.PLAYER_APEX_VEL_THRESHOLD ->
-                body.gravityScale = Constants.PLAYER_JUMP_HOLD_GRAVITY_MUL
-            vy <= 0 -> body.gravityScale = Constants.GRAVITY_FALL_MUL
-            else    -> body.gravityScale = 1f
+        // T-176: while Laya's Wind Dash slow-descent glide is active, skip
+        // the asymmetric-gravity write so [LayaAbility.update] (which runs
+        // later this frame) is the sole authority on gravity scale during
+        // the glide. Without this guard the standard `vy <= 0` branch would
+        // briefly clamp gravity to GRAVITY_FALL_MUL each frame before the
+        // ability re-applied the glide multiplier, producing a visibly
+        // jittery descent.
+        if (!isWindDashGliding) {
+            when {
+                fastFalling -> body.gravityScale = 2.5f
+                vy > 0 && InputManager.isJumpHeld() && Math.abs(vy) < Constants.PLAYER_APEX_VEL_THRESHOLD ->
+                    body.gravityScale = Constants.PLAYER_JUMP_HOLD_GRAVITY_MUL
+                vy <= 0 -> body.gravityScale = Constants.GRAVITY_FALL_MUL
+                else    -> body.gravityScale = 1f
+            }
         }
 
         // Terminal velocity cap (GDD §2.2) — after gravity scale is set.
