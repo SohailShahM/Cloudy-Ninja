@@ -58,8 +58,8 @@ class VictoryScreen(
                 val delta = bestTrialTime - priorBestTime
                 if (delta != 0f) {
                     val absDelta = if (delta < 0f) -delta else delta
-                    val deltaStr = if (delta < 0f) "−%.2fs under best".format(absDelta)
-                                   else "+%.2fs slower".format(absDelta)
+                    val deltaStr = if (delta < 0f) Strings.get(StringKey.VICTORY_DELTA_UNDER).format(absDelta)
+                                   else Strings.get(StringKey.VICTORY_DELTA_OVER).format(absDelta)
                     val deltaColor = if (delta < 0f) Color(0.3f, 1f, 0.5f, 1f) else Color(0.75f, 0.75f, 0.75f, 1f)
                     table.add(Label(deltaStr, Label.LabelStyle(bodyFont, deltaColor)))
                         .padBottom(8f).row()
