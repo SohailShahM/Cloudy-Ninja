@@ -253,6 +253,33 @@ class StormSentinel(
         }
     }
 
+    /**
+     * T-170: Draw the boss's high-contrast silhouette using [color] as the
+     * base. Called from [com.sohai.platformer.screens.LevelRenderer.renderWorld]
+     * inside the same open Filled block as [draw], only when the high-contrast
+     * accessibility flag is on. Uses a 0.5m circle (slightly wider than
+     * [BODY_RADIUS] = 0.45m) so the body is fully covered while the telegraph
+     * rings — which expand beyond [BODY_RADIUS] — remain visible.
+     *
+     * Composes the existing [isFlashing] hit-flash by lerping [color] toward
+     * white over [HIT_FLASH_DURATION] so on-hit feedback remains visible in
+     * high-contrast mode. No-op when [isDead].
+     */
+    fun drawHighContrast(renderer: ShapeRenderer, color: Color) {
+        if (isDead) return
+        val t = (hitFlashTimer / HIT_FLASH_DURATION).coerceIn(0f, 1f)
+        renderer.color = hcTmp.set(
+            color.r + (1f - color.r) * t,
+            color.g + (1f - color.g) * t,
+            color.b + (1f - color.b) * t,
+            color.a + (1f - color.a) * t,
+        )
+        renderer.circle(x, y, 0.5f)
+    }
+
+    /** T-170: scratch Color reused per drawHighContrast call to avoid allocation. */
+    private val hcTmp: Color = Color()
+
     private fun drawSweepTelegraph(renderer: ShapeRenderer) {
         // Orange halo on the boss body
         renderer.color = TELEGRAPH_SWEEP_COLOR

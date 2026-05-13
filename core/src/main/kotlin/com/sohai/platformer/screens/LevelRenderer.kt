@@ -243,6 +243,14 @@ class LevelRenderer(
     private val hcScratch: Color = Color()
 
     /**
+     * T-170: separate scratch Color for the player high-contrast dispatch.
+     * Needed because [hc] reuses [hcScratch] and we want to multiply
+     * [playerAlpha] into the resolved swatch without mutating [hcScratch]
+     * mid-call.
+     */
+    private val hcPlayerScratch: Color = Color()
+
+    /**
      * Alpha multiplier applied to the player sprite during the T-097 death
      * animation. Written by [LevelRunState] each frame while the player is
      * dying; restored to 1f on respawn. Outside the death animation this is
@@ -535,15 +543,11 @@ class LevelRenderer(
         // byte-identical to its pre-T-098 value.)
         for (enemy in enemies) {
             enemy.draw(shapeRenderer)
-            // T-132: cover the enemy with a pure-black silhouette when
-            // high-contrast is on. Enemies set their own colours inside
-            // [Enemy.draw], so we paint over the result here rather than
-            // editing every entity class. Size is a small generous box that
-            // covers SmogSprite (0.15×0.12 m) and similar small patrollers.
-            if (highContrast && !enemy.isDead) {
-                shapeRenderer.color = hc(Color.BLACK, ColorRole.ENEMY)
-                val ep = enemy.body.position
-                shapeRenderer.rect(ep.x - 0.18f, ep.y - 0.16f, 0.36f, 0.32f)
+            // T-170: defer the high-contrast silhouette to the entity, which
+            // owns its own bounds + the hit-flash lerp composition. Pre-T-170
+            // this overlay lived here; geometry now lives in Enemy.drawHighContrast.
+            if (highContrast) {
+                enemy.drawHighContrast(shapeRenderer, hc(Color.BLACK, ColorRole.ENEMY))
             }
         }
 
@@ -552,25 +556,18 @@ class LevelRenderer(
         // here too via the same Enemy.applyHitFlash helper.
         for (husk in driftHusks) {
             husk.draw(shapeRenderer)
-            // T-132: same enemy-silhouette overlay (DriftHusk is 0.16×0.14 m,
-            // and it skips its own draw while in COOLDOWN — we mirror that
-            // by checking isDead, which covers the practical case).
-            if (highContrast && !husk.isDead) {
-                shapeRenderer.color = hc(Color.BLACK, ColorRole.ENEMY)
-                val hp = husk.body.position
-                shapeRenderer.rect(hp.x - 0.18f, hp.y - 0.16f, 0.36f, 0.32f)
+            // T-170: high-contrast silhouette moved into the entity (see Enemy).
+            if (highContrast) {
+                husk.drawHighContrast(shapeRenderer, hc(Color.BLACK, ColorRole.ENEMY))
             }
         }
 
         // Boss sentinel (drawn after enemies so telegraph rings appear on top)
         sentinel?.draw(shapeRenderer)
-        // T-132: boss-sentinel silhouette overlay. BODY_RADIUS is 0.45 m, so
-        // a 0.5 m circle covers the body cleanly while leaving the telegraph
-        // rings (drawn outside the body radius) visible.
+        // T-170: high-contrast silhouette moved into StormSentinel (circle of
+        // 0.5m covers BODY_RADIUS=0.45m while leaving telegraph rings visible).
         if (highContrast && sentinel != null) {
-            val sp = sentinel.body.position
-            shapeRenderer.color = hc(Color.BLACK, ColorRole.ENEMY)
-            shapeRenderer.circle(sp.x, sp.y, 0.5f)
+            sentinel.drawHighContrast(shapeRenderer, hc(Color.BLACK, ColorRole.ENEMY))
         }
 
         // Particles (alpha blend enabled; works inside the Filled block via GL blend state)
@@ -655,22 +652,18 @@ class LevelRenderer(
         spriteBatch.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
 
-        // T-132: high-contrast overlay — paint a pure-white silhouette over the
-        // player sprite via ShapeRenderer (the sprite texture itself can't be
-        // recoloured without touching the atlas, so we cover it). The death
-        // fade still applies via [playerAlpha] so the player still vanishes on
-        // death; the per-character Zephyr tint is intentionally overridden
-        // because at maximum contrast we want all three characters to read as
-        // the SAME silhouette ("the player").
+        // T-170: high-contrast silhouette painting moved into PlayerController.
+        // The death-fade [playerAlpha] (a) is pre-multiplied into the colour's
+        // alpha here so the silhouette fades along with the sprite; the
+        // per-character Zephyr tint is intentionally overridden because at
+        // maximum contrast all three characters should read as the SAME
+        // silhouette ("the player").
         if (highContrast) {
             shapeRenderer.projectionMatrix = camera.combined
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-            // Match the player sprite's body footprint roughly: 28×32 px at
-            // PPM=100 → 0.28×0.32 m. Centred at the body position (sy starts
-            // 32 px below the body so the sprite includes legs).
-            val whiteCol = Color(1f, 1f, 1f, a)
-            shapeRenderer.color = whiteCol
-            shapeRenderer.rect(playerPos.x - 0.14f, playerPos.y - 0.20f, 0.28f, 0.42f)
+            val playerCol = hc(Color.WHITE, ColorRole.PLAYER)
+            hcPlayerScratch.set(playerCol.r, playerCol.g, playerCol.b, playerCol.a * a)
+            player.drawHighContrast(shapeRenderer, hcPlayerScratch)
             shapeRenderer.end()
         }
     }

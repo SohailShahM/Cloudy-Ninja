@@ -83,6 +83,52 @@ abstract class Enemy(
     abstract fun draw(renderer: ShapeRenderer)
 
     /**
+     * T-170: Half-width (metres) of the high-contrast silhouette rectangle.
+     * Subclasses override to tighten/loosen the cover relative to their
+     * actual body footprint. Default matches the pre-T-170 generous box
+     * (0.36m wide) that the LevelRenderer overlay used.
+     */
+    protected open val hcHalfWidth: Float
+        get() = 0.18f
+
+    /**
+     * T-170: Half-height (metres) of the high-contrast silhouette rectangle.
+     * Default matches the pre-T-170 generous box (0.32m tall) that the
+     * LevelRenderer overlay used.
+     */
+    protected open val hcHalfHeight: Float
+        get() = 0.16f
+
+    /**
+     * T-170: scratch Color reused per [drawHighContrast] call to avoid
+     * allocation on the hit-flash lerp. Separate from any subclass scratch
+     * used in [draw] so high-contrast doesn't clobber base-draw state.
+     */
+    private val hcTmp: Color = Color()
+
+    /**
+     * T-170: Draw the entity's high-contrast silhouette using [color] as the
+     * base. Called from [LevelRenderer.renderWorld] inside the same open
+     * Filled block as [draw], only when the high-contrast accessibility flag
+     * is on. The default implementation paints a [hcHalfWidth] x [hcHalfHeight]
+     * rectangle centred at the body position.
+     *
+     * Composes the T-098 hit-flash on top so the flash remains visible in
+     * high-contrast mode: the base [color] is lerped toward white by the
+     * current [hitFlashRatio]. Outside the flash window this is byte-identical
+     * to painting [color] directly.
+     *
+     * No-op when [isDead]. Subclasses with different silhouette shapes (e.g.
+     * StormSentinel's circle) override this method directly.
+     */
+    open fun drawHighContrast(renderer: ShapeRenderer, color: Color) {
+        if (isDead) return
+        val p = body.position
+        renderer.color = applyHitFlash(color, hcTmp)
+        renderer.rect(p.x - hcHalfWidth, p.y - hcHalfHeight, hcHalfWidth * 2f, hcHalfHeight * 2f)
+    }
+
+    /**
      * Apply damage to this enemy. When HP reaches 0 the enemy is marked dead
      * and its body should be queued for deferred destruction.
      */
