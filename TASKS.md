@@ -404,20 +404,6 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Done when:** Each predicate is testable headless without `Gdx.*`; behavior identical (no achievement fires earlier or later than before); test file covers each predicate with met/unmet/already-unlocked cases.
 - **Constraints:** **BEHAVIOR MUST STAY IDENTICAL.** Don't fix bugs as part of the refactor — surface them in LEARNINGS.md and QUESTIONS.md instead. Don't refactor T-107's `collector` predicate beyond what fits this pattern.
 
-### T-129 — Audio gate on first user input  [P3]
-- **Status:** Todo
-- **Tool:** `claude-code-sonnet`
-- **Tier:** S
-- **Autonomous-eligible:** yes
-- **Agent:** _unclaimed_
-- **Branch:** _none_
-- **Depends on:** T-104  *(splash now precedes MainMenu)*
-- **GDD ref:** GAME_PLAN.md — desktop usually doesn't need this, but **future HTML5 web demo (T-123 Option 2)** will hard-require a user-gesture before audio can play. Pre-bake the gate now so the web port doesn't need a runtime fork.
-- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/SplashScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`
-- **Goal:** Splash screen waits for first keypress OR mouse-click before transitioning to MainMenu (in addition to the existing 1s minimum + preload gate). When the gate fires, MusicManager.play() is allowed to start. Smoke mode bypasses this gate (already configured in T-104).
-- **Done when:** On desktop, splash shows a small "Press any key to continue" hint after the 1s minimum + preload complete. Key/click advances to MainMenu. Smoke CI passes unchanged.
-- **Constraints:** Don't break smoke. Don't add network calls. Hint text via Strings.kt new key `SPLASH_PRESS_ANY_KEY`.
-
 ### T-130 — Death recap overlay  [P3]
 - **Status:** Todo
 - **Tool:** `claude-code-sonnet`
@@ -546,6 +532,21 @@ MVP (T-A1) catches the bug class that just shipped (spawn-death, crashes, perf r
 - **Goal:** Add badges to top of README: (1) CI build status — `github.com/SohailShahM/Cloudy-Ninja/actions/workflows/ci.yml/badge.svg`, (2) AI smoke status — same path with `ai-smoke.yml`, (3) license — proprietary badge linked to `LICENSE`, (4) Kotlin version — derived from gradle, (5) libGDX version. Use shields.io for static text badges; native GH badges for workflow status. Group above first heading.
 - **Done when:** Badges render; all link targets correct; no broken images; CI passes.
 - **Constraints:** README-only. Don't restructure existing sections; just add the badge block at the very top.
+
+### T-129 — Audio gate on first user input  [P3]
+- **Status:** In Progress
+- **Tool:** `claude-code-sonnet`
+- **Tier:** S
+- **Autonomous-eligible:** yes
+- **Agent:** claude-code-sub-agent
+- **Branch:** claude/T-129-audio-gate-first-input
+- **Started:** 2026-05-13
+- **Depends on:** T-104  *(splash now precedes MainMenu)*
+- **GDD ref:** GAME_PLAN.md — desktop usually doesn't need this, but **future HTML5 web demo (T-123 Option 2)** will hard-require a user-gesture before audio can play. Pre-bake the gate now so the web port doesn't need a runtime fork.
+- **Files:** `core/src/main/kotlin/com/sohai/platformer/screens/SplashScreen.kt`, `core/src/main/kotlin/com/sohai/platformer/Main.kt`, `core/src/main/kotlin/com/sohai/platformer/audio/MusicManager.kt`
+- **Goal:** Splash screen waits for first keypress OR mouse-click before transitioning to MainMenu (in addition to the existing 1s minimum + preload gate). When the gate fires, MusicManager.play() is allowed to start. Smoke mode bypasses this gate (already configured in T-104).
+- **Done when:** On desktop, splash shows a small "Press any key to continue" hint after the 1s minimum + preload complete. Key/click advances to MainMenu. Smoke CI passes unchanged.
+- **Constraints:** Don't break smoke. Don't add network calls. Hint text via Strings.kt new key `SPLASH_PRESS_ANY_KEY`.
 
 ### T-106 — Extract `LevelEntityFactory` from GameScreen  [P3]
 - **Status:** In Progress
