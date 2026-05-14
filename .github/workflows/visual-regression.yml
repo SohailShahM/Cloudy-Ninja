@@ -36,6 +36,10 @@ jobs:
           sudo apt-get install -y xvfb
           python -m pip install -r pr-head/scripts/requirements-visual.txt
 
+      - name: chmod gradlew (Windows-checked-out repos drop +x bit)
+        run: |
+          chmod +x main-baseline/gradlew pr-head/gradlew
+
       - name: Capture main baseline
         working-directory: main-baseline
         run: |
