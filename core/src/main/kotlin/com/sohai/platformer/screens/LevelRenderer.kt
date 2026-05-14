@@ -36,6 +36,7 @@ import com.sohai.platformer.rendering.ParallaxBackground
 import com.sohai.platformer.rendering.ParallaxTheme
 import com.sohai.platformer.rendering.ParticleSystem
 import com.sohai.platformer.rendering.ScreenShake
+import com.sohai.platformer.rendering.SheetAnimState
 import com.sohai.platformer.rendering.SheetCharacterAtlas
 import com.sohai.platformer.rendering.SpriteFactory
 import com.sohai.platformer.rendering.TileRenderer
@@ -288,15 +289,40 @@ class LevelRenderer(
      * Ebo. Lazy so a [LevelRenderer] constructed for headless tests (no GL
      * context) never tries to load PNGs unless the renderPlayer path is
      * actually exercised with `currentCharacter == "Ebo"` and the
-     * high-contrast flag off. Laya / Zephyr still route through the procedural
-     * [eboAnimator] / [layaAnimator] [CharacterAnimator] fields — those will
-     * be swapped to sheet atlases in T-187 / T-188.
+     * high-contrast flag off. Zephyr still routes through the procedural
+     * [layaAnimator] [CharacterAnimator] field — that will be swapped to a
+     * sheet atlas in T-188.
      */
     private val eboSheetAtlas: SheetCharacterAtlas by lazy {
         SheetCharacterAtlas.loadLuizMelo("sprites/luizmelo/martial-hero-1")
     }
     private val eboSheetAnimator: AnimationStateMachine by lazy {
         AnimationStateMachine(eboSheetAtlas)
+    }
+
+    /**
+     * T-187: lazy LuizMelo Martial Hero 3 atlas + animation state machine for
+     * Laya. Same lazy-load contract as Ebo's pair above (headless tests don't
+     * pay any PNG cost unless the renderPlayer path actually fires for Laya
+     * with high-contrast off). MH3's "Going Up.png" / "Going Down.png" sheets
+     * map to JUMP / FALL inside [SheetCharacterAtlas.loadLuizMelo] — the state
+     * machine consumes the canonical [SheetAnimState] enum and is unaware of
+     * the pack-specific filename difference.
+     *
+     * For ATTACK1, the procedural [PlayerController.currentAnimState] returns
+     * [SheetAnimState.ATTACK1] when Laya's Wind Dash is active. We remap that
+     * to [SheetAnimState.ATTACK3] in [renderPlayer] before calling
+     * [AnimationStateMachine.setState] so the on-screen frames pull from
+     * MH3's `Attack3.png` (9 frames — the most kinetic of MH3's three attack
+     * sheets, fitting Laya's signature ability). PlayerController itself is
+     * untouched per the T-187 hard rule that `currentAnimState()` stays
+     * character-agnostic.
+     */
+    private val layaSheetAtlas: SheetCharacterAtlas by lazy {
+        SheetCharacterAtlas.loadLuizMelo("sprites/luizmelo/martial-hero-3")
+    }
+    private val layaSheetAnimator: AnimationStateMachine by lazy {
+        AnimationStateMachine(layaSheetAtlas)
     }
 
     /**
@@ -790,14 +816,15 @@ class LevelRenderer(
 
         val playerPos = player.body.position
 
-        // T-186: Ebo (and only Ebo, for now) renders through the sheet-based
+        // T-186 / T-187: Ebo and Laya render through the sheet-based
         // SheetCharacterAtlas + AnimationStateMachine path when high-contrast
-        // is OFF. Laya, Zephyr, and the Ebo-high-contrast case continue to
-        // use the procedural [CharacterAnimator] path UNCHANGED (T-187 / T-188
-        // will swap Laya + Zephyr). The high-contrast silhouette block below
-        // (T-170) still paints over the sprite regardless of which path was
-        // used, so the silhouette behaviour is unchanged.
-        val useSheetForEbo = (currentCharacter == "Ebo" && !highContrast)
+        // is OFF. Zephyr and any high-contrast case continue to use the
+        // procedural [CharacterAnimator] path UNCHANGED (T-188 will swap
+        // Zephyr). The high-contrast silhouette block below (T-170) still
+        // paints over the sprite regardless of which path was used, so the
+        // silhouette behaviour is unchanged.
+        val useSheetForEbo  = (currentCharacter == "Ebo"  && !highContrast)
+        val useSheetForLaya = (currentCharacter == "Laya" && !highContrast)
         val a = playerAlpha
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
@@ -832,13 +859,39 @@ class LevelRenderer(
             // cached TextureRegion (which would corrupt later frames).
             if (player.isFacingRight) spriteBatch.draw(frame, sx, sy, sw, sh)
             else                      spriteBatch.draw(frame, sx + sw, sy, -sw, sh)
+        } else if (useSheetForLaya) {
+            // T-187: identical structure to the Ebo branch above, but driving
+            // the MH3 atlas via [layaSheetAnimator]. The procedural
+            // [PlayerController.currentAnimState] is character-agnostic — it
+            // returns ATTACK1 whenever the player's ability is active. For
+            // Laya we remap that single state to [SheetAnimState.ATTACK3] so
+            // the on-screen frames pull from MH3's `Attack3.png` (9 frames,
+            // the most kinetic of MH3's three attack sheets), fitting Laya's
+            // signature Wind Dash ability. All other states pass through
+            // verbatim: JUMP / FALL resolve to MH3's "Going Up" / "Going Down"
+            // sheets internally inside [SheetCharacterAtlas.loadLuizMelo].
+            // T-046 wall-slide gap: same as Ebo — IDLE placeholder while the
+            // player wall-slides, MH3 ships no wall-slide sheet.
+            val rawState = player.currentAnimState()
+            val mappedState =
+                if (rawState == SheetAnimState.ATTACK1) SheetAnimState.ATTACK3 else rawState
+            layaSheetAnimator.setState(mappedState)
+            val frame = layaSheetAnimator.currentFrame(Gdx.graphics.deltaTime)
+            val sw = SPRITE_WORLD_W
+            val sh = SPRITE_WORLD_H
+            val sx = playerPos.x - sw / 2f
+            val sy = playerPos.y - SPRITE_BODY_OFFSET_Y
+            // Flip horizontally via negative-width draw — never mutates the
+            // cached TextureRegion (which would corrupt later frames).
+            if (player.isFacingRight) spriteBatch.draw(frame, sx, sy, sw, sh)
+            else                      spriteBatch.draw(frame, sx + sw, sy, -sw, sh)
         } else {
-            // Pre-T-186 procedural path: still used for Laya + Zephyr (T-187 /
-            // T-188 will swap), and for the Ebo-high-contrast case where the
-            // silhouette overlay matters more than fidelity. Unchanged vs.
-            // pre-T-186 behaviour, except for the T-206 per-character foot
-            // offset applied to [sy] (Ebo-high-contrast still wants the
-            // procedural Ebo offset, Laya/Zephyr each use their own).
+            // Pre-T-186 procedural path: still used for Zephyr (T-188 will
+            // swap), and for any high-contrast case where the silhouette
+            // overlay matters more than fidelity. Unchanged vs. pre-T-186
+            // behaviour, except for the T-206 per-character foot offset
+            // applied to [sy] (high-contrast variants still want the same
+            // procedural foot offset per character).
             val animator  = if (currentCharacter == "Ebo") eboAnimator else layaAnimator
             val frame = animator.getCurrentFrame()
             val sw = SpriteFactory.SPRITE_W / Constants.PPM
