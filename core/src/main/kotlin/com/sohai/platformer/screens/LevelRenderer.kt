@@ -538,18 +538,25 @@ class LevelRenderer(
             }
         }
 
-        // Moving platforms
+        // Moving platforms — visual rect extends 30cm BELOW collision bottom
+        // so it hides the character sprite's `SPRITE_FOOT_OFFSET = 0.3m` sink
+        // (same way thick static tiles already hide it). Collision shape is
+        // unchanged (still ±10cm at MovingPlatform.kt:28) so gameplay/feel are
+        // untouched. Before this change, characters appeared to float because
+        // 10cm of their visible legs dangled in open air below the thin
+        // platform. (User-reported 2026-05-14.)
         for (mp in movingPlatforms) {
             val pos = mp.body.position
             val hw = 50f / Constants.PPM
             val hh = 10f / Constants.PPM
+            val visualDropDown = 0.30f
             shapeRenderer.color = hc(MP_BASE, ColorRole.MOVING_PLATFORM)
-            shapeRenderer.rect(pos.x - hw, pos.y - hh, hw * 2f, hh * 2f)
+            shapeRenderer.rect(pos.x - hw, pos.y - hh - visualDropDown, hw * 2f, hh * 2f + visualDropDown)
             shapeRenderer.color = hc(MP_TOP, ColorRole.MOVING_PLATFORM_HIGHLIGHT)
             shapeRenderer.rect(pos.x - hw, pos.y + hh - 0.04f, hw * 2f, 0.04f)
-            // Underside shadow for depth
+            // Underside shadow for depth — now at the extended visual bottom
             shapeRenderer.color = hc(MP_SHADOW, ColorRole.PLATFORM_SHADOW)
-            shapeRenderer.rect(pos.x - hw, pos.y - hh, hw * 2f, 0.025f)
+            shapeRenderer.rect(pos.x - hw, pos.y - hh - visualDropDown, hw * 2f, 0.025f)
         }
 
         // Checkpoints
