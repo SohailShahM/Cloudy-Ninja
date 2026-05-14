@@ -189,3 +189,13 @@ assets/saves/save_slot_*.json.tmp
 # added in T-134 and is generated locally on first launch. The pattern below
 # matches all four but only un-tracked ones (ambient_menu) take effect.
 assets/audio/music/ambient_*.wav
+
+# Procedurally-generated achievement-unlock SFX (T-138) — written locally on
+# first run by ProceduralSoundGenerator. Same writeIfMissing pattern; not
+# committed to the repo (the canonical SFX would be hand-authored later if
+# we wanted shipped audio). Untracked → ignore future stagings.
+assets/audio/sfx/achievement_unlock.wav
+
+# Gameplay autosave — GameScreen writes this when transitioning checkpoints
+# (T-113-era checkpoint autosave). Per-machine runtime state; not canonical.
+assets/saves/checkpoint_autosave.json

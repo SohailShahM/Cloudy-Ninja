@@ -282,3 +282,96 @@ Quick session-end record:
 **When to apply:** any future "global keybind" work (debug toggles, screenshot-anywhere, dev console). Don't try to install a root multiplexer — refactoring every Screen to use a shared multiplexer is the only "clean" alternative and that's a much bigger ticket.
 
 **Architectural follow-up candidate:** the per-screen `inputProcessor = stage` pattern is a smell. A future ticket could introduce a `GlobalInputRouter` that screens *push their stage into* rather than overwriting the slot — at which point root-level handlers would actually compose. Not ticketed yet; mention if a third "I need a global handler" ticket appears.
+
+---
+
+## 2026-05-14: ScreenUtils.getFrameBufferPixmap returns bottom-up; PNG writes come out flipped
+
+**Symptom:** All visual captures (T-A10 CheckpointCapture, T-139/T-147 ScreenshotWriter) saved PNGs that were upside down. HUD text read as "dewS" / "noitcA" / "pmuJ"; tile terrain appeared at top of the image.
+
+**Cause:** OpenGL framebuffer pixel order is bottom-up (origin at lower-left). `Pixmap` / PNG format expect top-down (origin at upper-left). `ScreenUtils.getFrameBufferPixmap` reads the raw GL buffer without flipping; `PixmapIO.writePNG` writes the pixmap bytes verbatim. End result: file is inverted.
+
+**Fix:** Add an explicit `flipY(pixmap)` step between capture and write. Both `CheckpointCapture.kt` and `ScreenshotWriter.kt` now do this. Minimal helper:
+
+```kotlin
+private fun flipY(src: Pixmap): Pixmap {
+    val w = src.width; val h = src.height
+    val out = Pixmap(w, h, src.format)
+    out.blending = Pixmap.Blending.None
+    for (y in 0 until h) out.drawPixmap(src, 0, h - 1 - y, 0, y, w, 1)
+    return out
+}
+```
+
+**When to apply:** any new framebuffer-read path. Consider extracting to a shared `PixmapUtils.flipY` if a third call site appears.
+
+**Empirical reminder:** The in-game RENDER (via SpriteBatch's projection matrix) is right-side up — the flip only affects the framebuffer-readback path. Users won't see the issue in-game; they only see it in saved screenshot files.
+
+---
+
+## 2026-05-14: Smoke autopilot requires explicit `cloudy.smokeLevel` to skip MainMenu
+
+**Symptom:** Running `./gradlew :lwjgl3:run -Dcloudy.smoke=true -Dcloudy.captureCheckpoints=true` hung indefinitely at MainMenu. No checkpoint PNGs landed. Game window stayed on the title screen waiting for a Play click.
+
+**Cause:** Smoke autopilot is implemented inside `LevelRunState` — it only fires after a level has been entered. The MainMenu has no autopilot path; it just sits and waits for human input.
+
+**Fix:** Pass `-Dcloudy.smokeLevel=level1` (or any valid level id) — `Main.kt:64` reads this property and directly launches `GameScreen(level)` instead of going to MainMenu. Smoke autopilot then drives gameplay normally and auto-quits at end.
+
+**When to apply:** any local invocation of the smoke harness that needs gameplay capture. CI's `ai-smoke.yml` already passes the level prop per matrix entry — this is purely a local-dev gotcha.
+
+---
+
+## 2026-05-14: PowerShell mangles `-D` flags as Gradle task names — use `--%`
+
+**Symptom:** `.\gradlew.bat :lwjgl3:run -Dcloudy.smoke=true` failed with `Task '.smoke=true' not found in root project`. PowerShell stripped the `-Dcloudy` prefix and handed Gradle the orphan `.smoke=true` token.
+
+**Cause:** PowerShell parses `-D` as a parameter switch under some quoting conditions. The literal Java system-property syntax `-Dkey=value` gets eaten by PowerShell's argument resolver.
+
+**Fix:** Use PowerShell's stop-parsing token: insert `--%` between the executable and the system-property flags:
+
+```powershell
+.\gradlew.bat --% :lwjgl3:run -Dcloudy.smoke=true -Dcloudy.captureCheckpoints=true
+```
+
+`--%` tells PowerShell to pass everything after it verbatim. Gradle then sees the flags as written.
+
+**When to apply:** any PowerShell invocation that passes `-D...` system properties to Gradle (or to any JVM tool). Bash is unaffected; the issue is PowerShell-specific.
+
+---
+
+## 2026-05-14: lwjgl3:run task CWD is `assets/`, not the repo root
+
+**Symptom:** T-A10's CheckpointCapture writes to relative path `build/visual-checkpoints/...`. Expected location: `<repo>/build/visual-checkpoints/`. Actual location: `<repo>/assets/build/visual-checkpoints/`.
+
+**Cause:** libGDX's gdx-setup default `lwjgl3` Gradle task sets `workingDir = file("../assets")` so the running app's `user.dir` is the `assets/` folder (gives `Gdx.files.internal(...)` direct access to art assets).
+
+**Fix:** Either:
+- Resolve paths against the project root explicitly (e.g. `File(System.getProperty("user.dir")).parentFile`)
+- Or use libGDX's local-file convention: `Gdx.files.local("build/visual-checkpoints/")` resolves correctly relative to the task's working dir
+- Or update build output expectations to include the `assets/` prefix (cheapest)
+
+T-A10 went with cheapest — outputs land in `assets/build/visual-checkpoints/` and downstream tooling (e.g. T-A14 autotuner) reads from there.
+
+**When to apply:** any time a libGDX-app runtime writes files via `File(...)` relative paths. The implicit CWD = `assets/` always.
+
+---
+
+## 2026-05-14: Sprite-foot-offset interacts with surface visual thickness, not collision math
+
+**Symptom:** With `SPRITE_FOOT_OFFSET_EBO = 0.3f`, characters appeared correctly seated on thick ground tiles but visibly "floated midway" on thin platforms (10–20 px tall). T-210 investigated and confirmed: Box2D rest-position math is IDENTICAL for static tiles and moving/static platforms.
+
+**Cause:** The sprite-foot-offset pushes the character sprite 30 cm below the collision top. On thick surfaces (≥ 0.30 m tall), those 30 cm of sprite-extension land inside the opaque tile column and are visually hidden. On thin surfaces (< 0.30 m tall), the 30 cm punches through and extends below the visible platform into air — viewer sees torso at platform level + legs/feet dangling below.
+
+**Fix:** Don't change the offset (it's tuned for the procedural sprite's transparent-bottom margin). Instead, dynamically extend the VISUAL rect of thin surfaces downward by `max(0, sinkHide - height)` where `sinkHide` matches the foot offset (0.30 m). Collision stays untouched — gameplay is unchanged; only the rendered rect grows downward to cover the sprite-sink.
+
+Pattern (LevelRenderer.kt procedural ground branch):
+```kotlin
+val sinkHide = 0.30f
+val extraDown = (sinkHide - he * 2f).coerceAtLeast(0f)
+shapeRenderer.rect(cx - w, cy - he - extraDown, w * 2f, he * 2f + extraDown)
+```
+
+**Initial misdiagnosis worth flagging:** the autotuner V0 (T-A14) "fixed" this by writing `SPRITE_FOOT_OFFSET_EBO = 0.030f`, which actually made the character float on thick tiles where the original 0.3f worked. The correct fix lives in surface RENDERING, not in the per-character offset constant.
+
+**Architectural pattern for the long run:** when a TileRenderer-based variant of this issue surfaces (T-174 fixed the rendering-at-all bug for sub-32px tiles; a similar thin-tile sprite-sink bug may surface later), apply the same `extraDown` math inside `TileRenderer.renderObstacle` for sub-`sinkHide` heights.
+
