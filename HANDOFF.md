@@ -1,99 +1,66 @@
 # HANDOFF.md — short-lived continuity doc between Claude Code sessions
 
-> Read this **before** anything else if you are picking up where a previous Claude Code session left off. Then read `START_HERE.md` for the normal onboarding. Update this file at the end of your session to capture state the next agent will need. Keep it short — under 200 lines.
+> Read this **before** anything else if you are picking up where a previous Claude Code session left off.
 
-**Last updated:** 2026-05-14 (late) by Claude Opus — session closed by user request. All three characters now use LuizMelo MH sprite packs. **Sprite scale tuning is unresolved** — currently 4.80m × 4.80m world size; user did not confirm if this is right.
+**Last updated:** 2026-05-14 (late) by Claude Opus — **project wound down at user request.** CI disabled. All work shipped to main. Repo remains public + proprietary-licensed (`LICENSE` unchanged).
 
-## 🚨 Awaiting user action on return
+## 🛑 Project state — WIND-DOWN
 
-### 1. Confirm or adjust sprite scale
+The four GitHub Actions workflows are renamed to `.yml.disabled` (commit `cc95516`). The in-progress smoke run was cancelled. No automated CI runs on PRs or pushes until workflows are restored.
 
-`LevelRenderer.kt:241-242` holds the per-character sprite world size constants:
+**How to resume:** see `.github/workflows/README.md` — one-line restoration per workflow.
 
-```kotlin
-const val SPRITE_WORLD_W = 4.80f
-const val SPRITE_WORLD_H = 4.80f
-```
+## Last visual state (unresolved)
 
-Iteration history this session:
-- **0.80f** (T-186 original) — user: "tiny compared to the game world"
-- **1.20f** (50% bump) — user: still tiny, "need like 4x"
-- **4.80f** (current, 6× original) — user did not evaluate; ended session
+Sprite world size is currently `4.80f × 4.80f` (LevelRenderer.kt:241-242). User did not confirm if this is right; ended session before evaluating. Iteration history:
+- 0.80f (T-186 original) — too small
+- 1.20f → still too small
+- 4.80f (6× original) — not evaluated
 
-If 4.80m is too big, drop to 3.20m or 2.40m. If still too small, the issue isn't the world size — it's that the MH downsampled sprite art has heavy transparent margin inside the 48×48 frame, so the visible character is a small fraction of the rendered frame. Possible follow-ups:
-- **Crop the source PNGs** to tight character bounds via Pillow (recommended) — then world size can stay reasonable
-- **Re-downsample MH originals** (200/126 px) at a different target size that preserves more visible area
-- **Continue scaling the world size** further (5.0m+, but the character will read as oversized vs tiles)
+**Real fix (per LEARNINGS 2026-05-14):** the MH downsampled sprite art has heavy transparent margin inside the 48×48 frame. Tighter fix is cropping the source PNGs in `assets/sprites/luizmelo/martial-hero-{1,2,3}/`, then `SPRITE_WORLD_W/H` can return to ~0.80-1.20m. Use Pillow + nearest-neighbor crop to bounding-box of opaque pixels.
 
-Constants are a single-line edit. Tell me a direction.
+## What landed across the full project arc
 
-### Quick launch reference
-```powershell
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
-$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
-.\gradlew.bat :lwjgl3:run
-```
+**~30+ PRs merged across two sessions** (rough breakdown):
 
-Cycle characters with Q. All three should now render MH sprites (Ebo/MH1, Laya/MH3, Zephyr/MH2 with purple tint).
+- All 3 characters wired to LuizMelo MH sprite packs (T-186 Ebo/MH1, T-187 Laya/MH3, T-188 Zephyr/MH2)
+- 3 architectural smells fully closed (dual screen-shake T-169, silhouette overlay T-170, per-screen input clobbering T-171/T-172)
+- Calibri legal blocker cleared (T-126 → Inter SIL OFL 1.1)
+- Visual auto-test + auto-tune pipeline operational (T-A10 capture, T-A13 review doc, T-A14 V0 + T-A18 V1 autotuners, T-A17 regression CI)
+- Settings: brightness slider (T-208), master volume + mute (T-105 + T-118), sound test (T-145), reset to defaults (T-143), speedrun timer (T-142)
+- Laya Wind Dash slow-descent + camera zoom-out (T-176 + T-209 fix)
+- F12 screenshot anywhere (T-147), victory screenshot (T-139)
+- Movement snappiness toward Celeste baseline (T-175)
+- MainMenu title scrim (T-173)
+- Invisible barriers fixed (T-174 — TileRenderer was dropping sub-32px obstacle tiles)
+- 6 CC0 asset packs acquired + LuizMelo packs downsampled 200→48 px (T-181)
+- Plus a long tail of polish + research deliverables
 
-## What landed this session (cumulative)
+## Specs still in TASKS.md Todo (not started)
 
-**Code:**
-- All three characters wired to MH sprite packs (T-186/187/188 — PRs #161, #173, #174)
-- T-209 fix — Laya slow-descent + camera zoom now visible (was clipped out by projection mismatch)
-- Sprite world size 0.80m → 1.20m → 4.80m (tuning iteration; **unresolved**)
-- Thin-static-platform visual extension (procedural ground branch)
-- Foot offset reverted 0.03 → 0.3 after autotuner V0 was wrong
-- Brightness slider in Settings → Accessibility
-- Ambient lighting brightened then tuned down 20%
-
-**Pipeline:**
-- T-A10 visual checkpoint capture
-- T-A13 session-start visual review doc
-- T-A14 V0 foot-offset autotuner (Pillow + numpy, greedy heuristic)
-- T-A17 visual regression CI workflow (post-rebase)
-- T-A18 V1 foot-offset autotuner (baseline-subtraction)
-- CheckpointCapture + ScreenshotWriter Y-flip fixes
-- Visual-regression workflow chmod fix
-
-**Specs filed for next session:**
-- T-189–T-191 Biome tilesets (arid, eco, wind)
+- T-189–T-191 Biome tilesets
 - T-192–T-193 Enemy sprite integrations
-- T-200–T-205 T-046 gap-fill (boss, dash/cast/wall-slide anims, lightning VFX, Cloud Atlas UI)
-- T-182–T-185 Claude Design batch (MainMenu polish, itch.io landing, Cloud Atlas card, pitch deck)
+- T-200–T-205 T-046 gap-fill (boss sprite, dash/cast/wall-slide anims, lightning VFX, Cloud Atlas UI)
+- T-182–T-185 Claude Design batch (MainMenu polish, itch.io landing page, Cloud Atlas card, pitch deck)
 - T-168 Pre-alpha visual font verification
+- T-038 Ghost replay (determinism-sensitive)
+- T-046 Full graphics overhaul (umbrella; partially complete via T-186/T-187/T-188 + asset acquisition)
+- T-102 Gamepad support (needs hardware)
+- T-076 Dep upgrades (low-risk audit available)
+- T-081 Android build verification
 
-## Source-side quirks pinned (carry forward)
+## If you resume
 
-1. `ScreenUtils.getFrameBufferPixmap` returns **bottom-up** framebuffer — `flipY` before PNG write
-2. **PowerShell needs `--%`** before `-D...` flags to Gradle
-3. Smoke autopilot needs `cloudy.smokeLevel=<id>` to skip MainMenu
-4. lwjgl3 `:run` task CWD is `assets/` — relative paths land under `assets/build/...`
-5. Visual captures must wait past screen-fade-from-black (~1.5s)
-6. Box2D rest-position math is identical static-vs-platform; float-vs-sink is visual-thickness mismatch only
-7. Thin static platforms need visual `extraDown = max(0, sinkHide - height)` to hide sprite-sink
-8. gradlew needs `chmod +x` on Linux runners post-checkout
-9. Zephyr's purple tint is applied via SpriteBatch.setColor BEFORE the draw — automatically picks up by MH2 sprite
-10. **MH sprites have heavy transparent margin** inside the 48×48 frame — visible character is ~25% of frame area; world size needs ~4× compensation OR source PNGs need to be cropped
-
-## Architectural smells status
-
-- ✅ Dual screen-shake systems (T-169)
-- ✅ Silhouette overlay hack (T-170)
-- ✅ Per-screen input clobbering (T-171 + T-172)
-- 🟡 Two screenshot capture paths (CheckpointCapture + ScreenshotWriter) — share `flipY` + framebuffer logic
-- 🟡 TileRenderer lacks the thin-platform-extension fix (only procedural ground has it)
-- 🟡 Per-character renderPlayer switch (3 branches now); extract if T-200 boss sprite adds a 4th
-- 🟡 **MH sprite frame-fill ratio** — heavy transparent margin forces large world-size constants OR source-PNG crop step. Cropping is the cleaner long-run fix.
+1. Restore workflows per `.github/workflows/README.md`
+2. Read this HANDOFF + LEARNINGS.md (esp. 2026-05-14 entries — that day produced the most non-obvious gotchas)
+3. Decide on the sprite-scale question (crop source PNGs vs keep world-size huge)
+4. Pick from the Todo backlog
 
 ## Repo state
 
-Public + proprietary-licensed (unchanged). Admin-merge default. Direct push via admin bypass.
-**~30 PRs merged + 5 specs across this session + the prior. Architectural smells closed. T-046 character migration trio complete. Visual auto-test pipeline operational. Sprite scale needs eyeball confirmation.**
+- Public + proprietary (`LICENSE` unchanged)
+- Branch protection: 9 required checks on main (NONE will run while workflows disabled — only admin-merge works)
+- ~30 PRs merged this thread + the prior; all on main
+- Working tree may show runtime artifact churn (gameplay save state) — gitignored where appropriate
 
-## At end of your session
-
-1. Bump "Last updated" + summary
-2. Update "Awaiting user action"
-3. Capture new gotchas in `LEARNINGS.md` and reference here
-4. Commit + push to main
+Project is parked, not ended. Resume from this state by restoring workflows + picking up the Todo queue when motivated.
