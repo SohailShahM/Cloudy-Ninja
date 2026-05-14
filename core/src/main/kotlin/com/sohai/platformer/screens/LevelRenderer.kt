@@ -25,6 +25,7 @@ import com.sohai.platformer.levels.Level0_0
 import com.sohai.platformer.persist.ColorBlindMode
 import com.sohai.platformer.persist.SaveManager
 import com.sohai.platformer.persist.SettingsManager
+import com.sohai.platformer.rendering.AnimationStateMachine
 import com.sohai.platformer.rendering.CharacterAnimator
 import com.sohai.platformer.FontManager
 import com.sohai.platformer.rendering.CameraLookAhead
@@ -35,6 +36,7 @@ import com.sohai.platformer.rendering.ParallaxBackground
 import com.sohai.platformer.rendering.ParallaxTheme
 import com.sohai.platformer.rendering.ParticleSystem
 import com.sohai.platformer.rendering.ScreenShake
+import com.sohai.platformer.rendering.SheetCharacterAtlas
 import com.sohai.platformer.rendering.SpriteFactory
 import com.sohai.platformer.rendering.TileRenderer
 import com.sohai.platformer.rendering.TilesetRegistry
@@ -224,6 +226,28 @@ class LevelRenderer(
         // art assets. Same shape as a normal token; only colour differs.
         val HIDDEN_TOKEN_BODY   = Color(1.00f, 0.85f, 0.30f, 1f)
         val HIDDEN_TOKEN_GLOW   = Color(1.00f, 0.88f, 0.40f, 0.45f)
+
+        /**
+         * T-186: Ebo sprite world size. The MH1 frame is 48×48 px and the
+         * character pixels inside the frame occupy roughly the bottom-centre
+         * 32×40 area with a small transparent margin. Drawing at 0.80 m wide
+         * × 0.80 m tall keeps the *visible character* at roughly the same
+         * scale as the pre-T-186 procedural sprite (32×80 px at PPM=100 =
+         * 0.32×0.80 m). The vertical offset positions the foot of the sprite
+         * a bit below the body centre, matching the procedural path's
+         * `playerPos.y - 32 / PPM` reference.
+         */
+        const val SPRITE_WORLD_W = 0.80f
+        const val SPRITE_WORLD_H = 0.80f
+
+        /**
+         * T-186: vertical offset from the body centre to the sprite's bottom
+         * edge. Tuned so the sprite's feet sit roughly at the player's foot
+         * sensor (body centre minus the half-height of the body box, ≈ 0.32
+         * m below the body centre). Same magnitude as the procedural path's
+         * `32f / PPM` so the visual position matches before/after.
+         */
+        const val SPRITE_BODY_OFFSET_Y = 0.32f
     }
 
     /** Active mode-sensitive palette; resolved from SettingsManager at render time. */
@@ -258,6 +282,22 @@ class LevelRenderer(
      * always 1f, so default rendering is byte-identical to pre-T-097 behaviour.
      */
     var playerAlpha: Float = 1f
+
+    /**
+     * T-186: lazy LuizMelo Martial Hero 1 atlas + animation state machine for
+     * Ebo. Lazy so a [LevelRenderer] constructed for headless tests (no GL
+     * context) never tries to load PNGs unless the renderPlayer path is
+     * actually exercised with `currentCharacter == "Ebo"` and the
+     * high-contrast flag off. Laya / Zephyr still route through the procedural
+     * [eboAnimator] / [layaAnimator] [CharacterAnimator] fields — those will
+     * be swapped to sheet atlases in T-187 / T-188.
+     */
+    private val eboSheetAtlas: SheetCharacterAtlas by lazy {
+        SheetCharacterAtlas.loadLuizMelo("sprites/luizmelo/martial-hero-1")
+    }
+    private val eboSheetAnimator: AnimationStateMachine by lazy {
+        AnimationStateMachine(eboSheetAtlas)
+    }
 
     /**
      * T-144: camera look-ahead state. One instance per LevelRenderer (per
@@ -749,18 +789,16 @@ class LevelRenderer(
         if (playerAlpha <= 0.002f) return
 
         val playerPos = player.body.position
-        val animator  = if (currentCharacter == "Ebo") eboAnimator else layaAnimator
-        val frame = animator.getCurrentFrame()
-        val sw = SpriteFactory.SPRITE_W / Constants.PPM
-        val sh = SpriteFactory.SPRITE_H / Constants.PPM
-        val sx = playerPos.x - sw / 2f
-        val footOffset = when (currentCharacter) {
-            "Ebo"    -> SpriteFactory.SPRITE_FOOT_OFFSET_EBO
-            "Laya"   -> SpriteFactory.SPRITE_FOOT_OFFSET_LAYA
-            "Zephyr" -> SpriteFactory.SPRITE_FOOT_OFFSET_ZEPHYR
-            else     -> 0f
-        }
-        val sy = playerPos.y - 32f / Constants.PPM - footOffset
+
+        // T-186: Ebo (and only Ebo, for now) renders through the sheet-based
+        // SheetCharacterAtlas + AnimationStateMachine path when high-contrast
+        // is OFF. Laya, Zephyr, and the Ebo-high-contrast case continue to
+        // use the procedural [CharacterAnimator] path UNCHANGED (T-187 / T-188
+        // will swap Laya + Zephyr). The high-contrast silhouette block below
+        // (T-170) still paints over the sprite regardless of which path was
+        // used, so the silhouette behaviour is unchanged.
+        val useSheetForEbo = (currentCharacter == "Ebo" && !highContrast)
+        val a = playerAlpha
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA)
@@ -769,14 +807,54 @@ class LevelRenderer(
         // T-097: multiply the per-character tint by [playerAlpha] so the sprite
         // fades out during death. With playerAlpha == 1f the tints match the
         // pre-T-097 values exactly.
-        val a = playerAlpha
         when {
             player.isFlashing              -> spriteBatch.setColor(1f, 0.35f, 0.35f, 0.85f * a)
             currentCharacter == "Zephyr"   -> spriteBatch.setColor(0.72f, 0.55f, 1f, 1f * a)
             a < 1f                          -> spriteBatch.setColor(1f, 1f, 1f, a)
         }
-        if (player.isFacingRight) spriteBatch.draw(frame, sx, sy, sw, sh)
-        else                      spriteBatch.draw(frame, sx + sw, sy, -sw, sh)
+
+        if (useSheetForEbo) {
+            // T-186: drive the state machine off the player's current pose and
+            // pull the textured frame for this delta. Sprite world size matches
+            // the procedural path's footprint so the visual scale stays
+            // consistent with the existing rect/Pixmap-based hero (height-wise
+            // the MH1 character inside the 48px frame is close to the
+            // procedural 32×80 hero). T-046 wall-slide gap: Wall-slide is not
+            // yet authored in MH1 — when [player.currentAnimState] resolves to
+            // IDLE while the player is wall-sliding, that's the placeholder.
+            eboSheetAnimator.setState(player.currentAnimState())
+            val frame = eboSheetAnimator.currentFrame(Gdx.graphics.deltaTime)
+            val sw = SPRITE_WORLD_W
+            val sh = SPRITE_WORLD_H
+            val sx = playerPos.x - sw / 2f
+            val sy = playerPos.y - SPRITE_BODY_OFFSET_Y
+            // Flip horizontally via negative-width draw — never mutates the
+            // cached TextureRegion (which would corrupt later frames).
+            if (player.isFacingRight) spriteBatch.draw(frame, sx, sy, sw, sh)
+            else                      spriteBatch.draw(frame, sx + sw, sy, -sw, sh)
+        } else {
+            // Pre-T-186 procedural path: still used for Laya + Zephyr (T-187 /
+            // T-188 will swap), and for the Ebo-high-contrast case where the
+            // silhouette overlay matters more than fidelity. Unchanged vs.
+            // pre-T-186 behaviour, except for the T-206 per-character foot
+            // offset applied to [sy] (Ebo-high-contrast still wants the
+            // procedural Ebo offset, Laya/Zephyr each use their own).
+            val animator  = if (currentCharacter == "Ebo") eboAnimator else layaAnimator
+            val frame = animator.getCurrentFrame()
+            val sw = SpriteFactory.SPRITE_W / Constants.PPM
+            val sh = SpriteFactory.SPRITE_H / Constants.PPM
+            val sx = playerPos.x - sw / 2f
+            val footOffset = when (currentCharacter) {
+                "Ebo"    -> SpriteFactory.SPRITE_FOOT_OFFSET_EBO
+                "Laya"   -> SpriteFactory.SPRITE_FOOT_OFFSET_LAYA
+                "Zephyr" -> SpriteFactory.SPRITE_FOOT_OFFSET_ZEPHYR
+                else     -> 0f
+            }
+            val sy = playerPos.y - 32f / Constants.PPM - footOffset
+            if (player.isFacingRight) spriteBatch.draw(frame, sx, sy, sw, sh)
+            else                      spriteBatch.draw(frame, sx + sw, sy, -sw, sh)
+        }
+
         if (player.isFlashing || currentCharacter == "Zephyr" || a < 1f) spriteBatch.setColor(Color.WHITE)
         spriteBatch.end()
         Gdx.gl.glDisable(GL20.GL_BLEND)
