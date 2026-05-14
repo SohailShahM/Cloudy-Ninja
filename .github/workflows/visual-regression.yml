@@ -1,0 +1,82 @@
+name: visual-regression
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          path: pr-head
+
+      - name: Checkout main baseline
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-baseline
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install xvfb + Python deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          python -m pip install -r pr-head/scripts/requirements-visual.txt
+
+      - name: Capture main baseline
+        working-directory: main-baseline
+        run: |
+          xvfb-run -a ./gradlew :lwjgl3:run \
+            -Dcloudy.smoke=true \
+            -Dcloudy.smokeLevel=level1 \
+            -Dcloudy.captureCheckpoints=true \
+            --no-daemon
+
+      - name: Capture PR head
+        working-directory: pr-head
+        run: |
+          xvfb-run -a ./gradlew :lwjgl3:run \
+            -Dcloudy.smoke=true \
+            -Dcloudy.smokeLevel=level1 \
+            -Dcloudy.captureCheckpoints=true \
+            --no-daemon
+
+      - name: Diff checkpoints
+        run: |
+          python pr-head/scripts/image_diff.py \
+            --baseline main-baseline/assets/build/visual-checkpoints \
+            --head pr-head/assets/build/visual-checkpoints \
+            --threshold 5.0 \
+            --output diff-report.md
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-checkpoints
+          path: |
+            main-baseline/assets/build/visual-checkpoints/
+            pr-head/assets/build/visual-checkpoints/
+            diff-report.md
+          retention-days: 14
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --body-file diff-report.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
