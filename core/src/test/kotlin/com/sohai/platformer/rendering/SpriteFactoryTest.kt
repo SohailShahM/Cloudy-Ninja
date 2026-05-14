@@ -20,10 +20,11 @@ class SpriteFactoryTest : BehaviorSpec({
 
     given("per-character spriteFootOffset constants") {
         then("SPRITE_FOOT_OFFSET_EBO is set to the current tuning value") {
-            // T-A14: value produced by scripts/foot_offset_autotuner.py from
-            // level1-start.png (Ebo, procedural sprite). Re-run the autotuner
-            // after a fresh capture and update this assertion to the new value.
-            SpriteFactory.SPRITE_FOOT_OFFSET_EBO shouldBe 0.03f
+            // T-A14 V0 wrote 0.03f from a greedy heuristic that mis-measured
+            // window-bottom rather than actual feet — user confirmed visually
+            // that 0.03f makes Ebo float. Reverted to 0.3f matching Laya/Zephyr;
+            // T-A18 hardens the heuristic before the next autotuner pass.
+            SpriteFactory.SPRITE_FOOT_OFFSET_EBO shouldBe 0.3f
         }
         then("SPRITE_FOOT_OFFSET_LAYA is set to the current tuning value") {
             SpriteFactory.SPRITE_FOOT_OFFSET_LAYA shouldBe 0.3f
