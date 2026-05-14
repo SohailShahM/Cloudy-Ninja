@@ -238,8 +238,8 @@ class LevelRenderer(
          * a bit below the body centre, matching the procedural path's
          * `playerPos.y - 32 / PPM` reference.
          */
-        const val SPRITE_WORLD_W = 1.20f
-        const val SPRITE_WORLD_H = 1.20f
+        const val SPRITE_WORLD_W = 4.80f
+        const val SPRITE_WORLD_H = 4.80f
 
         /**
          * T-186: vertical offset from the body centre to the sprite's bottom
