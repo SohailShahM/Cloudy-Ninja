@@ -375,3 +375,22 @@ shapeRenderer.rect(cx - w, cy - he - extraDown, w * 2f, he * 2f + extraDown)
 
 **Architectural pattern for the long run:** when a TileRenderer-based variant of this issue surfaces (T-174 fixed the rendering-at-all bug for sub-32px tiles; a similar thin-tile sprite-sink bug may surface later), apply the same `extraDown` math inside `TileRenderer.renderObstacle` for sub-`sinkHide` heights.
 
+
+---
+
+## 2026-05-14: LuizMelo MH sprites have heavy transparent margin — world size tuning unreliable
+
+**Symptom:** After T-186/187/188 wired all three characters to LuizMelo MH packs at `SPRITE_WORLD_W = 0.80m`, the visible character on-screen was a small fraction of the expected size. User reported "tiny compared to the game world" at 0.80m and at the 1.20m bump that followed. Ended up at 4.80m before user said stop iterating; still uncertain whether that's right.
+
+**Cause:** The MH packs were downsampled by T-181 from 200/126 px → 48 px while preserving the original art's frame composition. The character occupies maybe 25-35% of the 48×48 frame; the rest is transparent margin (the artist drew with room for animation reach). When rendered at world-size = 0.80m × 0.80m, the visible character is roughly 0.20-0.30m wide and 0.30-0.40m tall — far smaller than the pre-MH1 procedural sprite (0.32 × 0.80m visible).
+
+**Fix (incomplete):** Scale up the `SPRITE_WORLD_W` / `SPRITE_WORLD_H` constants in `LevelRenderer.kt`. Each ~4× bump compensates for the ~25% frame fill. Currently at 4.80m. Unconfirmed visually.
+
+**Better fix (next session):** Crop the source PNGs in `assets/sprites/luizmelo/martial-hero-{1,2,3}/` to tight character bounds via Pillow. Same atlas + animator code works; just tighter frame around the visible art. Then world size returns to a sane 0.80-1.20m range. Recommended over continued world-size scaling because:
+- World-size-only scaling makes the sprite frame's transparent margin scale up too — wastes GPU bandwidth and risks overlapping nearby tiles
+- Cropping preserves the natural art proportions in world units
+- Sprite atlas is small enough (~85 KB total per character) that re-processing is cheap
+
+**Cost:** ~2 hours of "tune-and-retest" iteration. The autotuner (T-A14 V0 + T-A18 V1) couldn't help because it measures *gap to ground* not *visible-character-size*.
+
+**Architectural follow-up candidate:** add a per-pack `visibleFillRatio` metadata field that the renderer uses to compute effective world size from a single base scale constant. Avoids re-deriving the right magic number per character pack.
