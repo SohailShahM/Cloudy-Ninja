@@ -108,4 +108,25 @@ object Constants {
     // no-op when false: a single boolean check at the top of
     // `CheckpointCapture.capture()` short-circuits before any GL / disk work.
     @JvmField val CAPTURE_CHECKPOINTS: Boolean = java.lang.Boolean.getBoolean("cloudy.captureCheckpoints")
+
+    // T-A18: baseline-capture gate for the foot-offset autotuner V1. When true
+    // (pass `-Dcloudy.captureBaseline=true`) the GameScreen render loop SKIPS
+    // calling `renderer.renderPlayer(...)` so the resulting checkpoint PNG
+    // captures the level WITHOUT the character. The captured filename also
+    // gets a `-baseline` suffix appended so the with-player capture from a
+    // separate run isn't overwritten. Pair with `-Dcloudy.captureCheckpoints=true`
+    // — this flag only controls the player-skip + filename-suffix; the capture
+    // itself is still gated by CAPTURE_CHECKPOINTS.
+    //
+    // The autotuner V1 script (`scripts/foot_offset_autotuner_v1.py`) consumes
+    // a `level1-start.png` (with-player, normal capture) AND a
+    // `level1-start-baseline.png` (baseline capture, no player), subtracts
+    // pixel-by-pixel, and locates the character's true bottom-Y. Tighter than
+    // V0's color heuristic, which mis-measured search-window-bottom rather
+    // than sprite-feet.
+    //
+    // Pure no-op when false: a single boolean check inside the render loop
+    // skips the renderPlayer call. Level geometry, lighting, HUD all draw
+    // normally either way.
+    @JvmField val CAPTURE_BASELINE: Boolean = java.lang.Boolean.getBoolean("cloudy.captureBaseline")
 }

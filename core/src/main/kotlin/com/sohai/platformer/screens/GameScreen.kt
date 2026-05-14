@@ -592,8 +592,14 @@ class GameScreen(
         // Layer 0–2: parallax + obstacles + VFX + particles
         renderer.renderWorld(runState.cleanseRatio, runState.currentCharacter, runState.projectiles)
 
-        // Layer 2b: player sprite
-        renderer.renderPlayer(runState.currentCharacter)
+        // Layer 2b: player sprite. T-A18: skipped entirely when
+        // `cloudy.captureBaseline=true` so the foot-offset autotuner V1 can
+        // capture a player-free baseline frame for pixel-subtraction. Level
+        // geometry, lighting, HUD all continue to draw normally — only the
+        // sprite is suppressed.
+        if (!Constants.CAPTURE_BASELINE) {
+            renderer.renderPlayer(runState.currentCharacter)
+        }
 
         // Layer 2c: portal labels (hub world only)
         if (level is com.sohai.platformer.levels.Level0_0) {
@@ -751,10 +757,15 @@ class GameScreen(
                 prevPlayerYForCapture      = curY
             }
             // Fire whatever's pending. CheckpointCapture.capture() is a no-op
-            // unless cloudy.captureCheckpoints=true.
+            // unless cloudy.captureCheckpoints=true. T-A18: when capturing a
+            // baseline (player-render skipped) the filename gets a `-baseline`
+            // suffix so the with-player capture from a separate run isn't
+            // overwritten — the autotuner V1 needs both PNGs side-by-side for
+            // pixel subtraction.
             pendingCheckpointCapture?.let { name ->
                 pendingCheckpointCapture = null
-                com.sohai.platformer.visual.CheckpointCapture.capture(name)
+                val outName = if (Constants.CAPTURE_BASELINE) "$name-baseline" else name
+                com.sohai.platformer.visual.CheckpointCapture.capture(outName)
             }
         }
 
