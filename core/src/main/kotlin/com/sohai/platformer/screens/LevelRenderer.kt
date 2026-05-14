@@ -326,6 +326,33 @@ class LevelRenderer(
     }
 
     /**
+     * T-188: lazy LuizMelo Martial Hero 2 atlas + animation state machine for
+     * Zephyr — completes the T-046 character-sprite migration trio (Ebo MH1,
+     * Laya MH3, Zephyr MH2). Same lazy-load contract as the other two pairs:
+     * headless tests don't pay any PNG cost unless the renderPlayer path
+     * actually fires for Zephyr with high-contrast off.
+     *
+     * MH2 ships the canonical filename set (`Idle.png`, `Run.png`, `Jump.png`,
+     * `Fall.png`, `Attack1.png`, `Attack2.png`, `Take Hit.png`, `Death.png`)
+     * so no remapping is needed inside [renderPlayer] — [PlayerController.currentAnimState]'s
+     * ATTACK1 (returned while Zephyr's Cloud Float ability is active) maps
+     * directly to MH2's `Attack1.png` (4 frames). PlayerController itself
+     * stays untouched per the T-188 hard rule that `currentAnimState()` is
+     * character-agnostic.
+     *
+     * Zephyr's signature purple/lavender tint (RGBA 0.72, 0.55, 1.0) is still
+     * applied via [spriteBatch.setColor] in the `when` block above the draw
+     * so the MH2 anime-pixel sprite still reads as the "cool/lavender"
+     * character against Ebo's warm earth tones and Laya's neutral default.
+     */
+    private val zephyrSheetAtlas: SheetCharacterAtlas by lazy {
+        SheetCharacterAtlas.loadLuizMelo("sprites/luizmelo/martial-hero-2")
+    }
+    private val zephyrSheetAnimator: AnimationStateMachine by lazy {
+        AnimationStateMachine(zephyrSheetAtlas)
+    }
+
+    /**
      * T-144: camera look-ahead state. One instance per LevelRenderer (per
      * active level) so the bias smoothly recenters on respawn / portal swap.
      * The offset is applied alongside the T-116 [ScreenShake] offset before
@@ -816,15 +843,17 @@ class LevelRenderer(
 
         val playerPos = player.body.position
 
-        // T-186 / T-187: Ebo and Laya render through the sheet-based
-        // SheetCharacterAtlas + AnimationStateMachine path when high-contrast
-        // is OFF. Zephyr and any high-contrast case continue to use the
-        // procedural [CharacterAnimator] path UNCHANGED (T-188 will swap
-        // Zephyr). The high-contrast silhouette block below (T-170) still
-        // paints over the sprite regardless of which path was used, so the
-        // silhouette behaviour is unchanged.
-        val useSheetForEbo  = (currentCharacter == "Ebo"  && !highContrast)
-        val useSheetForLaya = (currentCharacter == "Laya" && !highContrast)
+        // T-186 / T-187 / T-188: Ebo, Laya, and Zephyr all render through
+        // the sheet-based SheetCharacterAtlas + AnimationStateMachine path
+        // when high-contrast is OFF — this completes the T-046 character-
+        // sprite migration trio. The high-contrast case continues to use the
+        // procedural [CharacterAnimator] fallback path UNCHANGED. The high-
+        // contrast silhouette block below (T-170) still paints over the
+        // sprite regardless of which path was used, so the silhouette
+        // behaviour is unchanged.
+        val useSheetForEbo    = (currentCharacter == "Ebo"    && !highContrast)
+        val useSheetForLaya   = (currentCharacter == "Laya"   && !highContrast)
+        val useSheetForZephyr = (currentCharacter == "Zephyr" && !highContrast)
         val a = playerAlpha
 
         Gdx.gl.glEnable(GL20.GL_BLEND)
@@ -877,6 +906,34 @@ class LevelRenderer(
                 if (rawState == SheetAnimState.ATTACK1) SheetAnimState.ATTACK3 else rawState
             layaSheetAnimator.setState(mappedState)
             val frame = layaSheetAnimator.currentFrame(Gdx.graphics.deltaTime)
+            val sw = SPRITE_WORLD_W
+            val sh = SPRITE_WORLD_H
+            val sx = playerPos.x - sw / 2f
+            val sy = playerPos.y - SPRITE_BODY_OFFSET_Y
+            // Flip horizontally via negative-width draw — never mutates the
+            // cached TextureRegion (which would corrupt later frames).
+            if (player.isFacingRight) spriteBatch.draw(frame, sx, sy, sw, sh)
+            else                      spriteBatch.draw(frame, sx + sw, sy, -sw, sh)
+        } else if (useSheetForZephyr) {
+            // T-188: identical structure to the Ebo (T-186) and Laya (T-187)
+            // branches above, but driving the MH2 atlas via
+            // [zephyrSheetAnimator]. The purple/lavender tint (RGBA 0.72,
+            // 0.55, 1.0) set by the `when` block above this if/else chain
+            // is still in effect when this draw fires — SpriteBatch.draw
+            // multiplies the batch colour into every pixel, so the MH2
+            // sprite picks up the lavender hue automatically (and the
+            // setColor(WHITE) reset below clears it after the draw, same
+            // as the pre-MH2 procedural Zephyr path).
+            //
+            // MH2 ships the canonical state set — `Attack1.png` maps
+            // directly from [PlayerController.currentAnimState]'s ATTACK1
+            // when Zephyr's signature Cloud Float ability is active, so no
+            // ATTACK3-style remap is needed (unlike Laya's MH3 branch).
+            // T-046 wall-slide gap: same as the other two — IDLE
+            // placeholder while the player wall-slides, MH2 ships no
+            // wall-slide sheet.
+            zephyrSheetAnimator.setState(player.currentAnimState())
+            val frame = zephyrSheetAnimator.currentFrame(Gdx.graphics.deltaTime)
             val sw = SPRITE_WORLD_W
             val sh = SPRITE_WORLD_H
             val sx = playerPos.x - sw / 2f
