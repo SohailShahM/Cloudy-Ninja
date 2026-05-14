@@ -152,3 +152,81 @@ cloudy-ninja-godot-spike/
    - Author `kenney_pixel.tres` and `debug.tres` ArtPack resources.
 4. Vertical slice (Phase 1b, 2 weeks): port Level0_1 end-to-end with one character (Ebo).
 5. Validation gate before Phase 2: Level0_1 must play correctly with `debug.tres` (stick-figure characters, solid-color tiles).
+
+---
+
+# Phase 1a + 1b — In-flight session results (2026-05-14)
+
+Status: **Phase 1a complete, Phase 1c validation gate PASSED. Phase 1b ~50% done.**
+
+Spike repo HEAD: `cb80ff8`.
+
+## Phase 1a deliverables (all complete)
+
+| Deliverable | Location | Status |
+|---|---|---|
+| Canonical tile-ID schema | `docs/tile_id_schema.md` | ✅ Authored (rows 0–6 mapped; rows 7–11 reserved for World 4 / v1.1) |
+| `ArtPack` Resource class | `scripts/resources/art_pack.gd` | ✅ Extended with `character_textures` and `prop_textures` dictionaries |
+| `ArtPackManager` autoload | `scripts/autoload/art_pack_manager.gd` | ✅ Lazy-loads kenney_pixel on `_ready()`, emits `pack_changed` |
+| Kenney TileSet | `art_packs/kenney_tileset.tres` | ✅ Atlas (0,0) = ground_solid + collision polygon, layer=World |
+| Debug TileSet | `art_packs/debug_tileset.tres` | ✅ Same shape, magenta-square texture |
+| `kenney_pixel.tres` ArtPack | `art_packs/kenney_pixel.tres` | ✅ Wires TileSet + character + prop textures |
+| `debug.tres` ArtPack | `art_packs/debug.tres` | ✅ Wires debug TileSet + stick-figure + magenta |
+| F1 dev hotkey to cycle packs | `scripts/autoload/game.gd::_cycle_art_pack` | ✅ Tested live on Android |
+
+## Phase 1b partial deliverables
+
+| Deliverable | Status | Note |
+|---|---|---|
+| Level0_1 scene (`scenes/levels/level0_1.tscn`) | ✅ | Faithful port of libGDX layout: left ground / 64px gap / right ground |
+| Level0_1 paints terrain on `_ready()` | ✅ | 112 ground tiles via `set_cell` |
+| `LevelRoot` base class | ✅ | Shared logic for ArtPack wiring + kill-plane + token signals + exit |
+| Player walks, jumps, falls correctly | ✅ | Verified via Android screenshots (Phase 0 results) |
+| EcoToken scene (Area2D + sensor) | ✅ | Texture from ArtPack via `prop_textures["ecotoken"]` |
+| ExitPortal scene (Area2D + sensor) | ✅ | Texture from ArtPack via `prop_textures["exit_portal"]` |
+| Kill-plane respawn at y > 360 | ✅ | Player falls into gap → respawns at spawn position |
+| Player consumes ArtPack character texture | ✅ | `ArtSprite` Sprite2D node added to player.tscn |
+| Touch HUD over level (carried from Phase 0) | ✅ | `<` `>` JMP ABL buttons functional |
+| Save slot persistence | ⏸ Deferred to Phase 2 | Per migration plan §7 Phase 2 |
+| Seed Slam ability (Ebo) | ⏸ Deferred to Phase 2 | Per migration plan §7 Phase 2 |
+| Pause menu / level-complete UI | ⏸ Deferred | Spike just respawns at exit |
+| TMX import (vs programmatic paint) | ✗ Skipped | Programmatic paint via `set_cell` is faster for spike iteration; TMX import revisited in Phase 3 content port |
+
+## Phase 1c validation gate — PASSED
+
+**Test:** With Level0_1 running on Android emulator, press F1 (via `adb shell input keyevent KEYCODE_F1`). Validate that all art swaps live without scene reload.
+
+**Result:**
+- `screen_9_level01_kenney.png` — kenney_pixel pack: grass-top dirt blocks, Kenney character head sprite
+- `screen_11_debug_pack.png` — debug pack after F1: magenta tile squares, cyan stick-figure character
+- Logcat: `[Game] Swapping art pack -> debug` → `[ArtPackManager] Loaded pack: debug`
+- Player position preserved across swap (40, 116, on_floor=true)
+- Zero scene-file modifications; pure Resource reference swap via `ArtPackManager.set_pack`
+
+**Conclusion:** ArtPack abstraction works exactly as designed. Future commissioned art commissions become a one-line `register()` call. The plan's core architectural bet is validated.
+
+## What's confirmed about the migration plan
+
+1. **TileMapLayer per scene** is the right primitive — programmatic `set_cell()` made Level0_1 layout author-able in 20 lines of GDScript.
+2. **ArtPack as a Resource** beats string-keyed lookups — the Inspector's drag-drop binding pattern keeps art and code separate without typing errors.
+3. **Tile-ID schema as a versioned doc** is essential — locking the atlas (col, row) contract up front means levels can be authored once and re-themed forever.
+4. **Cropping Kenney from 18×18 to 16×16** is necessary — running pixel-art at 18 leaves visible 1-pixel transparent margins between tiles. Doc this in the asset-import standard.
+
+## Known issues / followups
+
+1. **Tile borders visible** at 1× zoom on Android — caused by the cropped Kenney tiles having faint dark outlines at their original 16×16 edges. Will resolve when Phase 3 swaps to an atlas-packed Kenney TileSet (uses `tilemap_packed.png` with `texture_region_size` + `separation`).
+2. **Background ColorRect doesn't scroll** with camera — fine for Level0_1 (single-screen), but Level1+ needs ParallaxBackground.
+3. **TouchScreenButton needs explicit `shape`** (gotcha from Phase 0) — applies to every future on-screen button.
+4. **CLI export errors are opaque** — known Godot bug. Always run the editor once after creating a new export preset; the editor populates missing preset fields that the CLI can't.
+
+## Carry-over to Phase 2
+
+The natural next batch:
+- **Seed Slam ability** — projectile system with cooldown, hit detection, cleanse effect on `hazard_water_corrupted` tiles
+- **Save system** — atomic write 3 slots, checkpoint state, stats per slot
+- **Pause menu + Settings UI** — Godot `Theme` resource + Control nodes
+- **AnimationPlayer per character** — replace static `ArtSprite` with `AnimatedSprite2D` + per-pack `SpriteFrames`
+- **Laya + Zephyr** — character-switch UX, ability FSM separation from movement FSM
+- **GdUnit4 install + first 5 specs** — movement constants, ability cooldowns, save round-trip
+
+Estimated 3–4 weeks for full Phase 2.
