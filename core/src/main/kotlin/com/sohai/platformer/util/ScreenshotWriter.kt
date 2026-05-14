@@ -168,7 +168,7 @@ object ScreenshotWriter {
 
         @Suppress("DEPRECATION") // libGDX nightly deprecated this; the replacement
         // (Pixmap.createFromFrameBuffer) isn't available in our pinned 1.x.
-        val pixmap: Pixmap = try {
+        val rawPixmap: Pixmap = try {
             ScreenUtils.getFrameBufferPixmap(
                 0,
                 0,
@@ -179,6 +179,12 @@ object ScreenshotWriter {
             Gdx.app?.error("ScreenshotWriter", "Framebuffer capture failed: ${t.message}")
             return false
         }
+
+        // GL framebuffer is bottom-up; PNG/Pixmap order is top-down. Without
+        // this flip, saved PNGs render upside down (HUD text reads "dewS" etc).
+        // Mirrors the fix shipped in CheckpointCapture.kt for the T-A10 path.
+        val pixmap = flipY(rawPixmap)
+        rawPixmap.dispose()
 
         val target = FileHandle(File(dir, screenshotFileName(levelId, timestampMillis)))
         return write(pixmap, target)
@@ -222,7 +228,7 @@ object ScreenshotWriter {
         }
 
         @Suppress("DEPRECATION") // see note on captureAndWrite — same reason.
-        val pixmap: Pixmap = try {
+        val rawPixmap: Pixmap = try {
             ScreenUtils.getFrameBufferPixmap(
                 0,
                 0,
@@ -234,7 +240,26 @@ object ScreenshotWriter {
             return false
         }
 
+        // Same Y-flip as captureAndWrite — GL framebuffer bottom-up vs PNG top-down.
+        val pixmap = flipY(rawPixmap)
+        rawPixmap.dispose()
+
         val target = FileHandle(File(dir, manualFileName(screenName, timestampMillis)))
         return write(pixmap, target)
+    }
+
+    /**
+     * Vertically flip a Pixmap. Returns a new Pixmap; caller owns disposal.
+     * Used to convert OpenGL bottom-up framebuffer pixels to PNG top-down rows.
+     */
+    private fun flipY(src: Pixmap): Pixmap {
+        val w = src.width
+        val h = src.height
+        val out = Pixmap(w, h, src.format)
+        out.blending = Pixmap.Blending.None
+        for (y in 0 until h) {
+            out.drawPixmap(src, 0, h - 1 - y, 0, y, w, 1)
+        }
+        return out
     }
 }
