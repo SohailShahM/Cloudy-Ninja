@@ -571,6 +571,22 @@ If you need a task and nothing is tagged for your identity, append to `QUESTIONS
 - **Status:** Closed-WontFix
 - **Reasoning:** T-208 (in flight at spec time) provides a live in-game brightness slider. Auto-tuning brightness toward "some objective right value" adds little over user preference. If T-208 ships and lighting still proves hard to nail, reopen.
 
+### T-A17 — Re-land T-A16 visual regression CI workflow  [P3]
+- **Status:** Todo · **Tool:** `claude-code-sonnet` · **Tier:** S · **Autonomous-eligible:** yes
+- **Depends on:** T-A14 *(landed; this fixes the duplicate-requirements-file conflict)*
+- **GDD ref:** PR #169 closed 2026-05-14 due to merge conflict with T-A14's identical `scripts/requirements-visual.txt`
+- **Goal:** Re-open the T-A16 visual-regression-diff CI workflow. Same design as PR #169 (read its diff for the full plan). The ONLY change vs that PR: do NOT add `scripts/requirements-visual.txt` — it already exists on main (added by T-A14 PR #170).
+- **Files:** new `.github/workflows/visual-regression.yml`, new `scripts/image_diff.py`. Do NOT touch `scripts/requirements-visual.txt`.
+- **Done when:** workflow runs on PRs, comments pixel-diff results; existing `ai-smoke.yml` still green; CI cost <3min per PR.
+
+### T-A18 — Foot-offset autotuner V1 (tighter character detection)  [P3]
+- **Status:** Todo · **Tool:** `claude-code-sonnet` · **Tier:** M · **Autonomous-eligible:** yes
+- **Depends on:** T-A14 *(landed; this iterates on the heuristic)*
+- **GDD ref:** PR #170 surfaced — V0 heuristic was greedy (caught HUD chrome + dirt-tile as "character"); reported gap_px=27 was really window-bottom minus grass-top, not feet minus grass-top
+- **Goal:** Iterate on the autotuner heuristic. Use a tighter character-detection method (sprite-color-clustering, OR run a "no-character" capture first as background-subtract baseline, OR use a known character-skin color profile). Should produce a `gap_px` that's actually the feet-vs-grass measurement, not the window-bottom artifact.
+- **Files:** `scripts/foot_offset_autotuner.py`, new tests, possibly `scripts/baseline_capture.py` (run with character invisible to get background reference)
+- **Done when:** running the autotuner on a known-misaligned capture produces a gap measurement consistent with visual inspection (cross-checked against me / the user reading the PNG via Read).
+
 
 
 <!-- ═══════════════════════════════════════════════════════════════
