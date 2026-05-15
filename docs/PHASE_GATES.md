@@ -230,3 +230,51 @@ The natural next batch:
 - **GdUnit4 install + first 5 specs** — movement constants, ability cooldowns, save round-trip
 
 Estimated 3–4 weeks for full Phase 2.
+
+---
+
+# Phase 2 progress log (2026-05-15)
+
+Driven autonomously via Opus-orchestrated Sonnet sub-agents (per user direction).
+12 sub-agents total across 4 rounds, ~3500+ LoC delivered + ~50 .tres data files
++ 13 achievement icons. Spike repo at `cloudy-ninja-godot-spike` HEAD: `20a1cff`
+(Phase 2 round 3 complete).
+
+| Round | Commit | Agents | Key deliverables |
+|---|---|---|---|
+| 1 | `01bfe93` | 4 | SaveSystem (atomic .tmp.tres + cache), AudioBus (3 buses + crossfade + 8-pool), Atlas/Achievement data port, Seed Slam ability (Ebo) |
+| 2 | `60ae75b` | 4 | Achievements autoload + toast (8/13 need custom predicates), PauseManager + pause menu (smoke-mode safe), Settings UI (live audio preview), Main Menu + 3-slot save select (smoke-mode bypass) |
+| 3 | `20a1cff` | 3 | Laya WindDash + Zephyr Float + CharacterSwitcher (K cycles characters), FX autoload (5 GPUParticles + screen shake, reduced_motion aware), 4 tutorial levels (Level0_0 hub + 0_2/0_3/0_4) |
+| Self | — | (Opus) | Wiring: AudioBus.play_sfx + Achievements.event + FX.emit hooks into Player/EcoToken/ExitPortal; ability override dispatch in Player movement FSM |
+
+## Bugs caught + fixed during integration
+
+1. **SaveSystem temp file rejected** — agent used `slot_N.tres.tmp` extension which ResourceSaver doesn't recognize. Fixed to `slot_N.tmp.tres`.
+2. **Achievements class_name shadows autoload** — Godot 4.6: `class_name X` on an autoload script throws "Class hides autoload singleton". Removed class_name from achievements.gd; future autoloads must avoid it.
+3. **Achievement MANIFEST not packed in APK** — `export_filter='all_resources'` only packs scene-referenced .tres; runtime-loaded data/ resources were excluded. Fixed via `include_filter='data/*'`.
+4. **`#` comments in .tres files crash parser** — Godot .tres format uses `;` not `#`. Stripped `# Source: …` comments from all data/achievements + data/atlas .tres files.
+5. **MANIFEST script_class='Manifest' header baked type into exported .res** — at runtime the loader couldn't find Manifest class during early autoload init. Fixed by removing `script_class="Manifest"` from MANIFEST.tres headers + changing Achievements to load via plain Resource + `.get("entries")` dynamic access.
+6. **Player jumps over EcoToken in smoke test** — autopilot's cut jump had apex-hang that made arc taller than expected. Repositioned tokens to be at the jump apex (Y=60) so they're collected mid-air, not bypassed.
+7. **TouchScreenButton silent absorption of touches** — Godot 4.6 quirk: Area2D loaded from .tscn doesn't register its shape with PhysicsServer2D until monitoring is toggled. Workaround: `monitoring = false → await physics_frame × 2 → monitoring = true` in `_force_remonitor()` (Phase 1b discovery, documented).
+
+## New `docs/LIBGDX_ANTIPATTERNS.md`
+
+Phase 1b also produced this 14-item carry-forward avoidance doc capturing
+every legacy libGDX pain point that could silently leak into the Godot
+build. Includes pre-merge checklist. Required reading for any future ports
+from the libGDX repo.
+
+## Phase 2 totals so far
+
+Autoloads installed: 9 (Game, ArtPackManager, SaveSystem, Settings, AudioBus,
+PauseManager, Achievements, FX, CharacterSwitcher).
+
+Playable content: 5 levels (Level0_1, 0_0 hub, 0_2/0_3/0_4 tutorials).
+Pending: Levels 1/2/3 + Storm Sentinel boss (round 4 in flight).
+
+UI screens: main menu + 3-slot save select, pause menu, settings, achievement
+toast. Pending: stats screen + atlas viewer (round 4 in flight).
+
+Character roster: Ebo (Seed Slam), Laya (Wind Dash), Zephyr (Float). All three
+selectable via K-key cycle on `CharacterSwitcher`. AnimationPlayer state machine
+still pending — sprites are static AnimatedSprite2D placeholders.
