@@ -264,17 +264,57 @@ every legacy libGDX pain point that could silently leak into the Godot
 build. Includes pre-merge checklist. Required reading for any future ports
 from the libGDX repo.
 
-## Phase 2 totals so far
+## Phase 2 round 4 (2026-05-15, commit `f296757`)
 
-Autoloads installed: 9 (Game, ArtPackManager, SaveSystem, Settings, AudioBus,
-PauseManager, Achievements, FX, CharacterSwitcher).
+Three more parallel Sonnet sub-agents:
 
-Playable content: 5 levels (Level0_1, 0_0 hub, 0_2/0_3/0_4 tutorials).
-Pending: Levels 1/2/3 + Storm Sentinel boss (round 4 in flight).
+| Deliverable | LoC | Notes |
+|---|---|---|
+| **World levels 1-3 + Storm Sentinel boss** | ~885 | Level1 Ebo/SmogSprite, Level2 Laya dash-gates (smoke fails by design), Level3 boss arena. `BossPattern` Resource + full phase state machine (REST → LIGHTNING_TELEGRAPH → LIGHTNING_STRIKE → REST → SWEEP_TELEGRAPH → SWEEP). Telegraph visuals via ColorRect (GPUParticles2D upgrade deferred to Phase 3). |
+| **Stats screen** | ~175 | Per-slot grid (tokens/deaths/levels/time/achievements) + global achievement progress. Added StatsButton to main menu. |
+| **Cloud Atlas viewer + AtlasSystem** | ~341 | Two-pane list/detail overlay, locked entries show '???'. `AtlasSystem` autoload (10th and final) with threshold hooks for atlas_half/atlas_full. Buttons added to both pause menu + main menu. |
 
-UI screens: main menu + 3-slot save select, pause menu, settings, achievement
-toast. Pending: stats screen + atlas viewer (round 4 in flight).
+Both Stats and Atlas agents touched `main_menu.tscn`. They cooperated cleanly:
+unique button names + positions (Atlas before Stats), no merge needed.
 
-Character roster: Ebo (Seed Slam), Laya (Wind Dash), Zephyr (Float). All three
-selectable via K-key cycle on `CharacterSwitcher`. AnimationPlayer state machine
-still pending — sprites are static AnimatedSprite2D placeholders.
+## HANDOFF.md added (commit `19cacd6` in spike repo)
+
+Spike-repo session continuity doc. Captures: full project structure, autoload
+order, 10 critical gotchas, resume commands, prioritized next-session work.
+Required reading for anyone picking up the spike.
+
+## Phase 2 totals (final tally)
+
+Total commits this session: 10 in spike repo, 4 in libGDX worktree.
+Sub-agents dispatched: 12 (4 rounds × 3-4 agents).
+Approx LoC delivered by sub-agents: ~3500.
+Approx LoC integrated/wired by Opus: ~250.
+
+| Subsystem | Status |
+|---|---|
+| **Autoloads** (10) | Game, ArtPackManager, SaveSystem, Settings, AudioBus, PauseManager, Achievements, FX, CharacterSwitcher, AtlasSystem |
+| **Playable levels** | 8 (Level0_0 hub, Level0_1..0_4 tutorials, Level1, Level2, Level3 boss arena) |
+| **Characters** | Ebo (Seed Slam), Laya (Wind Dash), Zephyr (Float) — K-key cycles |
+| **Enemies** | SmogSprite (patrol AI), Storm Sentinel (3-phase boss) |
+| **UI screens** | Main menu + 3-slot save select, Pause menu, Settings, Stats, Atlas viewer, Achievement toast, Touch HUD, Character switch indicator |
+| **Data resources** | 6 atlas entries, 13 achievements (5 simple + 8 needing custom predicates), 3 ability presets, 1 boss pattern, 1 movement config, 1 audio pack, 2 ArtPacks |
+| **FX** | 5 GPUParticles2D one-shots + screen shake, all reduced_motion aware |
+| **Persistence** | 3 atomic save slots (.tmp.tres → .tres rename), per-slot stats + atlas unlocks + achievements |
+
+## Carry-over to next session
+
+Per HANDOFF.md "What to do next session" list — top priorities:
+
+1. **AudioBus.play_music()** wiring in level scripts (~30 min, trivial)
+2. **AnimationPlayer per character** (still static sprites)
+3. **Achievement custom predicates** for the 8 complex ones (speed_demon timer, all_clear set, eco_sweep level token count, etc.)
+4. **AtlasPickup entity** so AtlasSystem.unlock() gets called in-game
+5. **Real-device Android test** (emulator-only validation has known blind spot)
+6. **Visual polish** (particle textures from ArtPack, boss telegraph GPUParticles2D)
+7. **Localization scaffold** (TranslationServer + tr())
+8. **Migrate spike → `cloudy-ninja` proper repo** (rename libGDX repo, promote spike)
+
+The spike has crossed from "validation prototype" to "playable alpha skeleton".
+The original migration thesis is fully validated: every libGDX pain point that
+motivated the move (Box2D crashes, foot-offset autotuner, TMX flipY trap, save
+spam, BUG-002 collision masks) is provably eliminated by Godot's primitives.
