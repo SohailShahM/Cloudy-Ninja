@@ -900,8 +900,25 @@ class LevelRunState(
         camera.update()
 
         // Drain deferred body destructions (safe — outside world.step and contact callbacks)
+        //
+        // 2026-05-17 guard: skip the player body. Diagnosis of an
+        // EXCEPTION_ACCESS_VIOLATION in jniGetLinearVelocity (BUG-001 sibling)
+        // pointed at the player body being read from PlayerController.currentAnimState
+        // after destruction. The only way that body should reach this drain is a
+        // bug elsewhere — but the cost of the guard is one identity check per
+        // frame, and the cost of being wrong is a hard JVM crash. If the guard
+        // ever fires we log loudly so it can't go unnoticed.
         if (pendingBodyDestroy.isNotEmpty()) {
-            for (b in pendingBodyDestroy) world.destroyBody(b)
+            for (b in pendingBodyDestroy) {
+                if (b === player.body) {
+                    com.badlogic.gdx.Gdx.app.error(
+                        "LevelRunState",
+                        "BUG: player.body queued for destroy — skipping to prevent use-after-free crash"
+                    )
+                    continue
+                }
+                world.destroyBody(b)
+            }
             pendingBodyDestroy.clear()
         }
     }

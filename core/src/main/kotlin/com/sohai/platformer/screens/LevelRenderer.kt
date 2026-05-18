@@ -238,8 +238,17 @@ class LevelRenderer(
          * a bit below the body centre, matching the procedural path's
          * `playerPos.y - 32 / PPM` reference.
          */
-        const val SPRITE_WORLD_W = 4.80f
-        const val SPRITE_WORLD_H = 4.80f
+        // 2026-05-17 A/B feel-tuning recalibration: 4.80 was a desperate iteration
+        // (HANDOFF 2026-05-14 noted "not evaluated") that produced a ~2m visual
+        // offset because SPRITE_BODY_OFFSET_Y was not recomputed when SPRITE_WORLD
+        // bumped from 0.80 → 4.80. The MH sprites have heavy transparent margin
+        // (opaque content ≈ rows 13-29 of 48), so the rendered frame "appears"
+        // floating above the body. Bringing SPRITE_WORLD back to a sane value and
+        // recalibrating OFFSET below aligns the opaque foot to the body bottom.
+        // Visible character height ≈ 0.375m (≈ 16/48 of frame × 1.50m), body is
+        // 0.42m — sprite reads slightly shorter than body, which is OK.
+        const val SPRITE_WORLD_W = 1.50f
+        const val SPRITE_WORLD_H = 1.50f
 
         /**
          * T-186: vertical offset from the body centre to the sprite's bottom
@@ -248,7 +257,16 @@ class LevelRenderer(
          * m below the body centre). Same magnitude as the procedural path's
          * `32f / PPM` so the visual position matches before/after.
          */
-        const val SPRITE_BODY_OFFSET_Y = 0.32f
+        // 2026-05-17: recalibrated alongside SPRITE_WORLD_H = 1.50.
+        // Math: opaque bottom row ≈ row 28 of 48 (MH1 reference). In libGDX
+        // Y-up render space the opaque bottom is at sy + (48-28)/48 × sh =
+        // sy + 0.417 × 1.50 = sy + 0.625. Setting OFFSET so the opaque bottom
+        // lands at body bottom (playerPos.y - 0.21 for a 0.42m body):
+        //   playerPos.y - OFFSET + 0.625 = playerPos.y - 0.21
+        //   OFFSET = 0.625 + 0.21 = 0.835 (rounded to 0.85)
+        // MH2/MH3 have slightly different opaque bottoms (row 30 / row 36 for
+        // some poses) so they'll sit a few cm off; cosmetic, not gameplay-affecting.
+        const val SPRITE_BODY_OFFSET_Y = 0.85f
     }
 
     /** Active mode-sensitive palette; resolved from SettingsManager at render time. */
