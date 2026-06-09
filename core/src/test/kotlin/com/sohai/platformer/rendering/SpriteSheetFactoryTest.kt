@@ -51,6 +51,26 @@ class SpriteSheetFactoryTest : BehaviorSpec({
         }
     }
 
+    given("a fake loader handing back a single tracked mock texture") {
+        resetFactory()
+        val loaded = mockk<Texture>(relaxed = true)
+        SpriteSheetFactory.setLoaderForTesting(
+            SpriteSheetFactory.TextureLoader { _ -> loaded }
+        )
+
+        `when`("texture(path) loads the sheet") {
+            then("the pixel-art Nearest min/mag filter is forced on the loaded texture") {
+                SpriteSheetFactory.texture("sprites/luizmelo/martial-hero-1/Idle.png")
+                verify(exactly = 1) {
+                    loaded.setFilter(
+                        Texture.TextureFilter.Nearest,
+                        Texture.TextureFilter.Nearest,
+                    )
+                }
+            }
+        }
+    }
+
     given("two distinct sprite paths") {
         resetFactory()
         SpriteSheetFactory.setLoaderForTesting(

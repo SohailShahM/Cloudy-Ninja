@@ -245,8 +245,8 @@ class LevelRenderer(
         // (opaque content ≈ rows 13-29 of 48), so the rendered frame "appears"
         // floating above the body. Bringing SPRITE_WORLD back to a sane value and
         // recalibrating OFFSET below aligns the opaque foot to the body bottom.
-        // Visible character height ≈ 0.375m (≈ 16/48 of frame × 1.50m), body is
-        // 0.42m — sprite reads slightly shorter than body, which is OK.
+        // Visible character height ≈ 0.625m (≈ 20/48 of frame × 1.50m), body is
+        // 0.64m (half-height 0.32m) — sprite reads about as tall as the body.
         const val SPRITE_WORLD_W = 1.50f
         const val SPRITE_WORLD_H = 1.50f
 
@@ -258,15 +258,22 @@ class LevelRenderer(
          * `32f / PPM` so the visual position matches before/after.
          */
         // 2026-05-17: recalibrated alongside SPRITE_WORLD_H = 1.50.
+        // 2026-06-09 (PR #176 review): corrected the body half-height used in
+        // this derivation. PlayerController builds the body with
+        // `shape.setAsBox(width, height)` where height = 64f / PPM / 2f = 0.32m.
+        // Box2D's setAsBox takes HALF-extents, so the body is 0.64m tall and its
+        // bottom edge / foot sensor sit at playerPos.y - 0.32 (NOT - 0.21; the
+        // old 0.42m figure came from a stale sprite-body comment, not the live
+        // fixture). Recomputing the offset against the real 0.32m half-height:
         // Math: opaque bottom row ≈ row 28 of 48 (MH1 reference). In libGDX
         // Y-up render space the opaque bottom is at sy + (48-28)/48 × sh =
         // sy + 0.417 × 1.50 = sy + 0.625. Setting OFFSET so the opaque bottom
-        // lands at body bottom (playerPos.y - 0.21 for a 0.42m body):
-        //   playerPos.y - OFFSET + 0.625 = playerPos.y - 0.21
-        //   OFFSET = 0.625 + 0.21 = 0.835 (rounded to 0.85)
+        // lands at the real body bottom (playerPos.y - 0.32):
+        //   playerPos.y - OFFSET + 0.625 = playerPos.y - 0.32
+        //   OFFSET = 0.625 + 0.32 = 0.945
         // MH2/MH3 have slightly different opaque bottoms (row 30 / row 36 for
         // some poses) so they'll sit a few cm off; cosmetic, not gameplay-affecting.
-        const val SPRITE_BODY_OFFSET_Y = 0.85f
+        const val SPRITE_BODY_OFFSET_Y = 0.945f
     }
 
     /** Active mode-sensitive palette; resolved from SettingsManager at render time. */
