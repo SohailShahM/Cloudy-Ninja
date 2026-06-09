@@ -60,7 +60,17 @@ object SpriteSheetFactory : Disposable {
      * Different paths produce distinct textures.
      */
     fun texture(internalPath: String): Texture =
-        textureCache.getOrPut(internalPath) { loader.load(internalPath) }
+        textureCache.getOrPut(internalPath) {
+            // 2026-05-17 pixelation fix: libGDX defaults Texture mag filter to
+            // Linear, which bilinearly upsamples our 48×48 MH pixel-art sheets
+            // when they render at SPRITE_WORLD_W=1.50m → ~150 screen px on a
+            // 1280×720 viewport. That blurs every character. Force Nearest on
+            // both min and mag to match SpriteFactory.makeTex() and
+            // TileRenderer.ensureTexture(), which already do this correctly.
+            loader.load(internalPath).apply {
+                setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
+            }
+        }
 
     /**
      * Slices a horizontal-strip sprite sheet into [TextureRegion]s left-to-right.
